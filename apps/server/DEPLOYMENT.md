@@ -6,6 +6,202 @@ All deployment configuration is centralized in the `.deploy/` folder.
 
 ---
 
+## Table of Contents
+
+- [File Architecture](#file-architecture)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Cloud Run Deployment](#cloud-run-deployment)
+- [Deployment Configuration](#deployment-configuration)
+- [Adding Custom Environments](#adding-custom-environments)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## File Architecture
+
+### Server Deployment Structure
+
+```
+apps/server/
+├── .deploy/                          # 📁 All deployment-related files
+│   ├── deploy.config.yaml           # 🔧 Infrastructure configuration (COMMITTED)
+│   ├── scripts/
+│   │   └── deploy.sh                # 🚀 Deployment script with YAML parser
+│   └── README.md                    # 📖 Deployment usage guide
+│
+├── .env.example                     # 📄 Local development template (COMMITTED)
+├── .env.prod.example                # 📄 Production template (COMMITTED)
+├── .env.beta.example                # 📄 Beta template (COMMITTED)
+├── .env.sandbox.example             # 📄 Sandbox template (COMMITTED)
+│
+├── .env                             # 🔒 Local secrets (GITIGNORED)
+├── .env.prod                        # 🔒 Production secrets (GITIGNORED)
+├── .env.beta                        # 🔒 Beta secrets (GITIGNORED)
+├── .env.sandbox                     # 🔒 Sandbox secrets (GITIGNORED)
+│
+├── gcp-service-account.json         # 🔑 GCP credentials (GITIGNORED)
+│
+├── src/                             # 💻 Application source code
+├── Dockerfile                       # 🐳 Docker build configuration
+├── package.json                     # 📦 Dependencies & deploy scripts
+├── tsconfig.json                    # ⚙️ TypeScript configuration
+└── DEPLOYMENT.md                    # 📚 This file
+
+Root Level:
+├── cloudbuild.yaml                  # ☁️ Google Cloud Build config
+└── turbo.json                       # ⚡ Turborepo configuration
+```
+
+### Key Files Explained
+
+| File | Purpose | Committed? |
+|------|---------|-----------|
+| `.deploy/deploy.config.yaml` | Infrastructure settings (region, memory, CPU, scaling) | ✅ Yes |
+| `.deploy/scripts/deploy.sh` | Deployment script with YAML parser | ✅ Yes |
+| `.env.*.example` | Environment variable templates | ✅ Yes |
+| `.env`, `.env.prod`, `.env.beta`, `.env.sandbox` | Actual secrets and API keys | ❌ No (gitignored) |
+| `gcp-service-account.json` | GCP authentication credentials | ❌ No (gitignored) |
+| `Dockerfile` | Container build instructions | ✅ Yes |
+| `cloudbuild.yaml` | Cloud Build configuration | ✅ Yes |
+| `package.json` | Deploy scripts (`deploy:prod`, etc.) | ✅ Yes |
+
+### Security Model
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  COMMITTED (Safe to version control)                        │
+├─────────────────────────────────────────────────────────────┤
+│  • .deploy/deploy.config.yaml  - Infrastructure settings    │
+│  • .env.*.example              - Templates                  │
+│  • deploy.sh                   - Deployment script          │
+│  • Dockerfile                  - Build config               │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  GITIGNORED (Never commit)                                  │
+├─────────────────────────────────────────────────────────────┤
+│  • .env, .env.prod, etc.       - Actual secrets            │
+│  • gcp-service-account.json    - GCP credentials           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Prerequisites
+
+Before deploying to Google Cloud Run, ensure you have:
+
+### Required Tools
+
+1. **Bun** (v1.2.22 or higher)
+   ```bash
+   curl -fsSL https://bun.sh/install | bash
+   ```
+
+2. **Google Cloud SDK (gcloud)**
+   ```bash
+   # macOS
+   brew install google-cloud-sdk
+
+   # Or download from: https://cloud.google.com/sdk/docs/install
+   ```
+
+3. **Docker** (for local testing - optional)
+   ```bash
+   # macOS
+   brew install docker
+   ```
+
+### Required GCP Setup
+
+1. **Google Cloud Project**
+   - Create a project at: https://console.cloud.google.com
+   - Note your Project ID
+
+2. **Enable Required APIs**
+   ```bash
+   gcloud services enable run.googleapis.com
+   gcloud services enable cloudbuild.googleapis.com
+   gcloud services enable artifactregistry.googleapis.com
+   ```
+
+3. **Service Account with Permissions**
+
+   Create a service account with these roles:
+   - `Cloud Run Admin`
+   - `Cloud Build Editor`
+   - `Artifact Registry Administrator`
+   - `Service Account User`
+
+   ```bash
+   # Create service account
+   gcloud iam service-accounts create flowstack-deployer \
+     --display-name="FlowStack Deployer"
+
+   # Grant roles
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="serviceAccount:flowstack-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/run.admin"
+
+   # Repeat for other roles...
+
+   # Download JSON key
+   gcloud iam service-accounts keys create gcp-service-account.json \
+     --iam-account=flowstack-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com
+   ```
+
+4. **Move Service Account Key**
+   ```bash
+   mv gcp-service-account.json apps/server/
+   ```
+
+### Required Environment Files
+
+Create environment-specific `.env` files from templates:
+
+```bash
+cd apps/server
+
+# For production
+cp .env.prod.example .env.prod
+nano .env.prod  # Add your production secrets
+
+# For beta
+cp .env.beta.example .env.beta
+nano .env.beta
+
+# For sandbox
+cp .env.sandbox.example .env.sandbox
+nano .env.sandbox
+```
+
+### Verify Prerequisites
+
+Check that everything is installed:
+
+```bash
+# Check bun
+bun --version
+
+# Check gcloud
+gcloud --version
+
+# Check authentication
+gcloud auth list
+
+# Check project
+gcloud config get-value project
+
+# Check service account file exists
+ls -la apps/server/gcp-service-account.json
+
+# Check env files exist
+ls -la apps/server/.env.*
+```
+
+---
+
 ## Local Development
 
 ```bash
