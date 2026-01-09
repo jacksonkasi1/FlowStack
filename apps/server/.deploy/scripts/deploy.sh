@@ -2,7 +2,8 @@
 set -e
 
 # Trap to ensure cleanup on exit (temp file path set later)
-trap 'rm -f "$TEMP_ENV_YAML"' EXIT
+# Guard with non-empty check to avoid rm -f "" if mktemp fails
+trap '[ -n "$TEMP_ENV_YAML" ] && rm -f "$TEMP_ENV_YAML"' EXIT
 
 # ===========================================
 # FlowStack Server - GCP Cloud Run Deployment
@@ -249,8 +250,8 @@ echo ""
 echo "📋 Preparing environment variables..."
 
 # Use mktemp to avoid race conditions in parallel deployments
-# -t flag is portable across macOS (BSD) and Linux (GNU)
-TEMP_ENV_YAML=$(mktemp -t flowstack-deploy-env.XXXXXX)
+# Portable syntax that works across macOS (BSD) and Linux (GNU)
+TEMP_ENV_YAML=$(mktemp "${TMPDIR:-/tmp}/flowstack-deploy-env.XXXXXX")
 echo "NODE_ENV: \"production\"" > "$TEMP_ENV_YAML"
 echo "ENVIRONMENT: \"$ENV\"" >> "$TEMP_ENV_YAML"
 
@@ -277,20 +278,19 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   # Trim leading/trailing whitespace from value
   value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
-  # Check if value is fully quoted (starts and ends with matching quotes)
-  is_quoted=false
-  if [[ "$value" =~ ^\".*\"$ ]] || [[ "$value" =~ ^\'.*\'$ ]]; then
-    is_quoted=true
-  fi
+  # Handle inline comments and quotes
+  # Strategy: Strip trailing comments after closing quotes first, then remove quotes
 
-  # If NOT fully quoted, strip inline comments before processing quotes
-  if [[ "$is_quoted" == false ]]; then
-    value=$(echo "$value" | sed 's/[[:space:]]*#.*//')
-  fi
-
-  # Remove surrounding quotes if present (both single and double)
-  if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+  # Check if value starts with quote and find closing quote
+  if [[ "$value" =~ ^\"([^\"]*)\"(.*)$ ]]; then
+    # Double-quoted value - capture content and anything after closing quote
     value="${BASH_REMATCH[1]}"
+  elif [[ "$value" =~ ^\'([^\']*)\'(.*)$ ]]; then
+    # Single-quoted value - capture content and anything after closing quote
+    value="${BASH_REMATCH[1]}"
+  else
+    # Not quoted - strip inline comments (require space before #)
+    value=$(echo "$value" | sed -E 's/[[:space:]]+#.*//')
   fi
 
   # Escape for YAML: first backslashes, then double quotes
