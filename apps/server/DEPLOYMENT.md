@@ -2,6 +2,8 @@
 
 FlowStack supports deployment to **Google Cloud Run** with three environment tiers.
 
+All deployment configuration is centralized in the `.deploy/` folder.
+
 ---
 
 ## Local Development
@@ -58,9 +60,9 @@ bun run deploy:sandbox
 
 **Direct Script Execution:**
 ```bash
-./apps/server/scripts/deploy.sh prod
-./apps/server/scripts/deploy.sh beta
-./apps/server/scripts/deploy.sh sandbox
+./apps/server/.deploy/scripts/deploy.sh prod
+./apps/server/.deploy/scripts/deploy.sh beta
+./apps/server/.deploy/scripts/deploy.sh sandbox
 ```
 
 ### Customize Region & Service Account Path
@@ -70,9 +72,54 @@ GCP_REGION=us-central1 bun run deploy:prod
 GCP_SA_KEY_PATH=./my-sa-key.json bun run deploy:prod
 
 # Or with direct script
-GCP_REGION=us-central1 ./apps/server/scripts/deploy.sh prod
-GCP_SA_KEY_PATH=./my-sa-key.json ./apps/server/scripts/deploy.sh prod
+GCP_REGION=us-central1 ./apps/server/.deploy/scripts/deploy.sh prod
+GCP_SA_KEY_PATH=./my-sa-key.json ./apps/server/.deploy/scripts/deploy.sh prod
 ```
+
+---
+
+## Deployment Configuration
+
+### Configuration File (`/apps/server/.deploy/deploy.config.yaml`)
+
+All deployment infrastructure settings are managed in `.deploy/deploy.config.yaml`:
+
+```yaml
+defaults:
+  region: us-central1
+  artifact_registry: flowstack
+  service_account_key: gcp-service-account.json
+  timeout: 300
+
+environments:
+  prod:
+    service_name: flowstack-server-prod
+    memory: 2Gi
+    cpu: "2"
+    min_instances: 1
+    # ... more settings
+```
+
+**Benefits:**
+- ✅ Version controlled (safe to commit)
+- ✅ Single source of truth for all environments
+- ✅ Easy to compare environment configs
+- ✅ Environment variables override config values
+
+**Adding New Environments:**
+
+Just add a new section under `environments:`:
+
+```yaml
+environments:
+  staging:
+    service_name: flowstack-server-staging
+    memory: 1Gi
+    cpu: "1"
+    # inherits defaults for other values
+```
+
+Then deploy: `bun run deploy:staging`
 
 ---
 

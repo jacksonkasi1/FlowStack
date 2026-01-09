@@ -7,9 +7,9 @@
     "build": "tsc",
     "lint": "eslint src",
     "check-types": "tsc --noEmit",
-    "deploy:prod": "./scripts/deploy.sh prod",
-    "deploy:beta": "./scripts/deploy.sh beta",
-    "deploy:sandbox": "./scripts/deploy.sh sandbox"
+    "deploy:prod": "./.deploy/scripts/deploy.sh prod",
+    "deploy:beta": "./.deploy/scripts/deploy.sh beta",
+    "deploy:sandbox": "./.deploy/scripts/deploy.sh sandbox"
   },
   "dependencies": {
     "@repo/shared": "*"

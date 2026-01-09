@@ -1,0 +1,61 @@
+# ===========================================
+# FlowStack Deployment Configuration
+# ===========================================
+# This file contains deployment-specific settings (infrastructure)
+# Application secrets and API keys go in .env files
+
+# Global defaults - applied to all environments unless overridden
+defaults:
+  # GCP Configuration
+  region: us-central1                    # Default region for Cloud Run
+  artifact_registry: flowstack           # Artifact Registry repository name
+  service_account_key: gcp-service-account.json  # Path to service account JSON
+
+  # Cloud Run Settings
+  timeout: 300                           # Request timeout in seconds
+  allow_unauthenticated: true            # Allow public access (set false for internal services)
+
+  # These can be overridden by environment variables:
+  # - GCP_REGION
+  # - GCP_SA_KEY_PATH
+  # - PROJECT_ID (auto-detected from service account if not set)
+
+# Environment-specific configurations
+environments:
+  # Production Environment
+  prod:
+    service_name: flowstack-server-prod
+    memory: 2Gi                          # Memory allocation
+    cpu: "2"                             # CPU allocation
+    min_instances: 1                     # Minimum instances (always warm)
+    max_instances: 10                    # Maximum instances (auto-scale)
+    concurrency: 80                      # Requests per instance
+    # region: asia-southeast1            # Uncomment to override default region
+
+  # Beta Environment
+  beta:
+    service_name: flowstack-server-beta
+    memory: 1Gi
+    cpu: "1"
+    min_instances: 0                     # Scale to zero when idle
+    max_instances: 5
+    concurrency: 80
+
+  # Sandbox Environment
+  sandbox:
+    service_name: flowstack-server-sandbox
+    memory: 512Mi
+    cpu: "1"
+    min_instances: 0
+    max_instances: 2
+    concurrency: 40
+    # region: us-west1                   # Example: Different region for sandbox
+
+  # Add more environments as needed:
+  # staging:
+  #   service_name: flowstack-server-staging
+  #   memory: 1Gi
+  #   cpu: "1"
+  #   min_instances: 0
+  #   max_instances: 3
+  #   concurrency: 80

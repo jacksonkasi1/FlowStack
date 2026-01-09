@@ -7,40 +7,127 @@ trap 'rm -f "$TEMP_ENV_YAML"' EXIT
 # ===========================================
 # FlowStack Server - GCP Cloud Run Deployment
 # ===========================================
-# Usage: ./deploy.sh <prod|beta|sandbox>
+# Usage: ./deploy.sh <environment>
+# Example: ./deploy.sh prod
 # ===========================================
 
 ENV=$1
-
-if [ -z "$ENV" ]; then
-  echo "❌ Usage: $0 <prod|beta|sandbox>"
-  echo ""
-  echo "Available environments:"
-  echo "  - prod    (.env.prod.example)"
-  echo "  - beta    (.env.beta.example)"
-  echo "  - sandbox (.env.sandbox.example)"
-  exit 1
-fi
-
-if [[ ! "$ENV" =~ ^(prod|beta|sandbox)$ ]]; then
-  echo "❌ Invalid environment: $ENV"
-  echo "   Valid options: prod, beta, sandbox"
-  exit 1
-fi
 
 # ===========================================
 # Directory Resolution
 # ===========================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_DIR="$(dirname "$SCRIPT_DIR")"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+SERVER_DIR="$(dirname "$DEPLOY_DIR")"
 ROOT_DIR="$(dirname "$(dirname "$SERVER_DIR")")"
-
-# Allow overriding via environment variables
-SA_KEY="${GCP_SA_KEY_PATH:-$SERVER_DIR/gcp-service-account.json}"
-GCP_REGION="${GCP_REGION:-us-central1}"
+CONFIG_FILE="$DEPLOY_DIR/deploy.config.yaml"
 
 echo "📁 Root directory: $ROOT_DIR"
 echo "📁 Server directory: $SERVER_DIR"
+
+# ===========================================
+# Validate Config File
+# ===========================================
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "❌ Error: Configuration file not found at $CONFIG_FILE"
+  exit 1
+fi
+
+# ===========================================
+# Parse Available Environments from YAML
+# ===========================================
+get_available_environments() {
+  grep -A 1000 "^environments:" "$CONFIG_FILE" | \
+  grep "^  [a-z]" | \
+  sed 's/:.*//' | \
+  sed 's/^  //'
+}
+
+AVAILABLE_ENVS=$(get_available_environments)
+
+# ===========================================
+# Validate Environment Argument
+# ===========================================
+if [ -z "$ENV" ]; then
+  echo "❌ Usage: $0 <environment>"
+  echo ""
+  echo "Available environments (from deploy.config.yaml):"
+  while IFS= read -r env; do
+    echo "  - $env"
+  done <<< "$AVAILABLE_ENVS"
+  exit 1
+fi
+
+# Check if environment exists in config
+if ! echo "$AVAILABLE_ENVS" | grep -q "^$ENV$"; then
+  echo "❌ Invalid environment: $ENV"
+  echo ""
+  echo "Available environments:"
+  while IFS= read -r env; do
+    echo "  - $env"
+  done <<< "$AVAILABLE_ENVS"
+  exit 1
+fi
+
+# ===========================================
+# YAML Parser Function
+# ===========================================
+parse_yaml_value() {
+  local section=$1
+  local key=$2
+  local default=$3
+
+  # Try to get value from environment-specific section first
+  if [ -n "$section" ]; then
+    value=$(grep -A 20 "^  $section:" "$CONFIG_FILE" | \
+            grep "^    $key:" | \
+            head -1 | \
+            sed "s/^    $key: *//" | \
+            sed 's/^"//' | sed 's/"$//' | \
+            sed "s/^'//" | sed "s/'$//")
+
+    if [ -n "$value" ]; then
+      echo "$value"
+      return
+    fi
+  fi
+
+  # Fallback to defaults section
+  value=$(grep -A 20 "^defaults:" "$CONFIG_FILE" | \
+          grep "^  $key:" | \
+          head -1 | \
+          sed "s/^  $key: *//" | \
+          sed 's/^"//' | sed 's/"$//' | \
+          sed "s/^'//" | sed "s/'$//")
+
+  if [ -n "$value" ]; then
+    echo "$value"
+  else
+    echo "$default"
+  fi
+}
+
+# ===========================================
+# Load Configuration
+# ===========================================
+echo ""
+echo "📋 Loading configuration from deploy.config.yaml..."
+
+# Load with priority: ENV VAR > environment config > defaults
+SERVICE_NAME=$(parse_yaml_value "$ENV" "service_name" "flowstack-server-$ENV")
+MEMORY=$(parse_yaml_value "$ENV" "memory" "1Gi")
+CPU=$(parse_yaml_value "$ENV" "cpu" "1")
+MIN_INSTANCES=$(parse_yaml_value "$ENV" "min_instances" "0")
+MAX_INSTANCES=$(parse_yaml_value "$ENV" "max_instances" "5")
+CONCURRENCY=$(parse_yaml_value "$ENV" "concurrency" "80")
+TIMEOUT=$(parse_yaml_value "$ENV" "timeout" "300")
+ALLOW_UNAUTH=$(parse_yaml_value "$ENV" "allow_unauthenticated" "true")
+ARTIFACT_REGISTRY=$(parse_yaml_value "$ENV" "artifact_registry" "flowstack")
+
+# These can be overridden by environment variables
+REGION="${GCP_REGION:-$(parse_yaml_value "$ENV" "region" "us-central1")}"
+SA_KEY_FILE=$(parse_yaml_value "$ENV" "service_account_key" "gcp-service-account.json")
+SA_KEY="${GCP_SA_KEY_PATH:-$SERVER_DIR/$SA_KEY_FILE}"
 
 # ===========================================
 # Environment File Validation
@@ -67,7 +154,8 @@ echo "📋 Using environment file: $ENV_FILE"
 # ===========================================
 if [ ! -f "$SA_KEY" ]; then
   echo "❌ Error: Service account key not found at $SA_KEY"
-  echo "   Please place your 'gcp-service-account.json' in apps/server/"
+  echo "   Please place your service account JSON in apps/server/"
+  echo "   Or set GCP_SA_KEY_PATH environment variable"
   exit 1
 fi
 
@@ -78,7 +166,7 @@ echo ""
 echo "🔐 Authenticating with Service Account..."
 gcloud auth activate-service-account --key-file="$SA_KEY" --quiet
 
-PROJECT_ID=$(grep '"project_id":' "$SA_KEY" | head -1 | cut -d '"' -f 4)
+PROJECT_ID="${PROJECT_ID:-$(grep '"project_id":' "$SA_KEY" | head -1 | cut -d '"' -f 4)}"
 if [ -z "$PROJECT_ID" ]; then
   echo "❌ Error: Could not parse project_id from service account file."
   exit 1
@@ -88,36 +176,9 @@ echo "📌 Project ID: $PROJECT_ID"
 gcloud config set project "$PROJECT_ID" --quiet
 
 # ===========================================
-# Environment-Specific Configuration
+# Build Configuration Summary
 # ===========================================
-SERVICE_NAME="flowstack-server-$ENV"
-REGION="$GCP_REGION"
-IMAGE_NAME="$REGION-docker.pkg.dev/$PROJECT_ID/flowstack/$SERVICE_NAME"
-
-# Set resources based on environment
-case $ENV in
-  prod)
-    MEMORY="2Gi"
-    CPU="2"
-    MIN_INSTANCES="1"
-    MAX_INSTANCES="10"
-    CONCURRENCY="80"
-    ;;
-  beta)
-    MEMORY="1Gi"
-    CPU="1"
-    MIN_INSTANCES="0"
-    MAX_INSTANCES="5"
-    CONCURRENCY="80"
-    ;;
-  sandbox)
-    MEMORY="512Mi"
-    CPU="1"
-    MIN_INSTANCES="0"
-    MAX_INSTANCES="2"
-    CONCURRENCY="40"
-    ;;
-esac
+IMAGE_NAME="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/$SERVICE_NAME"
 
 echo ""
 echo "🌍 Environment: $ENV"
@@ -127,16 +188,18 @@ echo "📍 Region: $REGION"
 echo "💾 Memory: $MEMORY"
 echo "🔧 CPU: $CPU"
 echo "📊 Instances: $MIN_INSTANCES - $MAX_INSTANCES"
+echo "⚡ Concurrency: $CONCURRENCY"
+echo "⏱️  Timeout: ${TIMEOUT}s"
 
 # ===========================================
 # Create Artifact Registry if not exists
 # ===========================================
 echo ""
 echo "📦 Ensuring Artifact Registry repository exists..."
-gcloud artifacts repositories describe flowstack \
+gcloud artifacts repositories describe "$ARTIFACT_REGISTRY" \
   --location="$REGION" \
   --quiet 2>/dev/null || \
-gcloud artifacts repositories create flowstack \
+gcloud artifacts repositories create "$ARTIFACT_REGISTRY" \
   --repository-format=docker \
   --location="$REGION" \
   --description="FlowStack Docker images" \
@@ -209,17 +272,24 @@ done < "$ENV_FILE"
 echo ""
 echo "🚀 Deploying to Cloud Run..."
 
+# Build allow-unauthenticated flag
+if [ "$ALLOW_UNAUTH" = "true" ]; then
+  AUTH_FLAG="--allow-unauthenticated"
+else
+  AUTH_FLAG="--no-allow-unauthenticated"
+fi
+
 gcloud run deploy "$SERVICE_NAME" \
   --image "$IMAGE_NAME" \
   --platform managed \
   --region "$REGION" \
-  --allow-unauthenticated \
+  $AUTH_FLAG \
   --memory "$MEMORY" \
   --cpu "$CPU" \
   --min-instances "$MIN_INSTANCES" \
   --max-instances "$MAX_INSTANCES" \
   --concurrency "$CONCURRENCY" \
-  --timeout 300 \
+  --timeout "$TIMEOUT" \
   --env-vars-file="$TEMP_ENV_YAML" \
   --quiet
 
