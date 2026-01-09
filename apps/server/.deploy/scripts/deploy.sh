@@ -279,15 +279,39 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
   # Handle inline comments and quotes
-  # Strategy: Strip trailing comments after closing quotes first, then remove quotes
+  # Strategy: Handle escaped quotes, validate tail, then remove quotes
 
-  # Check if value starts with quote and find closing quote
-  if [[ "$value" =~ ^\"([^\"]*)\"(.*)$ ]]; then
-    # Double-quoted value - capture content and anything after closing quote
+  # Pattern explanation:
+  # - (([^"\\]|\\.)*)  matches either non-quote/non-backslash OR backslash+any char
+  # - This allows \" to be treated as escaped quote (not end of string)
+  # - Capture group 3 is the tail after closing quote (should be empty or comment)
+
+  if [[ "$value" =~ ^\"(([^\"\\]|\\.)*)\"(.*)$ ]]; then
+    # Double-quoted value with escaped quote support
     value="${BASH_REMATCH[1]}"
-  elif [[ "$value" =~ ^\'([^\']*)\'(.*)$ ]]; then
-    # Single-quoted value - capture content and anything after closing quote
+    tail="${BASH_REMATCH[3]}"
+
+    # Validate tail is only whitespace and optional comment
+    if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
+      echo "  ⚠️  Warning: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+    fi
+
+    # Un-escape: \" → " and \\ → \
+    value=$(echo "$value" | sed -e 's/\\"/"/g' -e 's/\\\\/\\/g')
+
+  elif [[ "$value" =~ ^\'(([^\'\\]|\\.)*)\'(.*)$ ]]; then
+    # Single-quoted value with escaped quote support
     value="${BASH_REMATCH[1]}"
+    tail="${BASH_REMATCH[3]}"
+
+    # Validate tail is only whitespace and optional comment
+    if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
+      echo "  ⚠️  Warning: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+    fi
+
+    # Un-escape: \' → ' and \\ → \
+    value=$(echo "$value" | sed -e "s/\\\\'/'/g" -e 's/\\\\/\\/g')
+
   else
     # Not quoted - strip inline comments (require space before #)
     value=$(echo "$value" | sed -E 's/[[:space:]]+#.*//')
