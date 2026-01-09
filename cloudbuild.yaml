@@ -1,0 +1,13 @@
+steps:
+  # Build Docker image
+  - name: 'gcr.io/cloud-builders/docker:latest'
+    args:
+      - 'build'
+      - '-t'
+      - '$_IMAGE_NAME'
+      - '-f'
+      - 'apps/server/Dockerfile'
+      - '.'
+
+images:
+  - '$_IMAGE_NAME'
