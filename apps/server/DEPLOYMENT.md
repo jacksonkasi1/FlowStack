@@ -23,18 +23,18 @@ bun run dev
    cp your-service-account.json apps/server/gcp-service-account.json
    ```
 
-2. **Create environment files:**
+2. **Create environment files from templates:**
    ```bash
    # For production
-   cp apps/server/.env.example apps/server/.env.prod
+   cp apps/server/.env.prod.example apps/server/.env.prod
    nano apps/server/.env.prod
 
    # For beta
-   cp apps/server/.env.example apps/server/.env.beta
+   cp apps/server/.env.beta.example apps/server/.env.beta
    nano apps/server/.env.beta
 
    # For sandbox
-   cp apps/server/.env.example apps/server/.env.sandbox
+   cp apps/server/.env.sandbox.example apps/server/.env.sandbox
    nano apps/server/.env.sandbox
    ```
 
@@ -59,12 +59,19 @@ GCP_SA_KEY_PATH=./my-sa-key.json ./apps/server/scripts/deploy.sh prod
 
 ## Environment Files
 
-- `.env` — Local development (gitignored)
-- `.env.prod` — Production (gitignored)
-- `.env.beta` — Beta (gitignored)
-- `.env.sandbox` — Sandbox (gitignored)
+### Template Files (Committed)
+- `.env.example` — Local development template
+- `.env.prod.example` — Production template
+- `.env.beta.example` — Beta template
+- `.env.sandbox.example` — Sandbox template
 
-Use `.env.example` as a template.
+### Actual Files (Gitignored - Create from templates)
+- `.env` — Local development (copy from `.env.example`)
+- `.env.prod` — Production (copy from `.env.prod.example`)
+- `.env.beta` — Beta (copy from `.env.beta.example`)
+- `.env.sandbox` — Sandbox (copy from `.env.sandbox.example`)
+
+Copy template files and update with your actual values.
 
 ---
 
@@ -101,7 +108,10 @@ The deployment script sets different resources based on environment:
 - Check `gcp-service-account.json` exists or set `GCP_SA_KEY_PATH`
 
 **Environment file not found**
-- Create `.env.prod`, `.env.beta`, or `.env.sandbox` from `.env.example`
+- Create `.env.prod`, `.env.beta`, or `.env.sandbox` from the respective `.example` files:
+  - `cp apps/server/.env.prod.example apps/server/.env.prod`
+  - `cp apps/server/.env.beta.example apps/server/.env.beta`
+  - `cp apps/server/.env.sandbox.example apps/server/.env.sandbox`
 
 **Container failed to start**
 - Check Cloud Run logs via deployment output link
