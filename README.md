@@ -1,57 +1,165 @@
 # FlowStack
 
-A bun-based monorepo using Turborepo for managing multiple applications and shared packages.
+**FlowStack** is a production-grade SaaS foundation focused on **clean architecture, clear boundaries, and long-term maintainability**.
 
-## Structure
+It is not a framework.
+It is not a boilerplate with magic.
 
-- `apps/` - Applications
-  - `server` - Backend server
-  - `web` - Frontend web application
-- `packages/` - Shared packages
-  - `shared` - Shared types and utilities
-  - `logs` - Logging utility
-  - `typescript-config` - Shared TypeScript configuration
-  - `eslint-config` - Shared ESLint configuration
+FlowStack is a **base repository** designed to help you build scalable products without losing control of your codebase.
 
-## Getting Started
+---
 
-### Prerequisites
+## Why FlowStack?
 
-- Node.js >= 18
-- Bun 1.2.22
+Most starters focus on **tech stack choices**.
 
-### Installation
+FlowStack focuses on **flow**:
+- how identity flows
+- how permissions flow
+- how responsibility flows
+- how code grows without becoming messy
 
-```bash
-bun install
+The goal is simple:
+
+> **Make the architecture obvious, boring, and easy to evolve.**
+
+---
+
+## Core Principles
+
+### 1. One Responsibility per File
+- One action per file
+- One API per file
+- One schema per file
+
+No large "god files".
+
+---
+
+### 2. One Responsibility per Folder
+Folders represent **domains**, not features.
+
+Examples:
+- `auth` → identity (who are you?)
+- `access` → permissions (what can you do?)
+- `impersonation` → temporary identity
+- `platform` → operator / super-admin logic
+
+If a folder exists, the feature exists.
+No runtime feature flags.
+
+---
+
+### 3. No Runtime Branching for Product Shape
+There are **no** `if (config.xxx)` checks inside business logic.
+
+All variability is resolved at **generation time**:
+- modules are included or excluded
+- unused folders are removed
+- runtime code stays clean and predictable
+
+---
+
+### 4. Apps Compose, Packages Own Logic
+- `apps/` contain routing and wiring
+- `packages/` contain real logic
+
+Apps never own business rules.
+
+---
+
+### 5. Boring Code > Clever Code
+FlowStack prefers:
+- explicit files
+- explicit imports
+- explicit boundaries
+
+Over abstraction is avoided on purpose.
+
+---
+
+## High-Level Structure
+
+```
+apps/
+  web/            # Customer frontend
+  server/         # Customer API
+  super-admin/    # Operator panel (optional)
+
+packages/
+  auth/           # Identity
+  access/         # Authorization (RBAC)
+  impersonation/  # Temporary identity
+  platform/       # Operator-level control
+  db/             # Database schema & migrations
+  env/            # Typed environment
+  email/          # Email providers & templates
+  storage/        # File storage
+  workflows/      # Background jobs
 ```
 
-### Development
+Each package is **independently understandable**.
 
-```bash
-bun run dev
+---
+
+## Configuration
+
+All feature decisions live in one place:
+
+```ts
+flow.config.ts
 ```
 
-This will start all apps in development mode.
+This file answers **what exists**, not **how it works**.
 
-### Building
+Example:
 
-```bash
-bun run build
-```
+- auth mode
+- super-admin enabled or not
+- impersonation enabled or not
+- deployment targets
 
-### Linting
+Runtime code assumes the decision is already made.
 
-```bash
-bun run lint
-```
+---
 
-### Type Checking
+## What This Repo Is (and Isn't)
 
-```bash
-bun run check-types
-```
+✅ A clean, extensible foundation
+✅ A reference architecture
+✅ A long-term base for real products
 
-## Package Manager
+❌ Not a "plug and play" SaaS
+❌ Not opinionated about UI design
+❌ Not a low-code framework
 
-This monorepo uses Bun as the package manager. Make sure to use `bun` commands instead of `npm` or `yarn`.
+You are expected to **build on top of it**.
+
+---
+
+## Current Status
+
+FlowStack is an **active base repository**.
+
+Features will be added incrementally:
+
+- more auth flows
+- more workflow primitives
+- more deployment helpers
+
+Breaking changes may happen early while the foundation is being refined.
+
+---
+
+## Philosophy
+
+> Scale is not about features.
+> Scale is about clarity.
+
+FlowStack exists to keep that clarity intact as products grow.
+
+---
+
+## License
+
+MIT
