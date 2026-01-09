@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Trap to ensure cleanup on exit
+# Trap to ensure cleanup on exit (temp file path set later)
 trap 'rm -f "$TEMP_ENV_YAML"' EXIT
 
 # ===========================================
@@ -248,7 +248,9 @@ gcloud builds submit \
 echo ""
 echo "📋 Preparing environment variables..."
 
-TEMP_ENV_YAML="$SERVER_DIR/.deploy-env.yaml"
+# Use mktemp to avoid race conditions in parallel deployments
+# -t flag is portable across macOS (BSD) and Linux (GNU)
+TEMP_ENV_YAML=$(mktemp -t flowstack-deploy-env.XXXXXX)
 echo "NODE_ENV: \"production\"" > "$TEMP_ENV_YAML"
 echo "ENVIRONMENT: \"$ENV\"" >> "$TEMP_ENV_YAML"
 
@@ -274,6 +276,17 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   # Trim leading/trailing whitespace from value
   value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+  # Check if value is fully quoted (starts and ends with matching quotes)
+  is_quoted=false
+  if [[ "$value" =~ ^\".*\"$ ]] || [[ "$value" =~ ^\'.*\'$ ]]; then
+    is_quoted=true
+  fi
+
+  # If NOT fully quoted, strip inline comments before processing quotes
+  if [[ "$is_quoted" == false ]]; then
+    value=$(echo "$value" | sed 's/[[:space:]]*#.*//')
+  fi
 
   # Remove surrounding quotes if present (both single and double)
   if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
