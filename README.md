@@ -78,6 +78,16 @@ Over abstraction is avoided on purpose.
 
 ---
 
+## Core Stack (Defaults, Not Lock-in)
+
+FlowStack is **stack-aware**, but not stack-locked.
+
+See **[docs/stack.md](./docs/stack.md)** for the default technologies and design philosophy.
+
+These are tools FlowStack is built and tested with. You can replace parts of the stack if you know what you're doing.
+
+---
+
 ## High-Level Structure
 
 ```
