@@ -13,6 +13,20 @@ build
 .env
 .env.local
 .env.*.local
+.env.prod
+.env.beta
+.env.sandbox
+
+# GCP Service Account & Deploy Artifacts
+gcp-service-account.json
+apps/server/gcp-service-account.json
+apps/server/.deploy-env.yaml
+apps/server/.deploy/.deploy-env.yaml
+
+# Keep .deploy folder structure but ignore generated files
+!apps/server/.deploy/
+!apps/server/.deploy/scripts/
+!apps/server/.deploy/deploy.config.yaml
 
 # IDE
 .vscode

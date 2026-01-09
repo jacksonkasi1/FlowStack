@@ -1,0 +1,85 @@
+# ===========================================
+# FlowStack Deployment Configuration
+# ===========================================
+# This file contains deployment-specific settings (infrastructure)
+# Application secrets and API keys go in .env files
+
+# Global defaults - applied to all environments unless overridden
+defaults:
+  # GCP Configuration
+  region: us-central1                    # Default region for Cloud Run
+  artifact_registry: flowstack           # Artifact Registry repository name
+  service_account_key: gcp-service-account.json  # Path to service account JSON
+
+  # Environment File (can be overridden per environment)
+  # If not specified, falls back to .env.<environment-name>
+  # env_file: .env                       # Uncomment to set a default env file
+
+  # Cloud Run Settings
+  timeout: 300                           # Request timeout in seconds
+  allow_unauthenticated: true            # Allow public access (set false for internal services)
+
+  # These can be overridden by environment variables:
+  # - GCP_REGION
+  # - GCP_SA_KEY_PATH
+  # - PROJECT_ID (auto-detected from service account if not set)
+
+# Environment-specific configurations
+environments:
+  # Production Environment
+  prod:
+    env_file: .env.prod                  # Points to .env.prod file
+    service_name: flowstack-server-prod
+    memory: 2Gi                          # Memory allocation
+    cpu: "2"                             # CPU allocation
+    min_instances: 1                     # Minimum instances (always warm)
+    max_instances: 10                    # Maximum instances (auto-scale)
+    concurrency: 80                      # Requests per instance
+    # region: asia-southeast1            # Uncomment to override default region
+
+  # Beta Environment
+  beta:
+    env_file: .env.beta                  # Points to .env.beta file
+    service_name: flowstack-server-beta
+    memory: 1Gi
+    cpu: "1"
+    min_instances: 0                     # Scale to zero when idle
+    max_instances: 5
+    concurrency: 80
+
+  # Sandbox Environment
+  sandbox:
+    env_file: .env.sandbox               # Points to .env.sandbox file
+    service_name: flowstack-server-sandbox
+    memory: 512Mi
+    cpu: "1"
+    min_instances: 0
+    max_instances: 2
+    concurrency: 40
+    # region: us-west1                   # Example: Different region for sandbox
+
+  # Example: Custom environment with custom name
+  # You can name it anything and point to any .env file
+  # jackson-testing:
+  #   env_file: .env.jackson             # Points to custom .env.jackson file
+  #   service_name: flowstack-server-jackson
+  #   memory: 512Mi
+  #   cpu: "1"
+  #   min_instances: 0
+  #   max_instances: 2
+  #   concurrency: 40
+  #
+  # Then add to package.json:
+  # "deploy:jackson-testing": "./.deploy/scripts/deploy.sh jackson-testing"
+  #
+  # Deploy: bun run deploy:jackson-testing
+
+  # Add more environments as needed:
+  # staging:
+  #   env_file: .env.staging
+  #   service_name: flowstack-server-staging
+  #   memory: 1Gi
+  #   cpu: "1"
+  #   min_instances: 0
+  #   max_instances: 3
+  #   concurrency: 80
