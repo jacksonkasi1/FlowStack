@@ -4,7 +4,7 @@ import http from 'http';
 // ** import logs
 import { logger } from '@repo/logs';
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8787;
 
 const server = http.createServer((req, res) => {
   logger.info(`${req.method} ${req.url}`);
