@@ -14,6 +14,11 @@ ENV=$1
 
 if [ -z "$ENV" ]; then
   echo "❌ Usage: $0 <prod|beta|sandbox>"
+  echo ""
+  echo "Available environments:"
+  echo "  - prod    (.env.prod.example)"
+  echo "  - beta    (.env.beta.example)"
+  echo "  - sandbox (.env.sandbox.example)"
   exit 1
 fi
 
@@ -48,6 +53,10 @@ fi
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "❌ Error: Environment file not found at $SERVER_DIR/.env.$ENV or $SERVER_DIR/.env"
+  echo ""
+  echo "📋 To create the file, run:"
+  echo "   cp $SERVER_DIR/.env.$ENV.example $SERVER_DIR/.env.$ENV"
+  echo "   # Then edit with your values"
   exit 1
 fi
 
