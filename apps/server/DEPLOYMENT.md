@@ -7,9 +7,15 @@ FlowStack supports deployment to **Google Cloud Run** with three environment tie
 ## Local Development
 
 ```bash
-cp apps/server/.env.example apps/server/.env
+cd apps/server
+cp .env.example .env
 # Edit .env with your values
 bun run dev
+```
+
+Or from root:
+```bash
+bun --cwd apps/server dev
 ```
 
 ---
@@ -40,8 +46,17 @@ bun run dev
 
 ### Deploy
 
-Deploy to any of three environments:
+Deploy to any of three environments using npm scripts:
 
+**From Root (using bun):**
+```bash
+cd apps/server
+bun run deploy:prod
+bun run deploy:beta
+bun run deploy:sandbox
+```
+
+**Direct Script Execution:**
 ```bash
 ./apps/server/scripts/deploy.sh prod
 ./apps/server/scripts/deploy.sh beta
@@ -51,6 +66,10 @@ Deploy to any of three environments:
 ### Customize Region & Service Account Path
 
 ```bash
+GCP_REGION=us-central1 bun run deploy:prod
+GCP_SA_KEY_PATH=./my-sa-key.json bun run deploy:prod
+
+# Or with direct script
 GCP_REGION=us-central1 ./apps/server/scripts/deploy.sh prod
 GCP_SA_KEY_PATH=./my-sa-key.json ./apps/server/scripts/deploy.sh prod
 ```
@@ -132,4 +151,19 @@ The deployment script sets different resources based on environment:
 5. Environment variables converted to Cloud Run format
 6. Service deployed to Cloud Run
 7. Service URL returned
+
+---
+
+## Quick Commands Reference
+
+| Task | Command |
+|------|---------|
+| Local dev | `cd apps/server && bun run dev` |
+| Build | `cd apps/server && bun run build` |
+| Type check | `cd apps/server && bun run check-types` |
+| Deploy prod | `cd apps/server && bun run deploy:prod` |
+| Deploy beta | `cd apps/server && bun run deploy:beta` |
+| Deploy sandbox | `cd apps/server && bun run deploy:sandbox` |
+| Custom region prod | `GCP_REGION=us-west1 bun run deploy:prod` |
+| Custom SA key | `GCP_SA_KEY_PATH=./key.json bun run deploy:prod` |
 

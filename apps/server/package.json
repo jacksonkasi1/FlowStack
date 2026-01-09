@@ -6,7 +6,10 @@
     "dev": "node src/index.ts",
     "build": "tsc",
     "lint": "eslint src",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "deploy:prod": "./scripts/deploy.sh prod",
+    "deploy:beta": "./scripts/deploy.sh beta",
+    "deploy:sandbox": "./scripts/deploy.sh sandbox"
   },
   "dependencies": {
     "@repo/shared": "*"
