@@ -11,6 +11,10 @@ defaults:
   artifact_registry: flowstack           # Artifact Registry repository name
   service_account_key: gcp-service-account.json  # Path to service account JSON
 
+  # Environment File (can be overridden per environment)
+  # If not specified, falls back to .env.<environment-name>
+  # env_file: .env                       # Uncomment to set a default env file
+
   # Cloud Run Settings
   timeout: 300                           # Request timeout in seconds
   allow_unauthenticated: true            # Allow public access (set false for internal services)
@@ -24,6 +28,7 @@ defaults:
 environments:
   # Production Environment
   prod:
+    env_file: .env.prod                  # Points to .env.prod file
     service_name: flowstack-server-prod
     memory: 2Gi                          # Memory allocation
     cpu: "2"                             # CPU allocation
@@ -34,6 +39,7 @@ environments:
 
   # Beta Environment
   beta:
+    env_file: .env.beta                  # Points to .env.beta file
     service_name: flowstack-server-beta
     memory: 1Gi
     cpu: "1"
@@ -43,6 +49,7 @@ environments:
 
   # Sandbox Environment
   sandbox:
+    env_file: .env.sandbox               # Points to .env.sandbox file
     service_name: flowstack-server-sandbox
     memory: 512Mi
     cpu: "1"
@@ -51,8 +58,25 @@ environments:
     concurrency: 40
     # region: us-west1                   # Example: Different region for sandbox
 
+  # Example: Custom environment with custom name
+  # You can name it anything and point to any .env file
+  # jackson-testing:
+  #   env_file: .env.jackson             # Points to custom .env.jackson file
+  #   service_name: flowstack-server-jackson
+  #   memory: 512Mi
+  #   cpu: "1"
+  #   min_instances: 0
+  #   max_instances: 2
+  #   concurrency: 40
+  #
+  # Then add to package.json:
+  # "deploy:jackson-testing": "./.deploy/scripts/deploy.sh jackson-testing"
+  #
+  # Deploy: bun run deploy:jackson-testing
+
   # Add more environments as needed:
   # staging:
+  #   env_file: .env.staging
   #   service_name: flowstack-server-staging
   #   memory: 1Gi
   #   cpu: "1"

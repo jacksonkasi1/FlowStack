@@ -83,6 +83,8 @@ parse_yaml_value() {
             grep "^    $key:" | \
             head -1 | \
             sed "s/^    $key: *//" | \
+            sed 's/#.*//' | \
+            sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | \
             sed 's/^"//' | sed 's/"$//' | \
             sed "s/^'//" | sed "s/'$//")
 
@@ -97,6 +99,8 @@ parse_yaml_value() {
           grep "^  $key:" | \
           head -1 | \
           sed "s/^  $key: *//" | \
+          sed 's/#.*//' | \
+          sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | \
           sed 's/^"//' | sed 's/"$//' | \
           sed "s/^'//" | sed "s/'$//")
 
@@ -132,18 +136,36 @@ SA_KEY="${GCP_SA_KEY_PATH:-$SERVER_DIR/$SA_KEY_FILE}"
 # ===========================================
 # Environment File Validation
 # ===========================================
-ENV_FILE="$SERVER_DIR/.env.$ENV"
+# Get env_file from YAML config, or fall back to .env.$ENV pattern
+ENV_FILE_NAME=$(parse_yaml_value "$ENV" "env_file" "")
+
+if [ -n "$ENV_FILE_NAME" ]; then
+  # Use the env_file specified in YAML
+  ENV_FILE="$SERVER_DIR/$ENV_FILE_NAME"
+else
+  # Fall back to .env.$ENV pattern
+  ENV_FILE="$SERVER_DIR/.env.$ENV"
+fi
+
+# If specified file doesn't exist, try fallback to .env
 if [ ! -f "$ENV_FILE" ]; then
-  # Fallback to .env if .env.$ENV doesn't exist
   ENV_FILE="$SERVER_DIR/.env"
 fi
 
+# If still not found, show error
 if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ Error: Environment file not found at $SERVER_DIR/.env.$ENV or $SERVER_DIR/.env"
-  echo ""
-  echo "📋 To create the file, run:"
-  echo "   cp $SERVER_DIR/.env.$ENV.example $SERVER_DIR/.env.$ENV"
-  echo "   # Then edit with your values"
+  if [ -n "$ENV_FILE_NAME" ]; then
+    echo "❌ Error: Environment file not found at $SERVER_DIR/$ENV_FILE_NAME"
+    echo ""
+    echo "📋 The YAML config specifies: env_file: $ENV_FILE_NAME"
+    echo "   Please create this file or update the env_file setting in deploy.config.yaml"
+  else
+    echo "❌ Error: Environment file not found at $SERVER_DIR/.env.$ENV or $SERVER_DIR/.env"
+    echo ""
+    echo "📋 To create the file, run:"
+    echo "   cp $SERVER_DIR/.env.$ENV.example $SERVER_DIR/.env.$ENV"
+    echo "   # Then edit with your values"
+  fi
   exit 1
 fi
 

@@ -106,20 +106,103 @@ environments:
 - ✅ Easy to compare environment configs
 - ✅ Environment variables override config values
 
-**Adding New Environments:**
+**Environment File Mapping:**
 
-Just add a new section under `environments:`:
+Each environment can specify which `.env` file to use via the `env_file` field:
 
 ```yaml
 environments:
+  prod:
+    env_file: .env.prod              # Uses .env.prod for secrets
+    service_name: flowstack-server-prod
+    memory: 2Gi
+
   staging:
+    env_file: .env.staging           # Uses .env.staging for secrets
     service_name: flowstack-server-staging
     memory: 1Gi
-    cpu: "1"
-    # inherits defaults for other values
 ```
 
-Then deploy: `bun run deploy:staging`
+**Fallback Behavior:**
+1. If `env_file` is specified → Use that file
+2. If not specified → Use `.env.<environment-name>`
+3. If that doesn't exist → Fall back to `.env`
+
+---
+
+## Adding Custom Environments
+
+You can create ANY custom environment with ANY name!
+
+### Example: Personal Testing Environment
+
+**Step 1: Add to `deploy.config.yaml`**
+
+```yaml
+environments:
+  jackson-testing:                   # Custom name!
+    env_file: .env.jackson           # Points to .env.jackson
+    service_name: flowstack-server-jackson
+    memory: 512Mi
+    cpu: "1"
+    min_instances: 0
+    max_instances: 2
+    concurrency: 40
+```
+
+**Step 2: Create env file**
+
+```bash
+cp apps/server/.env.example apps/server/.env.jackson
+nano apps/server/.env.jackson
+```
+
+**Step 3: Add deploy script to `package.json`**
+
+```json
+{
+  "scripts": {
+    "deploy:jackson-testing": "./.deploy/scripts/deploy.sh jackson-testing"
+  }
+}
+```
+
+**Step 4: Deploy**
+
+```bash
+cd apps/server
+bun run deploy:jackson-testing
+```
+
+**That's it!** ✅ The deployment script automatically:
+- Reads `deploy.config.yaml` to find `jackson-testing` config
+- Uses `.env.jackson` file as specified
+- Deploys with the configured resources
+
+---
+
+## Multiple Developers / Environments
+
+Each developer can have their own environment:
+
+```yaml
+environments:
+  dev-john:
+    env_file: .env.john
+    service_name: flowstack-server-john
+    memory: 512Mi
+
+  dev-sarah:
+    env_file: .env.sarah
+    service_name: flowstack-server-sarah
+    memory: 512Mi
+```
+
+Then in `package.json`:
+```json
+"deploy:dev-john": "./.deploy/scripts/deploy.sh dev-john",
+"deploy:dev-sarah": "./.deploy/scripts/deploy.sh dev-sarah"
+```
 
 ---
 
