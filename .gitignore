@@ -13,6 +13,14 @@ build
 .env
 .env.local
 .env.*.local
+.env.prod
+.env.beta
+.env.sandbox
+
+# GCP Service Account
+gcp-service-account.json
+apps/server/gcp-service-account.json
+apps/server/.deploy-env.yaml
 
 # IDE
 .vscode
