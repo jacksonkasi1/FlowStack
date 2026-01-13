@@ -418,6 +418,38 @@ Then in `package.json`:
 
 Copy template files and update with your actual values.
 
+### Environment File Format
+
+The deployment script supports inline comments in `.env` files:
+
+**Supported:**
+```bash
+# Full-line comments are supported
+API_KEY=secret123 # inline comments (space before #)
+
+# Values with # but no space before it are preserved
+CALLBACK_URL=http://example.com/#anchor  # OK - no space before first #
+TOKEN=abc#123  # OK - # is part of the value
+
+# Quoted values always preserve # characters inside
+DATABASE_URL="postgresql://user:pass#123@localhost/db"
+PASSWORD='my#pass#word'
+
+# Comments after closing quotes (with space) are stripped
+APP_NAME="MyApp" # production app  → parsed as "MyApp"
+```
+
+**Comment Detection Rules:**
+- Inline comments require **at least one space before #**
+- `value # comment` → `value` (comment stripped)
+- `value#123` → `value#123` (no space, # preserved)
+- `"value#123" # comment` → `value#123` (quoted, then comment stripped)
+
+**Best Practices:**
+- Use full-line comments for better readability
+- Quote values with `#` if they might have trailing comments
+- Ensure space before `#` for inline comments
+
 ---
 
 ## Environment-Specific Resources
@@ -474,9 +506,30 @@ The deployment script sets different resources based on environment:
 2. Service account authentication
 3. Artifact Registry repository created (if not exists)
 4. Docker image built and pushed via Cloud Build
-5. Environment variables converted to Cloud Run format
+5. Environment variables converted to Cloud Run format (using unique temp file)
 6. Service deployed to Cloud Run
 7. Service URL returned
+
+### Parallel Deployments
+
+The deployment script supports running multiple deployments in parallel:
+
+```bash
+# Deploy to multiple environments simultaneously
+bun run deploy:prod & bun run deploy:beta & bun run deploy:sandbox &
+
+# Wait for all deployments to complete
+wait
+
+# Or in a single line
+bun run deploy:prod & bun run deploy:beta & bun run deploy:sandbox & wait
+```
+
+Each deployment:
+- Creates a unique temporary file using `mktemp` (no race conditions)
+- Authenticates independently
+- Can deploy to different regions
+- Cleans up automatically on completion or failure
 
 ---
 
