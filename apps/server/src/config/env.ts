@@ -24,10 +24,10 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
-    R2_ACCESS_KEY_ID: z.string().optional(),
-    R2_SECRET_ACCESS_KEY: z.string().optional(),
-    R2_ENDPOINT_URL: z.string().url().optional(),
-    R2_BUCKET_NAME: z.string().optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1),
+    R2_SECRET_ACCESS_KEY: z.string().min(1),
+    R2_ENDPOINT_URL: z.string().url(),
+    R2_BUCKET_NAME: z.string().min(1),
     R2_PUBLIC_URL: z.string().url().optional(),
   },
 
