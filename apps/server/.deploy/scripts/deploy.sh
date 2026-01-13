@@ -293,7 +293,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
     # Validate tail is only whitespace and optional comment
     if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
-      echo "  ⚠️  Warning: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      echo "❌ Error: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      exit 1
     fi
 
     # Un-escape: \" → " and \\ → \
@@ -306,7 +307,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
     # Validate tail is only whitespace and optional comment
     if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
-      echo "  ⚠️  Warning: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      echo "❌ Error: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      exit 1
     fi
 
     # Un-escape: \' → ' and \\ → \
