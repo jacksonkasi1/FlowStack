@@ -1,23 +1,63 @@
 // ** import core packages
-import http from 'http';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
-// ** import logs
-import { logger } from '@repo/logs';
+// ** import utils
+import { logger } from "@repo/logs";
 
-const PORT = process.env.PORT || 8787;
+// ** import routes
+import apiRouter from "./routes";
 
-const server = http.createServer((req, res) => {
-  logger.info(`${req.method} ${req.url}`);
+// ** import config
+import { env } from "./config";
 
-  if (req.url === '/' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ message: 'FlowStack Server' }));
-  } else {
-    res.writeHead(404);
-    res.end();
-  }
+const app = new Hono();
+
+app.use(
+  "*",
+  cors({
+    origin: env.ALLOWED_ORIGINS
+      ? env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+      : [env.FRONTEND_URL || "http://localhost:3000"],
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  const duration = Date.now() - start;
+  logger.info(
+    `${c.req.method} ${c.req.path} - ${c.res.status} (${duration}ms)`,
+  );
 });
 
-server.listen(PORT, () => {
-  logger.info(`Server running on http://localhost:${PORT}`);
+app.get("/", (c) => {
+  return c.json({ message: "FlowStack Server", status: "ok" });
 });
+
+app.get("/health", (c) => {
+  return c.json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
+app.route("/api", apiRouter);
+
+app.notFound((c) => {
+  return c.json({ error: "Not Found" }, 404);
+});
+
+app.onError((err, c) => {
+  logger.error(`Unhandled error: ${err.message}`);
+  return c.json({ error: "Internal Server Error" }, 500);
+});
+
+const PORT = parseInt(env.PORT || "8787", 10);
+
+export default {
+  port: PORT,
+  fetch: app.fetch,
+};
+
+logger.info(`Server starting on http://localhost:${PORT}`);
