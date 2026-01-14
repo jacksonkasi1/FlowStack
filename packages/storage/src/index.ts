@@ -8,29 +8,37 @@ export type {
   DownloadResult,
 } from "./types";
 
-// ** import utils
-export { createEnvFromProcessEnv } from "./types";
-export { createR2Client } from "./client";
-export { r2GetSignedUploadUrl, r2UploadBuffer } from "./upload";
-export { r2GetSignedDownloadUrl, r2DownloadFile } from "./download";
-export {
-  r2DeleteFile,
-  r2DeleteFileByUrl,
-  r2DeleteMultipleFiles,
-} from "./delete";
-export { r2ListFiles, r2FileExists } from "./list";
-
-// ** import core packages
+// ** import internal
 import { createEnvFromProcessEnv } from "./types";
+import { createR2Client } from "./client";
+import { r2GetSignedUploadUrl, r2UploadBuffer } from "./upload";
+import { r2GetSignedDownloadUrl, r2DownloadFile } from "./download";
 import {
   r2DeleteFile,
   r2DeleteFileByUrl,
   r2DeleteMultipleFiles,
 } from "./delete";
-import { r2DownloadFile, r2GetSignedDownloadUrl } from "./download";
-import { r2FileExists, r2ListFiles } from "./list";
-import { r2GetSignedUploadUrl, r2UploadBuffer } from "./upload";
+import { r2ListFiles, r2FileExists } from "./list";
+import { isValidPath, isValidFileName } from "./utils";
 
+// ** export standalone utils
+export {
+  createEnvFromProcessEnv,
+  createR2Client,
+  r2GetSignedUploadUrl,
+  r2UploadBuffer,
+  r2GetSignedDownloadUrl,
+  r2DownloadFile,
+  r2DeleteFile,
+  r2DeleteFileByUrl,
+  r2DeleteMultipleFiles,
+  r2ListFiles,
+  r2FileExists,
+  isValidPath,
+  isValidFileName,
+};
+
+// ** export r2 client wrapper
 export const r2 = {
   getSignedUploadUrl: (
     fileName: string,
@@ -65,4 +73,7 @@ export const r2 = {
 
   fileExists: (filePath: string) =>
     r2FileExists(filePath, createEnvFromProcessEnv()),
+
+  isValidPath,
+  isValidFileName,
 };

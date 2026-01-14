@@ -3,7 +3,7 @@ import type { Context, Next } from "hono";
 
 // ** import utils
 import { configureAuth } from "@repo/auth";
-import { env } from "../config";
+import { env } from "@/config";
 
 let authInstance: ReturnType<typeof configureAuth> | null = null;
 

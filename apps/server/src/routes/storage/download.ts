@@ -13,6 +13,11 @@ route.get("/download-url", async (c) => {
     return c.json({ error: "filePath is required" }, 400);
   }
 
+  // Validate filePath to prevent path traversal
+  if (!r2.isValidPath(filePath)) {
+    return c.json({ error: "Invalid file path" }, 400);
+  }
+
   try {
     const url = await r2.getSignedDownloadUrl(filePath);
     return c.json({ url });

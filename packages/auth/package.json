@@ -22,6 +22,7 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/email-templates": "workspace:*",
+    "@repo/logs": "workspace:*",
     "better-auth": "^1.4.12"
   },
   "devDependencies": {

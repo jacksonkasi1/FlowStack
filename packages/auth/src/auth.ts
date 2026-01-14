@@ -1,15 +1,21 @@
 // ** import core packages
-import { db, user as userTable } from "@repo/db";
+import { db } from "@repo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, organization } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import {
+  admin,
+  bearer,
+  organization,
+  username,
+} from "better-auth/plugins";
+import { logger } from "@repo/logs";
 
 // ** import utils
 import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
 import checkUserRole from "./utils/user-is-admin";
+
 
 // ** import types
 import type { Env } from "./types";
@@ -128,30 +134,23 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        const isInvitationSignup = false;
-
-        if (isInvitationSignup) {
-          // Auto-verify for invitation signups
-          try {
-            await db
-              .update(userTable)
-              .set({ emailVerified: true })
-              .where(eq(userTable.email, user.email));
-          } catch (error) {
-            console.error("Failed to auto-verify email:", error);
-          }
-          return;
-        }
-
         // Send verification email for normal signups
-        await sendVerificationEmail(env, {
-          to: { address: user.email, name: user.name || "" },
-          url,
-        });
+        try {
+          await sendVerificationEmail(env, {
+            to: { address: user.email, name: user.name || "" },
+            url,
+          });
+        } catch (error) {
+          logger.error(
+            `Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       },
     },
 
     plugins: [
+      bearer(),
+      username(),
       organization({
         async sendInvitationEmail(data) {
           const inviteLink = `${frontendURL}/accept-invitation/${data.id}`;

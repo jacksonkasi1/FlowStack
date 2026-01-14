@@ -13,6 +13,11 @@ route.get("/exists", async (c) => {
     return c.json({ error: "filePath is required" }, 400);
   }
 
+  // Validate filePath to prevent path traversal
+  if (!r2.isValidPath(filePath)) {
+    return c.json({ error: "Invalid file path" }, 400);
+  }
+
   try {
     const exists = await r2.fileExists(filePath);
     return c.json({ exists });

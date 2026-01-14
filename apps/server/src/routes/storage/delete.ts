@@ -6,8 +6,7 @@ import { r2 } from "@repo/storage";
 
 const route = new Hono();
 
-// Validation pattern to prevent path traversal and absolute paths
-const DANGEROUS_PATTERNS = /\.\.|^\/|[\x00-\x1f]/;
+
 
 route.delete("/delete", async (c) => {
   const filePath = c.req.query("filePath");
@@ -17,7 +16,7 @@ route.delete("/delete", async (c) => {
   }
 
   // Validate filePath to prevent path traversal
-  if (DANGEROUS_PATTERNS.test(filePath)) {
+  if (!r2.isValidPath(filePath)) {
     return c.json({ error: "Invalid file path" }, 400);
   }
 
