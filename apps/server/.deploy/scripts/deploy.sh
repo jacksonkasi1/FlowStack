@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-# Trap to ensure cleanup on exit
-trap 'rm -f "$TEMP_ENV_YAML"' EXIT
+# Trap to ensure cleanup on exit (temp file path set later)
+# Guard with non-empty check to avoid rm -f "" if mktemp fails
+trap '[ -n "$TEMP_ENV_YAML" ] && rm -f "$TEMP_ENV_YAML"' EXIT
 
 # ===========================================
 # FlowStack Server - GCP Cloud Run Deployment
@@ -248,7 +249,9 @@ gcloud builds submit \
 echo ""
 echo "📋 Preparing environment variables..."
 
-TEMP_ENV_YAML="$SERVER_DIR/.deploy-env.yaml"
+# Use mktemp to avoid race conditions in parallel deployments
+# Portable syntax that works across macOS (BSD) and Linux (GNU)
+TEMP_ENV_YAML=$(mktemp "${TMPDIR:-/tmp}/flowstack-deploy-env.XXXXXX")
 echo "NODE_ENV: \"production\"" > "$TEMP_ENV_YAML"
 echo "ENVIRONMENT: \"$ENV\"" >> "$TEMP_ENV_YAML"
 
@@ -275,9 +278,45 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   # Trim leading/trailing whitespace from value
   value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
-  # Remove surrounding quotes if present (both single and double)
-  if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+  # Handle inline comments and quotes
+  # Strategy: Handle escaped quotes, validate tail, then remove quotes
+
+  # Pattern explanation:
+  # - (([^"\\]|\\.)*)  matches either non-quote/non-backslash OR backslash+any char
+  # - This allows \" to be treated as escaped quote (not end of string)
+  # - Capture group 3 is the tail after closing quote (should be empty or comment)
+
+  if [[ "$value" =~ ^\"(([^\"\\]|\\.)*)\"(.*)$ ]]; then
+    # Double-quoted value with escaped quote support
     value="${BASH_REMATCH[1]}"
+    tail="${BASH_REMATCH[3]}"
+
+    # Validate tail is only whitespace and optional comment
+    if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
+      echo "❌ Error: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      exit 1
+    fi
+
+    # Un-escape: \" → " and \\ → \
+    value=$(echo "$value" | sed -e 's/\\"/"/g' -e 's/\\\\/\\/g')
+
+  elif [[ "$value" =~ ^\'(([^\'\\]|\\.)*)\'(.*)$ ]]; then
+    # Single-quoted value with escaped quote support
+    value="${BASH_REMATCH[1]}"
+    tail="${BASH_REMATCH[3]}"
+
+    # Validate tail is only whitespace and optional comment
+    if [[ -n "$tail" ]] && [[ ! "$tail" =~ ^[[:space:]]*(#.*)?$ ]]; then
+      echo "❌ Error: Malformed line for $key - unexpected content after closing quote: $tail" >&2
+      exit 1
+    fi
+
+    # Un-escape: \' → ' and \\ → \
+    value=$(echo "$value" | sed -e "s/\\\\'/'/g" -e 's/\\\\/\\/g')
+
+  else
+    # Not quoted - strip inline comments (require space before #)
+    value=$(echo "$value" | sed -E 's/[[:space:]]+#.*//')
   fi
 
   # Escape for YAML: first backslashes, then double quotes
