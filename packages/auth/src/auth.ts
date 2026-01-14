@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 // ** import utils
 import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
+import { sendVerificationEmail } from "./email/send-verification-email";
 import checkUserRole from "./utils/user-is-admin";
 
 // ** import types
@@ -126,10 +127,11 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
-      sendVerificationEmail: async ({ user, url: _url }) => {
+      sendVerificationEmail: async ({ user, url }) => {
         const isInvitationSignup = false;
 
         if (isInvitationSignup) {
+          // Auto-verify for invitation signups
           try {
             await db
               .update(userTable)
@@ -140,6 +142,12 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           }
           return;
         }
+
+        // Send verification email for normal signups
+        await sendVerificationEmail(env, {
+          to: { address: user.email, name: user.name || "" },
+          url,
+        });
       },
     },
 

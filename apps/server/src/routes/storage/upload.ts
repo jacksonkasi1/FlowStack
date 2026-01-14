@@ -1,10 +1,14 @@
-// ** import core packages
+// ** import lib
 import { Hono } from "hono";
 
 // ** import utils
 import { r2 } from "@repo/storage";
 
 const route = new Hono();
+
+// Validation patterns for file names
+const DANGEROUS_PATTERNS = /\.\.|[\x00-\x1f]/;
+const MAX_FILENAME_LENGTH = 255;
 
 route.get("/upload-url", async (c) => {
   const fileName = c.req.query("fileName");
@@ -13,6 +17,14 @@ route.get("/upload-url", async (c) => {
 
   if (!fileName) {
     return c.json({ error: "fileName is required" }, 400);
+  }
+
+  // Validate fileName to prevent path traversal
+  if (
+    DANGEROUS_PATTERNS.test(fileName) ||
+    fileName.length > MAX_FILENAME_LENGTH
+  ) {
+    return c.json({ error: "Invalid fileName" }, 400);
   }
 
   try {

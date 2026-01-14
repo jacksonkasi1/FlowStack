@@ -12,7 +12,10 @@ import type { Env, FileObject, UploadOptions } from "./types";
 function generateFilePath(fileName: string, organizationId?: string): string {
   const timestamp = Date.now();
   const uniqueId = nanoid(8);
-  const sanitizedName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const sanitizedName = fileName
+    .replace(/[^a-zA-Z0-9.-]/g, "_")
+    .replace(/^\.+/, "") // Remove leading dots
+    .replace(/\.{2,}/g, "."); // Collapse consecutive dots
   const prefix = organizationId ? `uploads/${organizationId}` : "uploads";
   return `${prefix}/${timestamp}-${uniqueId}-${sanitizedName}`;
 }

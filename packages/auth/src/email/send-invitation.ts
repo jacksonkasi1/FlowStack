@@ -22,8 +22,12 @@ export async function sendOrganizationInvitation(
   env: Env,
   props: SendInvitationProps,
 ): Promise<void> {
+  if (!env.ZEPTOMAIL_API_KEY) {
+    throw new Error("ZEPTOMAIL_API_KEY is required to send invitation emails");
+  }
+
   const emailClient = createEmailClientFromEnv({
-    ZEPTOMAIL_API_KEY: env.ZEPTOMAIL_API_KEY || "",
+    ZEPTOMAIL_API_KEY: env.ZEPTOMAIL_API_KEY,
   });
 
   const html = await render(

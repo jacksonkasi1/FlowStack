@@ -57,7 +57,22 @@ export async function r2FileExists(
 
     await client.send(command);
     return true;
-  } catch {
-    return false;
+  } catch (error: unknown) {
+    // Only return false for NotFound errors
+    if (error instanceof Error && "name" in error) {
+      if (error.name === "NotFound" || error.name === "NoSuchKey") {
+        return false;
+      }
+      // Check for 404 status in AWS SDK metadata
+      if ("$metadata" in error) {
+        const metadata = (error as { $metadata?: { httpStatusCode?: number } })
+          .$metadata;
+        if (metadata?.httpStatusCode === 404) {
+          return false;
+        }
+      }
+    }
+    // Rethrow other errors (network, auth, permission issues)
+    throw error;
   }
 }
