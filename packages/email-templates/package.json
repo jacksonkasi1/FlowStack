@@ -1,0 +1,30 @@
+{
+  "name": "@repo/email-templates",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "dev:email": "email dev -p 3001"
+  },
+  "dependencies": {
+    "@react-email/components": "^1.0.4",
+    "@react-email/tailwind": "^2.0.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-email": "^5.2.3"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
+  }
+}
