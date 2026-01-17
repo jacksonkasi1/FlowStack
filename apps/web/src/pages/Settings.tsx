@@ -8,48 +8,50 @@ import {
   DeleteAccountCard,
 } from "@daveyplate/better-auth-ui";
 
+// ** import components
+import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+// ** import shared config
+import { minimalCardStyles } from "@repo/shared/config/settings";
+
 export default function Settings() {
   return (
-    <main className="container mx-auto max-w-5xl p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your profile, security preferences, and connected accounts
-        </p>
-      </div>
+    <ProtectedRoute>
+      <AppLayout>
+        <div className="mx-auto max-w-lg py-8 px-4">
+          <h1 className="text-xl font-semibold mb-6">Settings</h1>
 
-      <div className="space-y-8">
-        {/* Account Settings Section */}
-        <section>
-          <h2 className="mb-4 text-xl font-semibold">Profile</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <UpdateAvatarCard />
-            <UpdateNameCard />
-          </div>
-          <div className="mt-6">
-            <ChangeEmailCard />
-          </div>
-        </section>
-
-        {/* Security Settings Section */}
-        <section>
-          <h2 className="mb-4 text-xl font-semibold">Security</h2>
           <div className="space-y-6">
-            <ChangePasswordCard />
-            <SessionsCard />
-            {/* Commented out - Shows duplicate Google since user is already signed in via Google */}
-            {/* <ProvidersCard /> */}
-          </div>
-        </section>
+            <section>
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Profile
+              </h2>
+              <div className="flex flex-col gap-3">
+                <UpdateAvatarCard classNames={minimalCardStyles.card} />
+                <UpdateNameCard classNames={minimalCardStyles.card} />
+                <ChangeEmailCard classNames={minimalCardStyles.card} />
+              </div>
+            </section>
 
-        {/* Danger Zone */}
-        <section>
-          <h2 className="mb-4 text-xl font-semibold text-destructive">
-            Danger Zone
-          </h2>
-          <DeleteAccountCard />
-        </section>
-      </div>
-    </main>
+            <section>
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Security
+              </h2>
+              <div className="flex flex-col gap-3">
+                <ChangePasswordCard classNames={minimalCardStyles.card} />
+                <SessionsCard
+                  className="shadow-none border-border/40"
+                  classNames={{
+                    cell: "shadow-none border-border/40",
+                  }}
+                />
+                <DeleteAccountCard classNames={minimalCardStyles.card} />
+              </div>
+            </section>
+          </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

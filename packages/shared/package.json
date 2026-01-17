@@ -11,6 +11,10 @@
     "./types": {
       "import": "./src/types/index.ts",
       "types": "./src/types/index.ts"
+    },
+    "./config/settings": {
+      "import": "./src/config/settings.ts",
+      "types": "./src/config/settings.ts"
     }
   },
   "scripts": {
