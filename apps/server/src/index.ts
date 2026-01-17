@@ -53,7 +53,7 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-const PORT = parseInt(env.PORT || "8787", 10);
+const PORT = parseInt(env.PORT || "8080", 10);
 
 export default {
   port: PORT,

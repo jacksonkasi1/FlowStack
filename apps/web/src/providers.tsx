@@ -35,6 +35,13 @@ export function Providers({ children }: ProvidersProps) {
             authClient={authClient as any}
             navigate={navigate}
             Link={LinkWrapper}
+            social={{
+                providers: ['google'],
+            }}
+            magicLink={false}
+            account={{
+                fields: ['image', 'name'],
+            }}
         >
             {children}
         </AuthUIProvider>

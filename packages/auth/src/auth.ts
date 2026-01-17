@@ -72,7 +72,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
   /**
    * Extracts token from better-auth URL and builds frontend reset password URL
-   * URL format: http://localhost:8787/api/auth/reset-password/{token}?callbackURL=...
+   * URL format: http://localhost:8080/api/auth/reset-password/{token}?callbackURL=...
    */
   const buildPasswordResetFrontendUrl = (originalUrl: string): string => {
     try {

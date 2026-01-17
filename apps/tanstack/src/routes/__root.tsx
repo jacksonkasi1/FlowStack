@@ -1,15 +1,20 @@
 // ** import types
-import type { ReactNode } from 'react';
 
 // ** import lib
-import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
-import { TanStackDevtools } from '@tanstack/react-devtools';
-import { Toaster } from 'sonner';
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from '@tanstack/react-router'
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { TanStackDevtools } from '@tanstack/react-devtools'
+import { Toaster } from 'sonner'
 
 // ** import utils
-import { Providers } from '../providers';
-import appCss from '../styles.css?url';
+import { Providers } from '../providers'
+import appCss from '../styles.css?url'
+import type { ReactNode } from 'react'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -35,14 +40,14 @@ export const Route = createRootRoute({
 
   component: RootComponent,
   shellComponent: RootDocument,
-});
+})
 
 function RootComponent() {
   return (
     <Providers>
       <Outlet />
     </Providers>
-  );
+  )
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
@@ -82,5 +87,5 @@ function RootDocument({ children }: { children: ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
+  )
 }

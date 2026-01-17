@@ -1,11 +1,11 @@
 // ** import lib
-import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui';
-import { useEffect } from 'react';
+import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/')({
   component: Index,
-});
+})
 
 function Index() {
   return (
@@ -17,16 +17,16 @@ function Index() {
         <RedirectTo to="/auth/sign-in" />
       </SignedOut>
     </>
-  );
+  )
 }
 
 function RedirectTo({ to }: { to: string }) {
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.navigate({ to: to as any, replace: true });
-  }, [router, to]);
+     
+    router.navigate({ to: to as any, replace: true })
+  }, [router, to])
 
-  return null;
+  return null
 }
