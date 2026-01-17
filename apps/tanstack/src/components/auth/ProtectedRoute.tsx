@@ -7,30 +7,31 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 
 interface ProtectedRouteProps {
-    children: ReactNode
-    redirectTo?: string
+  children: ReactNode
+  redirectTo?: string
 }
 
-export function ProtectedRoute({ children, redirectTo = '/auth/sign-in' }: ProtectedRouteProps) {
-    return (
-        <>
-            <SignedOut>
-                <RedirectTo to={redirectTo} />
-            </SignedOut>
+export function ProtectedRoute({
+  children,
+  redirectTo = '/auth/sign-in',
+}: ProtectedRouteProps) {
+  return (
+    <>
+      <SignedOut>
+        <RedirectTo to={redirectTo} />
+      </SignedOut>
 
-            <SignedIn>
-                {children}
-            </SignedIn>
-        </>
-    )
+      <SignedIn>{children}</SignedIn>
+    </>
+  )
 }
 
 function RedirectTo({ to }: { to: string }) {
-    const router = useRouter()
+  const router = useRouter()
 
-    useEffect(() => {
-        router.navigate({ to, replace: true } as any)
-    }, [router, to])
+  useEffect(() => {
+    router.navigate({ to, replace: true })
+  }, [router, to])
 
-    return null
+  return null
 }

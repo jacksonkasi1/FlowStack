@@ -12,18 +12,10 @@ import {
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-export default function Settings() {
-  // Minimal card styling to hide descriptions and reduce visual noise
-  const minimalCardStyles = {
-    cards: "gap-3",
-    card: {
-      base: "shadow-none border-border/40 gap-3",
-      title: "text-base",
-      content: "py-3",
-      footer: "py-3",
-    },
-  };
+// ** import shared config
+import { minimalCardStyles } from "@repo/shared/config/settings";
 
+export default function Settings() {
   return (
     <ProtectedRoute>
       <AppLayout>

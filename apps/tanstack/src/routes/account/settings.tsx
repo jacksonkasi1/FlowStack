@@ -6,29 +6,21 @@ import {
   ChangePasswordCard,
   SessionsCard,
   DeleteAccountCard,
-} from "@daveyplate/better-auth-ui"
+} from '@daveyplate/better-auth-ui'
 import { createFileRoute } from '@tanstack/react-router'
 
 // ** import components
-import { AppLayout } from "@/components/layout/AppLayout"
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { AppLayout } from '@/components/layout/AppLayout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+
+// ** import shared config
+import { minimalCardStyles } from '@repo/shared/config/settings'
 
 export const Route = createFileRoute('/account/settings')({
   component: Settings,
 })
 
 function Settings() {
-  // Minimal card styling to hide descriptions and reduce visual noise
-  const minimalCardStyles = {
-    cards: "gap-3",
-    card: {
-      base: "shadow-none border-border/40 gap-3",
-      title: "text-base",
-      content: "py-3",
-      footer: "py-3",
-    },
-  }
-
   return (
     <ProtectedRoute>
       <AppLayout>
@@ -56,7 +48,7 @@ function Settings() {
                 <SessionsCard
                   className="shadow-none border-border/40"
                   classNames={{
-                    cell: "shadow-none border-border/40",
+                    cell: 'shadow-none border-border/40',
                   }}
                 />
                 <DeleteAccountCard classNames={minimalCardStyles.card} />
