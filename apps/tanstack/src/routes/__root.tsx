@@ -1,9 +1,15 @@
-import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+// ** import types
+import type { ReactNode } from 'react';
 
-import { Providers } from '../providers'
-import appCss from '../styles.css?url'
+// ** import lib
+import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import { Toaster } from 'sonner';
+
+// ** import utils
+import { Providers } from '../providers';
+import appCss from '../styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -29,24 +35,39 @@ export const Route = createRootRoute({
 
   component: RootComponent,
   shellComponent: RootDocument,
-})
+});
 
 function RootComponent() {
   return (
     <Providers>
       <Outlet />
     </Providers>
-  )
+  );
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          name="viewport"
+          content="initial-scale=1, viewport-fit=cover, width=device-width"
+        />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: light)"
+          content="oklch(1 0 0)"
+        />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: dark)"
+          content="oklch(0.145 0 0)"
+        />
         <HeadContent />
       </head>
       <body>
         {children}
+        <Toaster />
         <TanStackDevtools
           config={{
             position: 'bottom-right',
@@ -61,6 +82,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
-

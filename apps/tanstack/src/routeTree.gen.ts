@@ -9,16 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthPathnameRouteImport } from './routes/auth/$pathname'
+import { Route as OrganizationOrganizationViewRouteImport } from './routes/organization/$organizationView'
+import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
+import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -29,55 +25,79 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthPathnameRoute = AuthPathnameRouteImport.update({
-  id: '/auth/$pathname',
-  path: '/auth/$pathname',
+const OrganizationOrganizationViewRoute =
+  OrganizationOrganizationViewRouteImport.update({
+    id: '/organization/$organizationView',
+    path: '/organization/$organizationView',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
+  id: '/auth/$authView',
+  path: '/auth/$authView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
+  id: '/account/$accountView',
+  path: '/account/$accountView',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/auth/$pathname': typeof AuthPathnameRoute
+  '/account/$accountView': typeof AccountAccountViewRoute
+  '/auth/$authView': typeof AuthAuthViewRoute
+  '/organization/$organizationView': typeof OrganizationOrganizationViewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/auth/$pathname': typeof AuthPathnameRoute
+  '/account/$accountView': typeof AccountAccountViewRoute
+  '/auth/$authView': typeof AuthAuthViewRoute
+  '/organization/$organizationView': typeof OrganizationOrganizationViewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/auth/$pathname': typeof AuthPathnameRoute
+  '/account/$accountView': typeof AccountAccountViewRoute
+  '/auth/$authView': typeof AuthAuthViewRoute
+  '/organization/$organizationView': typeof OrganizationOrganizationViewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/reset-password' | '/auth/$pathname'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/account/$accountView'
+    | '/auth/$authView'
+    | '/organization/$organizationView'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/reset-password' | '/auth/$pathname'
-  id: '__root__' | '/' | '/dashboard' | '/reset-password' | '/auth/$pathname'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/account/$accountView'
+    | '/auth/$authView'
+    | '/organization/$organizationView'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/account/$accountView'
+    | '/auth/$authView'
+    | '/organization/$organizationView'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  AuthPathnameRoute: typeof AuthPathnameRoute
+  AccountAccountViewRoute: typeof AccountAccountViewRoute
+  AuthAuthViewRoute: typeof AuthAuthViewRoute
+  OrganizationOrganizationViewRoute: typeof OrganizationOrganizationViewRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -92,11 +112,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/$pathname': {
-      id: '/auth/$pathname'
-      path: '/auth/$pathname'
-      fullPath: '/auth/$pathname'
-      preLoaderRoute: typeof AuthPathnameRouteImport
+    '/organization/$organizationView': {
+      id: '/organization/$organizationView'
+      path: '/organization/$organizationView'
+      fullPath: '/organization/$organizationView'
+      preLoaderRoute: typeof OrganizationOrganizationViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/$authView': {
+      id: '/auth/$authView'
+      path: '/auth/$authView'
+      fullPath: '/auth/$authView'
+      preLoaderRoute: typeof AuthAuthViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/$accountView': {
+      id: '/account/$accountView'
+      path: '/account/$accountView'
+      fullPath: '/account/$accountView'
+      preLoaderRoute: typeof AccountAccountViewRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -105,8 +139,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  AuthPathnameRoute: AuthPathnameRoute,
+  AccountAccountViewRoute: AccountAccountViewRoute,
+  AuthAuthViewRoute: AuthAuthViewRoute,
+  OrganizationOrganizationViewRoute: OrganizationOrganizationViewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

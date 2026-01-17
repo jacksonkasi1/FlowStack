@@ -2,25 +2,22 @@
 import type { ReactNode } from 'react';
 
 // ** import lib
-import { AuthUIProvider } from '@daveyplate/better-auth-ui';
-import { useRouter, Link } from '@tanstack/react-router';
+import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack';
+import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack';
+import { Link, useRouter } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // ** import utils
 import { authClient } from '@/lib/auth-client';
 
-interface LinkWrapperProps {
-    href: string;
-    className?: string;
-    children: ReactNode;
-}
-
-function LinkWrapper({ href, className, children }: LinkWrapperProps) {
-    return (
-        <Link to={href} className={className}>
-            {children}
-        </Link>
-    );
-}
+// Create a client
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60,
+        },
+    },
+});
 
 interface ProvidersProps {
     children: ReactNode;
@@ -29,19 +26,18 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
     const router = useRouter();
 
-    const navigateWrapper = (href: string) => {
-        router.navigate({ to: href });
-    };
-
     return (
-        <AuthUIProvider
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            authClient={authClient as any}
-            navigate={navigateWrapper}
-            Link={LinkWrapper}
-        >
-            {children}
-        </AuthUIProvider>
+        <QueryClientProvider client={queryClient}>
+            <AuthQueryProvider>
+                <AuthUIProviderTanstack
+                    authClient={authClient}
+                    navigate={(href) => router.navigate({ to: href })}
+                    replace={(href) => router.navigate({ to: href, replace: true })}
+                    Link={({ href, ...props }) => <Link to={href} {...props} />}
+                >
+                    {children}
+                </AuthUIProviderTanstack>
+            </AuthQueryProvider>
+        </QueryClientProvider>
     );
 }
-
