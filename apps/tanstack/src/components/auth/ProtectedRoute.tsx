@@ -1,10 +1,10 @@
+// ** import types
+import type { ReactNode } from 'react'
+
 // ** import lib
 import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui'
 import { useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
-
-// ** import types
-import type { ReactNode } from 'react'
 
 interface ProtectedRouteProps {
   children: ReactNode
