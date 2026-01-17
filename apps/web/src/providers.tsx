@@ -8,6 +8,9 @@ import { useNavigate, Link } from 'react-router-dom';
 // ** import utils
 import { authClient } from '@/lib/auth-client';
 
+// ** import rest-api
+import { deleteAvatar, uploadAvatar } from '@/rest-api/storage';
+
 interface LinkWrapperProps {
     href: string;
     className?: string;
@@ -41,6 +44,10 @@ export function Providers({ children }: ProvidersProps) {
             magicLink={true}
             account={{
                 fields: ['image', 'name'],
+            }}
+            avatar={{
+                upload: uploadAvatar,
+                delete: deleteAvatar,
             }}
         >
             {children}
