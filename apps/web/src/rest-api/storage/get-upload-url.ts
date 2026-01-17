@@ -9,9 +9,9 @@ export interface GetUploadUrlParams {
 }
 
 export interface GetUploadUrlResponse {
-    uploadUrl: string;
+    signedUrl: string;
+    filePath: string;
     publicUrl: string;
-    key: string;
 }
 
 /**

@@ -9,16 +9,16 @@ export interface GetUploadUrlParams {
 }
 
 export interface GetUploadUrlResponse {
-    uploadUrl: string;
+    signedUrl: string;
+    filePath: string;
     publicUrl: string;
-    key: string;
 }
 
 /**
  * Get a signed upload URL for uploading files to R2 storage
  *
  * @param params - Upload parameters including fileName and optional contentType
- * @returns Promise with upload URL and public URL
+ * @returns Promise with signed URL and file path
  */
 export const getUploadUrl = async (
     params: GetUploadUrlParams,
