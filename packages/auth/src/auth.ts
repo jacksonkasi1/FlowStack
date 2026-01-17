@@ -11,6 +11,9 @@ import {
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
 
+// ** import config
+import { AUTH_REDIRECTS } from "./config/redirects";
+
 // ** import utils
 import { sendMagicLink } from "./email/send-magic-link";
 import { sendOrganizationInvitation } from "./email/send-invitation";
@@ -58,7 +61,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
    */
   const buildEmailUrlWithFrontendCallback = (
     originalUrl: string,
-    frontendPath: string = "/dashboard",
+    frontendPath: string = AUTH_REDIRECTS.afterLogin,
   ): string => {
     try {
       const urlObj = new URL(originalUrl);
@@ -168,7 +171,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         // Backend URL with frontend callbackURL - server will redirect after verification
         const verificationUrl = buildEmailUrlWithFrontendCallback(
           url,
-          "/dashboard",
+          AUTH_REDIRECTS.afterEmailVerification,
         );
 
         try {
@@ -192,7 +195,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           // Use front end URL with callback
           const magicLinkUrl = buildEmailUrlWithFrontendCallback(
             url,
-            "/dashboard",
+            AUTH_REDIRECTS.afterMagicLink,
           );
 
           await sendMagicLink(env, {
@@ -206,7 +209,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       }),
       organization({
         async sendInvitationEmail(data) {
-          const inviteLink = `${frontendURL}/accept-invitation/${data.id}`;
+          const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}/${data.id}`;
 
           await sendOrganizationInvitation(env, {
             from: {
