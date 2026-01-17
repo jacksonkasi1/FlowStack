@@ -15,6 +15,7 @@ This folder contains all deployment-related configuration and scripts.
 ## Configuration
 
 **`deploy.config.yaml`** - Infrastructure settings (safe to commit)
+
 - GCP region, memory, CPU, scaling settings
 - Environment-specific configurations
 - **Environment file mapping** via `env_file` field
@@ -27,12 +28,13 @@ Each environment specifies which `.env` file to use:
 ```yaml
 environments:
   prod:
-    env_file: .env.prod        # Uses .env.prod for secrets
+    env_file: .env.prod # Uses .env.prod for secrets
     service_name: flowstack-server-prod
     memory: 2Gi
 ```
 
 **Fallback behavior:**
+
 1. If `env_file` specified → Use that file
 2. If not specified → Use `.env.<environment-name>`
 3. If that doesn't exist → Fall back to `.env`
@@ -61,8 +63,8 @@ You can create environments with **ANY custom name**!
 
 ```yaml
 environments:
-  jackson-testing:              # Custom name!
-    env_file: .env.jackson      # Points to custom .env file
+  jackson-testing: # Custom name!
+    env_file: .env.jackson # Points to custom .env file
     service_name: flowstack-server-jackson
     memory: 512Mi
     cpu: "1"
@@ -90,6 +92,7 @@ bun run deploy:jackson-testing
 ```
 
 The script automatically:
+
 - Reads `deploy.config.yaml` to find `jackson-testing`
 - Uses `.env.jackson` as specified in `env_file`
 - Deploys with the configured resources

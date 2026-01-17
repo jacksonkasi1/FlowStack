@@ -18,7 +18,9 @@ export async function sendVerificationEmail(
   props: SendVerificationProps,
 ): Promise<void> {
   if (!env.ZEPTOMAIL_API_KEY) {
-    throw new Error("ZEPTOMAIL_API_KEY is required to send verification emails");
+    throw new Error(
+      "ZEPTOMAIL_API_KEY is required to send verification emails",
+    );
   }
 
   const emailClient = createEmailClientFromEnv({

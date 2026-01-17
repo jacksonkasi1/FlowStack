@@ -6,8 +6,6 @@ import { r2 } from "@repo/storage";
 
 const route = new Hono();
 
-
-
 route.delete("/delete", async (c) => {
   const filePath = c.req.query("filePath");
 

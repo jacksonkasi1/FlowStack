@@ -13,7 +13,7 @@ export interface Env {
   GOOGLE_CLIENT_SECRET?: string;
 }
 
-export interface Bindings extends Env { }
+export interface Bindings extends Env {}
 
 export interface AuthConfig {
   env: Env;

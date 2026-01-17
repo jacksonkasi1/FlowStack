@@ -6,6 +6,8 @@
     "dev": "bun run --hot src/index.ts",
     "build": "tsc",
     "lint": "eslint src",
+    "format": "prettier --write .",
+    "check": "prettier --write . && eslint --fix",
     "check-types": "tsc --noEmit",
     "deploy:prod": "./.deploy/scripts/deploy.sh prod",
     "deploy:beta": "./.deploy/scripts/deploy.sh beta",
@@ -24,6 +26,7 @@
   "devDependencies": {
     "@repo/typescript-config": "*",
     "@types/node": "^22",
+    "prettier": "^3.8.0",
     "typescript": "^5.7.2"
   }
 }

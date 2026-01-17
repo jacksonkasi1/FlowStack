@@ -5,17 +5,21 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
   admin,
   bearer,
+  magicLink,
   organization,
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
 
+// ** import config
+import { AUTH_REDIRECTS } from "./config/redirects";
+
 // ** import utils
+import { sendMagicLink } from "./email/send-magic-link";
 import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
 import checkUserRole from "./utils/user-is-admin";
-
 
 // ** import types
 import type { Env } from "./types";
@@ -52,18 +56,47 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     };
   }
 
-  const buildCallbackUrl = async (originalUrl: string): Promise<string> => {
+  /**
+   * Modifies better-auth URL callbackURL to point to frontend
+   */
+  const buildEmailUrlWithFrontendCallback = (
+    originalUrl: string,
+    frontendPath: string = AUTH_REDIRECTS.afterLogin,
+  ): string => {
     try {
       const urlObj = new URL(originalUrl);
-      const pathParts = urlObj.pathname.split("/");
+      // Replace the callbackURL param to point to frontend
+      urlObj.searchParams.set("callbackURL", `${frontendURL}${frontendPath}`);
+      return urlObj.toString();
+    } catch {
+      logger.warn("Failed to parse URL, returning original");
+      return originalUrl;
+    }
+  };
+
+  /**
+   * Extracts token from better-auth URL and builds frontend reset password URL
+   * URL format: http://localhost:8080/api/auth/reset-password/{token}?callbackURL=...
+   */
+  const buildPasswordResetFrontendUrl = (originalUrl: string): string => {
+    try {
+      const urlObj = new URL(originalUrl);
+
+      // Extract token from pathname (last segment)
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
       const token = pathParts[pathParts.length - 1];
 
-      if (!token) {
+      if (!token || token === "reset-password") {
+        logger.warn("No token found in password reset URL path");
         return originalUrl;
       }
 
+      // Direct link to frontend reset password page with token
       return `${frontendURL}/reset-password?token=${token}`;
-    } catch {
+    } catch (error) {
+      logger.warn(
+        `Failed to parse password reset URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return originalUrl;
     }
   };
@@ -113,7 +146,8 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       requireEmailVerification: true,
 
       sendResetPassword: async ({ user, url }) => {
-        const resetUrl = await buildCallbackUrl(url);
+        // Direct link to frontend reset password form with token
+        const resetUrl = buildPasswordResetFrontendUrl(url);
 
         await sendResetPassword(env, {
           from: {
@@ -134,11 +168,16 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        // Send verification email for normal signups
+        // Backend URL with frontend callbackURL - server will redirect after verification
+        const verificationUrl = buildEmailUrlWithFrontendCallback(
+          url,
+          AUTH_REDIRECTS.afterEmailVerification,
+        );
+
         try {
           await sendVerificationEmail(env, {
             to: { address: user.email, name: user.name || "" },
-            url,
+            url: verificationUrl,
           });
         } catch (error) {
           logger.error(
@@ -151,9 +190,26 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     plugins: [
       bearer(),
       username(),
+      magicLink({
+        async sendMagicLink({ email, url }) {
+          // Use front end URL with callback
+          const magicLinkUrl = buildEmailUrlWithFrontendCallback(
+            url,
+            AUTH_REDIRECTS.afterMagicLink,
+          );
+
+          await sendMagicLink(env, {
+            to: {
+              address: email,
+              name: "",
+            },
+            url: magicLinkUrl,
+          });
+        },
+      }),
       organization({
         async sendInvitationEmail(data) {
-          const inviteLink = `${frontendURL}/accept-invitation/${data.id}`;
+          const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}/${data.id}`;
 
           await sendOrganizationInvitation(env, {
             from: {

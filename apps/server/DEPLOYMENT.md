@@ -55,16 +55,16 @@ Root Level:
 
 ### Key Files Explained
 
-| File | Purpose | Committed? |
-|------|---------|-----------|
-| `.deploy/deploy.config.yaml` | Infrastructure settings (region, memory, CPU, scaling) | ✅ Yes |
-| `.deploy/scripts/deploy.sh` | Deployment script with YAML parser | ✅ Yes |
-| `.env.*.example` | Environment variable templates | ✅ Yes |
-| `.env`, `.env.prod`, `.env.beta`, `.env.sandbox` | Actual secrets and API keys | ❌ No (gitignored) |
-| `gcp-service-account.json` | GCP authentication credentials | ❌ No (gitignored) |
-| `Dockerfile` | Container build instructions | ✅ Yes |
-| `cloudbuild.yaml` | Cloud Build configuration | ✅ Yes |
-| `package.json` | Deploy scripts (`deploy:prod`, etc.) | ✅ Yes |
+| File                                             | Purpose                                                | Committed?         |
+| ------------------------------------------------ | ------------------------------------------------------ | ------------------ |
+| `.deploy/deploy.config.yaml`                     | Infrastructure settings (region, memory, CPU, scaling) | ✅ Yes             |
+| `.deploy/scripts/deploy.sh`                      | Deployment script with YAML parser                     | ✅ Yes             |
+| `.env.*.example`                                 | Environment variable templates                         | ✅ Yes             |
+| `.env`, `.env.prod`, `.env.beta`, `.env.sandbox` | Actual secrets and API keys                            | ❌ No (gitignored) |
+| `gcp-service-account.json`                       | GCP authentication credentials                         | ❌ No (gitignored) |
+| `Dockerfile`                                     | Container build instructions                           | ✅ Yes             |
+| `cloudbuild.yaml`                                | Cloud Build configuration                              | ✅ Yes             |
+| `package.json`                                   | Deploy scripts (`deploy:prod`, etc.)                   | ✅ Yes             |
 
 ### Security Model
 
@@ -95,11 +95,13 @@ Before deploying to Google Cloud Run, ensure you have:
 ### Required Tools
 
 1. **Bun** (v1.2.22 or higher)
+
    ```bash
    curl -fsSL https://bun.sh/install | bash
    ```
 
 2. **Google Cloud SDK (gcloud)**
+
    ```bash
    # macOS
    brew install google-cloud-sdk
@@ -120,6 +122,7 @@ Before deploying to Google Cloud Run, ensure you have:
    - Note your Project ID
 
 2. **Enable Required APIs**
+
    ```bash
    gcloud services enable run.googleapis.com
    gcloud services enable cloudbuild.googleapis.com
@@ -212,6 +215,7 @@ bun run dev
 ```
 
 Or from root:
+
 ```bash
 bun --cwd apps/server dev
 ```
@@ -223,11 +227,13 @@ bun --cwd apps/server dev
 ### Setup
 
 1. **Save GCP Service Account JSON:**
+
    ```bash
    cp your-service-account.json apps/server/gcp-service-account.json
    ```
 
 2. **Create environment files from templates:**
+
    ```bash
    # For production
    cp apps/server/.env.prod.example apps/server/.env.prod
@@ -247,6 +253,7 @@ bun --cwd apps/server dev
 Deploy to any of three environments using npm scripts:
 
 **From Root (using bun):**
+
 ```bash
 cd apps/server
 bun run deploy:prod
@@ -255,6 +262,7 @@ bun run deploy:sandbox
 ```
 
 **Direct Script Execution:**
+
 ```bash
 ./apps/server/.deploy/scripts/deploy.sh prod
 ./apps/server/.deploy/scripts/deploy.sh beta
@@ -297,6 +305,7 @@ environments:
 ```
 
 **Benefits:**
+
 - ✅ Version controlled (safe to commit)
 - ✅ Single source of truth for all environments
 - ✅ Easy to compare environment configs
@@ -309,17 +318,18 @@ Each environment can specify which `.env` file to use via the `env_file` field:
 ```yaml
 environments:
   prod:
-    env_file: .env.prod              # Uses .env.prod for secrets
+    env_file: .env.prod # Uses .env.prod for secrets
     service_name: flowstack-server-prod
     memory: 2Gi
 
   staging:
-    env_file: .env.staging           # Uses .env.staging for secrets
+    env_file: .env.staging # Uses .env.staging for secrets
     service_name: flowstack-server-staging
     memory: 1Gi
 ```
 
 **Fallback Behavior:**
+
 1. If `env_file` is specified → Use that file
 2. If not specified → Use `.env.<environment-name>`
 3. If that doesn't exist → Fall back to `.env`
@@ -336,8 +346,8 @@ You can create ANY custom environment with ANY name!
 
 ```yaml
 environments:
-  jackson-testing:                   # Custom name!
-    env_file: .env.jackson           # Points to .env.jackson
+  jackson-testing: # Custom name!
+    env_file: .env.jackson # Points to .env.jackson
     service_name: flowstack-server-jackson
     memory: 512Mi
     cpu: "1"
@@ -371,6 +381,7 @@ bun run deploy:jackson-testing
 ```
 
 **That's it!** ✅ The deployment script automatically:
+
 - Reads `deploy.config.yaml` to find `jackson-testing` config
 - Uses `.env.jackson` file as specified
 - Deploys with the configured resources
@@ -395,6 +406,7 @@ environments:
 ```
 
 Then in `package.json`:
+
 ```json
 "deploy:dev-john": "./.deploy/scripts/deploy.sh dev-john",
 "deploy:dev-sarah": "./.deploy/scripts/deploy.sh dev-sarah"
@@ -405,12 +417,14 @@ Then in `package.json`:
 ## Environment Files
 
 ### Template Files (Committed)
+
 - `.env.example` — Local development template
 - `.env.prod.example` — Production template
 - `.env.beta.example` — Beta template
 - `.env.sandbox.example` — Sandbox template
 
 ### Actual Files (Gitignored - Create from templates)
+
 - `.env` — Local development (copy from `.env.example`)
 - `.env.prod` — Production (copy from `.env.prod.example`)
 - `.env.beta` — Beta (copy from `.env.beta.example`)
@@ -423,6 +437,7 @@ Copy template files and update with your actual values.
 The deployment script supports inline comments in `.env` files:
 
 **Supported:**
+
 ```bash
 # Full-line comments are supported
 API_KEY=secret123 # inline comments (space before #)
@@ -440,12 +455,14 @@ APP_NAME="MyApp" # production app  → parsed as "MyApp"
 ```
 
 **Comment Detection Rules:**
+
 - Inline comments require **at least one space before #**
 - `value # comment` → `value` (comment stripped)
 - `value#123` → `value#123` (no space, # preserved)
 - `"value#123" # comment` → `value#123` (quoted, then comment stripped)
 
 **Best Practices:**
+
 - Use full-line comments for better readability
 - Quote values with `#` if they might have trailing comments
 - Ensure space before `#` for inline comments
@@ -457,6 +474,7 @@ APP_NAME="MyApp" # production app  → parsed as "MyApp"
 The deployment script sets different resources based on environment:
 
 ### Production
+
 - Memory: 2Gi
 - CPU: 2
 - Min instances: 1
@@ -464,6 +482,7 @@ The deployment script sets different resources based on environment:
 - Concurrency: 80
 
 ### Beta
+
 - Memory: 1Gi
 - CPU: 1
 - Min instances: 0
@@ -471,6 +490,7 @@ The deployment script sets different resources based on environment:
 - Concurrency: 80
 
 ### Sandbox
+
 - Memory: 512Mi
 - CPU: 1
 - Min instances: 0
@@ -482,19 +502,23 @@ The deployment script sets different resources based on environment:
 ## Troubleshooting
 
 **Service account not found**
+
 - Check `gcp-service-account.json` exists or set `GCP_SA_KEY_PATH`
 
 **Environment file not found**
+
 - Create `.env.prod`, `.env.beta`, or `.env.sandbox` from the respective `.example` files:
   - `cp apps/server/.env.prod.example apps/server/.env.prod`
   - `cp apps/server/.env.beta.example apps/server/.env.beta`
   - `cp apps/server/.env.sandbox.example apps/server/.env.sandbox`
 
 **Container failed to start**
+
 - Check Cloud Run logs via deployment output link
 - Verify all required environment variables are set
 
 **API key errors**
+
 - Verify all keys in `.env.prod|beta|sandbox` are correct and active
 - Check service account has necessary permissions
 
@@ -526,6 +550,7 @@ bun run deploy:prod & bun run deploy:beta & bun run deploy:sandbox & wait
 ```
 
 Each deployment:
+
 - Creates a unique temporary file using `mktemp` (no race conditions)
 - Authenticates independently
 - Can deploy to different regions
@@ -535,14 +560,13 @@ Each deployment:
 
 ## Quick Commands Reference
 
-| Task | Command |
-|------|---------|
-| Local dev | `cd apps/server && bun run dev` |
-| Build | `cd apps/server && bun run build` |
-| Type check | `cd apps/server && bun run check-types` |
-| Deploy prod | `cd apps/server && bun run deploy:prod` |
-| Deploy beta | `cd apps/server && bun run deploy:beta` |
-| Deploy sandbox | `cd apps/server && bun run deploy:sandbox` |
-| Custom region prod | `GCP_REGION=us-west1 bun run deploy:prod` |
-| Custom SA key | `GCP_SA_KEY_PATH=./key.json bun run deploy:prod` |
-
+| Task               | Command                                          |
+| ------------------ | ------------------------------------------------ |
+| Local dev          | `cd apps/server && bun run dev`                  |
+| Build              | `cd apps/server && bun run build`                |
+| Type check         | `cd apps/server && bun run check-types`          |
+| Deploy prod        | `cd apps/server && bun run deploy:prod`          |
+| Deploy beta        | `cd apps/server && bun run deploy:beta`          |
+| Deploy sandbox     | `cd apps/server && bun run deploy:sandbox`       |
+| Custom region prod | `GCP_REGION=us-west1 bun run deploy:prod`        |
+| Custom SA key      | `GCP_SA_KEY_PATH=./key.json bun run deploy:prod` |

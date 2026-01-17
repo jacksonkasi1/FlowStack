@@ -7,17 +7,17 @@
 # Global defaults - applied to all environments unless overridden
 defaults:
   # GCP Configuration
-  region: us-central1                    # Default region for Cloud Run
-  artifact_registry: flowstack           # Artifact Registry repository name
-  service_account_key: gcp-service-account.json  # Path to service account JSON
+  region: us-central1 # Default region for Cloud Run
+  artifact_registry: flowstack # Artifact Registry repository name
+  service_account_key: gcp-service-account.json # Path to service account JSON
 
   # Environment File (can be overridden per environment)
   # If not specified, falls back to .env.<environment-name>
   # env_file: .env                       # Uncomment to set a default env file
 
   # Cloud Run Settings
-  timeout: 300                           # Request timeout in seconds
-  allow_unauthenticated: true            # Allow public access (set false for internal services)
+  timeout: 300 # Request timeout in seconds
+  allow_unauthenticated: true # Allow public access (set false for internal services)
 
   # These can be overridden by environment variables:
   # - GCP_REGION
@@ -28,28 +28,28 @@ defaults:
 environments:
   # Production Environment
   prod:
-    env_file: .env.prod                  # Points to .env.prod file
+    env_file: .env.prod # Points to .env.prod file
     service_name: flowstack-server-prod
-    memory: 2Gi                          # Memory allocation
-    cpu: "2"                             # CPU allocation
-    min_instances: 1                     # Minimum instances (always warm)
-    max_instances: 10                    # Maximum instances (auto-scale)
-    concurrency: 80                      # Requests per instance
+    memory: 2Gi # Memory allocation
+    cpu: "2" # CPU allocation
+    min_instances: 1 # Minimum instances (always warm)
+    max_instances: 10 # Maximum instances (auto-scale)
+    concurrency: 80 # Requests per instance
     # region: asia-southeast1            # Uncomment to override default region
 
   # Beta Environment
   beta:
-    env_file: .env.beta                  # Points to .env.beta file
+    env_file: .env.beta # Points to .env.beta file
     service_name: flowstack-server-beta
     memory: 1Gi
     cpu: "1"
-    min_instances: 0                     # Scale to zero when idle
+    min_instances: 0 # Scale to zero when idle
     max_instances: 5
     concurrency: 80
 
   # Sandbox Environment
   sandbox:
-    env_file: .env.sandbox               # Points to .env.sandbox file
+    env_file: .env.sandbox # Points to .env.sandbox file
     service_name: flowstack-server-sandbox
     memory: 512Mi
     cpu: "1"

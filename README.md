@@ -14,6 +14,7 @@ FlowStack is a **base repository** designed to help you build scalable products 
 Most starters focus on **tech stack choices**.
 
 FlowStack focuses on **flow**:
+
 - how identity flows
 - how permissions flow
 - how responsibility flows
@@ -28,6 +29,7 @@ The goal is simple:
 ## Core Principles
 
 ### 1. One Responsibility per File
+
 - One action per file
 - One API per file
 - One schema per file
@@ -37,9 +39,11 @@ No large "god files".
 ---
 
 ### 2. One Responsibility per Folder
+
 Folders represent **domains**, not features.
 
 Examples:
+
 - `auth` → identity (who are you?)
 - `access` → permissions (what can you do?)
 - `impersonation` → temporary identity
@@ -51,9 +55,11 @@ No runtime feature flags.
 ---
 
 ### 3. No Runtime Branching for Product Shape
+
 There are **no** `if (config.xxx)` checks inside business logic.
 
 All variability is resolved at **generation time**:
+
 - modules are included or excluded
 - unused folders are removed
 - runtime code stays clean and predictable
@@ -61,6 +67,7 @@ All variability is resolved at **generation time**:
 ---
 
 ### 4. Apps Compose, Packages Own Logic
+
 - `apps/` contain routing and wiring
 - `packages/` contain real logic
 
@@ -69,7 +76,9 @@ Apps never own business rules.
 ---
 
 ### 5. Boring Code > Clever Code
+
 FlowStack prefers:
+
 - explicit files
 - explicit imports
 - explicit boundaries
@@ -85,6 +94,20 @@ FlowStack is **stack-aware**, but not stack-locked.
 See **[docs/stack.md](./docs/stack.md)** for the default technologies and design philosophy.
 
 These are tools FlowStack is built and tested with. You can replace parts of the stack if you know what you're doing.
+
+---
+
+## Authentication
+
+FlowStack uses [Better Auth](https://www.better-auth.com/) for identity management with support for:
+
+- Email/password authentication
+- Magic link authentication
+- OAuth providers (Google, GitHub, etc.)
+- Session management
+- Account settings and security
+
+For detailed setup, configuration, and troubleshooting guides, see **[docs/auth/README.md](./docs/auth/README.md)**.
 
 ---
 
@@ -117,7 +140,7 @@ Each package is **independently understandable**.
 All feature decisions live in one place:
 
 ```ts
-flow.config.ts
+flow.config.ts;
 ```
 
 This file answers **what exists**, not **how it works**.
