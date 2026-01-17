@@ -6,6 +6,7 @@ import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui';
 import AuthPage from '@/pages/auth/AuthPage';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
+import Settings from '@/pages/Settings';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/auth/:pathname" element={<AuthPage />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/account/settings" element={<Settings />} />
     </Routes>
   );
 }

@@ -38,7 +38,7 @@ export function Providers({ children }: ProvidersProps) {
             social={{
                 providers: ['google'],
             }}
-            magicLink={false}
+            magicLink={true}
             account={{
                 fields: ['image', 'name'],
             }}

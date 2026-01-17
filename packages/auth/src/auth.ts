@@ -5,12 +5,14 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
   admin,
   bearer,
+  magicLink,
   organization,
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
 
 // ** import utils
+import { sendMagicLink } from "./email/send-magic-link";
 import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
@@ -181,6 +183,20 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     plugins: [
       bearer(),
       username(),
+      magicLink({
+        async sendMagicLink({ email, url }) {
+          // Use front end URL with callback
+          const magicLinkUrl = buildEmailUrlWithFrontendCallback(url, "/dashboard");
+
+          await sendMagicLink(env, {
+            to: {
+              address: email,
+              name: "",
+            },
+            url: magicLinkUrl,
+          });
+        },
+      }),
       organization({
         async sendInvitationEmail(data) {
           const inviteLink = `${frontendURL}/accept-invitation/${data.id}`;
