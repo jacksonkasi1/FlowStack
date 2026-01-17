@@ -72,21 +72,25 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
   /**
    * Extracts token from better-auth URL and builds frontend reset password URL
+   * URL format: http://localhost:8787/api/auth/reset-password/{token}?callbackURL=...
    */
   const buildPasswordResetFrontendUrl = (originalUrl: string): string => {
     try {
       const urlObj = new URL(originalUrl);
-      const token = urlObj.searchParams.get("token");
 
-      if (!token) {
-        logger.warn("No token found in password reset URL");
+      // Extract token from pathname (last segment)
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      const token = pathParts[pathParts.length - 1];
+
+      if (!token || token === "reset-password") {
+        logger.warn("No token found in password reset URL path");
         return originalUrl;
       }
 
       // Direct link to frontend reset password page with token
       return `${frontendURL}/reset-password?token=${token}`;
-    } catch {
-      logger.warn("Failed to parse password reset URL, returning original");
+    } catch (error) {
+      logger.warn(`Failed to parse password reset URL: ${error instanceof Error ? error.message : String(error)}`);
       return originalUrl;
     }
   };
