@@ -7,6 +7,9 @@ import AuthPage from "@/pages/auth/AuthPage";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import Settings from "@/pages/Settings";
+import OrganizationSettingsPage from "@/pages/organization/Settings";
+import OrganizationMembersPage from "@/pages/organization/Members";
+import AcceptInvitationPage from "@/pages/organization/AcceptInvite";
 
 export default function App() {
   return (
@@ -28,6 +31,15 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/account/settings" element={<Settings />} />
+      <Route
+        path="/organization/settings"
+        element={<OrganizationSettingsPage />}
+      />
+      <Route
+        path="/organization/members"
+        element={<OrganizationMembersPage />}
+      />
+      <Route path="/invitation/:id" element={<AcceptInvitationPage />} />
     </Routes>
   );
 }
