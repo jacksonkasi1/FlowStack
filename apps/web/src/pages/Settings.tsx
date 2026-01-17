@@ -6,13 +6,11 @@ import {
   ChangePasswordCard,
   SessionsCard,
   DeleteAccountCard,
-  SignedIn,
-  SignedOut,
 } from "@daveyplate/better-auth-ui";
-import { Navigate } from "react-router-dom";
 
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function Settings() {
   // Minimal card styling to hide descriptions and reduce visual noise
@@ -27,47 +25,41 @@ export default function Settings() {
   };
 
   return (
-    <>
-      <SignedOut>
-        <Navigate to="/auth/sign-in" replace />
-      </SignedOut>
+    <ProtectedRoute>
+      <AppLayout>
+        <div className="mx-auto max-w-lg py-8 px-4">
+          <h1 className="text-xl font-semibold mb-6">Settings</h1>
 
-      <SignedIn>
-        <AppLayout>
-          <div className="mx-auto max-w-lg py-8 px-4">
-            <h1 className="text-xl font-semibold mb-6">Settings</h1>
+          <div className="space-y-6">
+            <section>
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Profile
+              </h2>
+              <div className="flex flex-col gap-3">
+                <UpdateAvatarCard classNames={minimalCardStyles.card} />
+                <UpdateNameCard classNames={minimalCardStyles.card} />
+                <ChangeEmailCard classNames={minimalCardStyles.card} />
+              </div>
+            </section>
 
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                  Profile
-                </h2>
-                <div className="flex flex-col gap-3">
-                  <UpdateAvatarCard classNames={minimalCardStyles.card} />
-                  <UpdateNameCard classNames={minimalCardStyles.card} />
-                  <ChangeEmailCard classNames={minimalCardStyles.card} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                  Security
-                </h2>
-                <div className="flex flex-col gap-3">
-                  <ChangePasswordCard classNames={minimalCardStyles.card} />
-                  <SessionsCard
-                    className="shadow-none border-border/40"
-                    classNames={{
-                      cell: "shadow-none border-border/40",
-                    }}
-                  />
-                  <DeleteAccountCard classNames={minimalCardStyles.card} />
-                </div>
-              </section>
-            </div>
+            <section>
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Security
+              </h2>
+              <div className="flex flex-col gap-3">
+                <ChangePasswordCard classNames={minimalCardStyles.card} />
+                <SessionsCard
+                  className="shadow-none border-border/40"
+                  classNames={{
+                    cell: "shadow-none border-border/40",
+                  }}
+                />
+                <DeleteAccountCard classNames={minimalCardStyles.card} />
+              </div>
+            </section>
           </div>
-        </AppLayout>
-      </SignedIn>
-    </>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }
