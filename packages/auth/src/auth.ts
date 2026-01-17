@@ -52,18 +52,41 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     };
   }
 
-  const buildCallbackUrl = async (originalUrl: string): Promise<string> => {
+  /**
+   * Modifies better-auth URL callbackURL to point to frontend
+   */
+  const buildEmailUrlWithFrontendCallback = (
+    originalUrl: string,
+    frontendPath: string = "/dashboard"
+  ): string => {
     try {
       const urlObj = new URL(originalUrl);
-      const pathParts = urlObj.pathname.split("/");
-      const token = pathParts[pathParts.length - 1];
+      // Replace the callbackURL param to point to frontend
+      urlObj.searchParams.set("callbackURL", `${frontendURL}${frontendPath}`);
+      return urlObj.toString();
+    } catch {
+      logger.warn("Failed to parse URL, returning original");
+      return originalUrl;
+    }
+  };
+
+  /**
+   * Extracts token from better-auth URL and builds frontend reset password URL
+   */
+  const buildPasswordResetFrontendUrl = (originalUrl: string): string => {
+    try {
+      const urlObj = new URL(originalUrl);
+      const token = urlObj.searchParams.get("token");
 
       if (!token) {
+        logger.warn("No token found in password reset URL");
         return originalUrl;
       }
 
+      // Direct link to frontend reset password page with token
       return `${frontendURL}/reset-password?token=${token}`;
     } catch {
+      logger.warn("Failed to parse password reset URL, returning original");
       return originalUrl;
     }
   };
@@ -113,7 +136,8 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       requireEmailVerification: true,
 
       sendResetPassword: async ({ user, url }) => {
-        const resetUrl = await buildCallbackUrl(url);
+        // Direct link to frontend reset password form with token
+        const resetUrl = buildPasswordResetFrontendUrl(url);
 
         await sendResetPassword(env, {
           from: {
@@ -134,11 +158,13 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        // Send verification email for normal signups
+        // Backend URL with frontend callbackURL - server will redirect after verification
+        const verificationUrl = buildEmailUrlWithFrontendCallback(url, "/dashboard");
+
         try {
           await sendVerificationEmail(env, {
             to: { address: user.email, name: user.name || "" },
-            url,
+            url: verificationUrl,
           });
         } catch (error) {
           logger.error(
