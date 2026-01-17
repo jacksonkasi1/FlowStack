@@ -30,7 +30,8 @@ export function Providers({ children }: ProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <AuthQueryProvider>
         <AuthUIProviderTanstack
-          authClient={authClient}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          authClient={authClient as any}
           navigate={(href) => router.navigate({ to: href })}
           replace={(href) => router.navigate({ to: href, replace: true })}
           Link={({ href, ...props }) => <Link to={href} {...props} />}
