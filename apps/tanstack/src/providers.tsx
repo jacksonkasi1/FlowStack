@@ -30,11 +30,17 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const router = useRouter()
 
+  // Frontend base URL for OAuth callbacks (not the API server URL)
+  const frontendBaseURL =
+    import.meta.env.VITE_FRONTEND_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : '')
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthQueryProvider>
         <AuthUIProviderTanstack
           authClient={authClient as any}
+          baseURL={frontendBaseURL}
           navigate={(href) => router.navigate({ to: href })}
           replace={(href) => router.navigate({ to: href, replace: true })}
           Link={({ href, ...props }) => <Link to={href} {...props} />}
