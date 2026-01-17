@@ -6,61 +6,83 @@ import {
   ChangePasswordCard,
   SessionsCard,
   DeleteAccountCard,
-} from "@daveyplate/better-auth-ui";
+  SignedIn,
+  SignedOut,
+} from "@daveyplate/better-auth-ui"
+import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
-/**
- * Minimal settings page using consolidated components
- * - Hidden descriptions/instructions via classNames
- * - Reduced gaps and padding
- * - Clean, minimal layout
- */
-export default function Settings() {
+// ** import components
+import { AppLayout } from "@/components/layout/AppLayout"
+
+export const Route = createFileRoute('/account/settings')({
+  component: Settings,
+})
+
+function Settings() {
   // Minimal card styling to hide descriptions and reduce visual noise
   const minimalCardStyles = {
     cards: "gap-3",
     card: {
       base: "shadow-none border-border/40 gap-3",
-      // header: "pb-0",
       title: "text-base",
-      // description: "hidden", // Hide header descriptions
       content: "py-3",
       footer: "py-3",
-      // instructions: "hidden", // Hide footer instructions
     },
-  };
+  }
 
   return (
-    <main className="mx-auto max-w-lg py-8 px-4">
-      <h1 className="text-xl font-semibold mb-6">Settings</h1>
+    <>
+      <SignedOut>
+        <RedirectTo to="/auth/sign-in" />
+      </SignedOut>
 
-      <div className="space-y-6">
-        <section>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-            Profile
-          </h2>
-          <div className="flex flex-col gap-3">
-            <UpdateAvatarCard classNames={minimalCardStyles.card} />
-            <UpdateNameCard classNames={minimalCardStyles.card} />
-            <ChangeEmailCard classNames={minimalCardStyles.card} />
-          </div>
-        </section>
+      <SignedIn>
+        <AppLayout>
+          <div className="mx-auto max-w-lg py-8 px-4">
+            <h1 className="text-xl font-semibold mb-6">Settings</h1>
 
-        <section>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-            Security
-          </h2>
-          <div className="flex flex-col gap-3">
-            <ChangePasswordCard classNames={minimalCardStyles.card} />
-            <SessionsCard
-              className="shadow-none border-border/40"
-              classNames={{
-                cell: "shadow-none border-border/40",
-              }}
-            />
-            <DeleteAccountCard classNames={minimalCardStyles.card} />
+            <div className="space-y-6">
+              <section>
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Profile
+                </h2>
+                <div className="flex flex-col gap-3">
+                  <UpdateAvatarCard classNames={minimalCardStyles.card} />
+                  <UpdateNameCard classNames={minimalCardStyles.card} />
+                  <ChangeEmailCard classNames={minimalCardStyles.card} />
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Security
+                </h2>
+                <div className="flex flex-col gap-3">
+                  <ChangePasswordCard classNames={minimalCardStyles.card} />
+                  <SessionsCard
+                    className="shadow-none border-border/40"
+                    classNames={{
+                      cell: "shadow-none border-border/40",
+                    }}
+                  />
+                  <DeleteAccountCard classNames={minimalCardStyles.card} />
+                </div>
+              </section>
+            </div>
           </div>
-        </section>
-      </div>
-    </main>
-  );
+        </AppLayout>
+      </SignedIn>
+    </>
+  )
+}
+
+function RedirectTo({ to }: { to: string }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.navigate({ to, replace: true } as any)
+  }, [router, to])
+
+  return null
 }

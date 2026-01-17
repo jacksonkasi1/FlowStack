@@ -1,7 +1,10 @@
 // ** import lib
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { SignedIn, SignedOut, UserButton } from '@daveyplate/better-auth-ui'
+import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui'
 import { useEffect } from 'react'
+
+// ** import components
+import { AppLayout } from '@/components/layout/AppLayout'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -15,19 +18,14 @@ function Dashboard() {
       </SignedOut>
 
       <SignedIn>
-        <div className="flex min-h-screen flex-col">
-          <header className="flex items-center justify-between border-b px-6 py-4 h-[42px]">
-            <h1 className="text-xl font-semibold">FlowStack</h1>
-            <UserButton size='icon' />
-          </header>
-
-          <main className="flex flex-1 items-center justify-center p-6">
+        <AppLayout>
+          <div className="flex flex-1 items-center justify-center p-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold">Welcome to FlowStack</h2>
               <p className="mt-2 text-gray-600">You are signed in.</p>
             </div>
-          </main>
-        </div>
+          </div>
+        </AppLayout>
       </SignedIn>
     </>
   )
@@ -37,7 +35,7 @@ function RedirectTo({ to }: { to: string }) {
   const router = useRouter()
 
   useEffect(() => {
-    router.navigate({ to: to as any, replace: true })
+    router.navigate({ to, replace: true } as any)
   }, [router, to])
 
   return null
