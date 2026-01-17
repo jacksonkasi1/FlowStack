@@ -97,6 +97,20 @@ These are tools FlowStack is built and tested with. You can replace parts of the
 
 ---
 
+## Authentication
+
+FlowStack uses [Better Auth](https://www.better-auth.com/) for identity management with support for:
+
+- Email/password authentication
+- Magic link authentication
+- OAuth providers (Google, GitHub, etc.)
+- Session management
+- Account settings and security
+
+For detailed setup, configuration, and troubleshooting guides, see **[docs/auth/README.md](./docs/auth/README.md)**.
+
+---
+
 ## High-Level Structure
 
 ```
