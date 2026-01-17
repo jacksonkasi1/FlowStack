@@ -4,14 +4,15 @@ Quick reference guides for FlowStack authentication setup using [Better Auth](ht
 
 ## Quick Links
 
-| Topic | Description |
-|-------|-------------|
-| [Configuration](./configuration.md) | ⭐ Centralized config reference (URLs, redirects, env vars) |
-| [OAuth Redirects](./oauth-redirects.md) | Handle redirects after Google/social login |
-| [Adding Providers](./adding-providers.md) | Add new OAuth providers (GitHub, Discord, etc.) |
-| [Cross-Domain Auth](./cross-domain-auth.md) | Multi-subdomain & cross-domain login |
-| [Email Templates](./email-templates.md) | Customize verification & reset emails |
-| [Troubleshooting](./troubleshooting.md) | Common issues and solutions |
+| Topic                                       | Description                                                 |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| [Configuration](./configuration.md)         | ⭐ Centralized config reference (URLs, redirects, env vars) |
+| [Protected Routes](./protected-routes.md)   | Protect pages requiring authentication                      |
+| [OAuth Redirects](./oauth-redirects.md)     | Handle redirects after Google/social login                  |
+| [Adding Providers](./adding-providers.md)   | Add new OAuth providers (GitHub, Discord, etc.)             |
+| [Cross-Domain Auth](./cross-domain-auth.md) | Multi-subdomain & cross-domain login                        |
+| [Email Templates](./email-templates.md)     | Customize verification & reset emails                       |
+| [Troubleshooting](./troubleshooting.md)     | Common issues and solutions                                 |
 
 ---
 
@@ -19,27 +20,28 @@ Quick reference guides for FlowStack authentication setup using [Better Auth](ht
 
 ### Configuration Files
 
-| File | Purpose |
-|------|---------|
-| `apps/*/src/config/urls.ts` | Frontend/API URLs (`APP_URLS`) |
-| `apps/*/src/config/redirects.ts` | Frontend redirect paths |
-| `packages/auth/src/config/redirects.ts` | Backend redirect paths |
+| File                                    | Purpose                        |
+| --------------------------------------- | ------------------------------ |
+| `apps/*/src/config/urls.ts`             | Frontend/API URLs (`APP_URLS`) |
+| `apps/*/src/config/redirects.ts`        | Frontend redirect paths        |
+| `packages/auth/src/config/redirects.ts` | Backend redirect paths         |
 
 ### Backend (`packages/auth/`)
 
-| File | Purpose |
-|------|---------|
-| `src/auth.ts` | Main Better Auth configuration |
-| `src/email/*.ts` | Email sending functions |
-| `src/types.ts` | Environment variable types |
+| File             | Purpose                        |
+| ---------------- | ------------------------------ |
+| `src/auth.ts`    | Main Better Auth configuration |
+| `src/email/*.ts` | Email sending functions        |
+| `src/types.ts`   | Environment variable types     |
 
 ### Frontend (`apps/web/` or `apps/tanstack/`)
 
-| File | Purpose |
-|------|---------|
-| `src/lib/auth-client.ts` | Auth client configuration |
-| `src/providers.tsx` | AuthUIProvider setup |
-| `src/pages/auth/*.tsx` | Auth page components |
+| File                                     | Purpose                                 |
+| ---------------------------------------- | --------------------------------------- |
+| `src/lib/auth-client.ts`                 | Auth client configuration               |
+| `src/providers.tsx`                      | AuthUIProvider setup                    |
+| `src/components/auth/ProtectedRoute.tsx` | Protect routes requiring authentication |
+| `src/pages/auth/*.tsx`                   | Auth page components                    |
 
 ---
 
