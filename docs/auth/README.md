@@ -6,14 +6,24 @@ Quick reference guides for FlowStack authentication setup using [Better Auth](ht
 
 | Topic | Description |
 |-------|-------------|
+| [Configuration](./configuration.md) | ⭐ Centralized config reference (URLs, redirects, env vars) |
 | [OAuth Redirects](./oauth-redirects.md) | Handle redirects after Google/social login |
 | [Adding Providers](./adding-providers.md) | Add new OAuth providers (GitHub, Discord, etc.) |
 | [Cross-Domain Auth](./cross-domain-auth.md) | Multi-subdomain & cross-domain login |
 | [Email Templates](./email-templates.md) | Customize verification & reset emails |
+| [Troubleshooting](./troubleshooting.md) | Common issues and solutions |
 
 ---
 
 ## Key Files Overview
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `apps/*/src/config/urls.ts` | Frontend/API URLs (`APP_URLS`) |
+| `apps/*/src/config/redirects.ts` | Frontend redirect paths |
+| `packages/auth/src/config/redirects.ts` | Backend redirect paths |
 
 ### Backend (`packages/auth/`)
 
