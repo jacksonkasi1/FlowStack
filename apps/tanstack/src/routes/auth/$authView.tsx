@@ -10,8 +10,10 @@ export const Route = createFileRoute('/auth/$authView')({
 function RouteComponent() {
   const { authView } = Route.useParams()
 
-  // Use absolute URL to ensure redirect goes to frontend, not server
-  const redirectTo = `${window.location.origin}/dashboard`
+  // Only use absolute URL on client-side to avoid SSR errors
+  const redirectTo = typeof window !== 'undefined'
+    ? `${window.location.origin}/dashboard`
+    : '/dashboard'
 
   return (
     <main className="container mx-auto flex min-h-screen grow flex-col items-center justify-center gap-3 self-center p-4 md:p-6">

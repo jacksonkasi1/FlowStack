@@ -1,14 +1,17 @@
 // ** import types
+import type { ReactNode } from 'react'
 
 // ** import lib
 import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack'
 import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack'
 import { Link, useRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
 
 // ** import utils
 import { authClient } from '@/lib/auth-client'
+
+// ** import rest-api
+import { deleteAvatar, uploadAvatar } from '@/rest-api/storage'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -30,7 +33,6 @@ export function Providers({ children }: ProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <AuthQueryProvider>
         <AuthUIProviderTanstack
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           authClient={authClient as any}
           navigate={(href) => router.navigate({ to: href })}
           replace={(href) => router.navigate({ to: href, replace: true })}
@@ -41,6 +43,10 @@ export function Providers({ children }: ProvidersProps) {
           magicLink={true}
           account={{
             fields: ['image', 'name'],
+          }}
+          avatar={{
+            upload: uploadAvatar,
+            delete: deleteAvatar,
           }}
         >
           {children}

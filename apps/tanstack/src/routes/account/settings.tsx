@@ -1,11 +1,11 @@
 // ** import lib
 import {
-    UpdateAvatarCard,
-    UpdateNameCard,
     ChangeEmailCard,
     ChangePasswordCard,
-    SessionsCard,
     DeleteAccountCard,
+    SessionsCard,
+    UpdateAvatarCard,
+    UpdateNameCard,
 } from "@daveyplate/better-auth-ui";
 import { createFileRoute } from "@tanstack/react-router";
 
