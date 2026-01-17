@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 // ** import lib
 import { AuthUIProvider } from '@daveyplate/better-auth-ui';
 import { useNavigate, Link } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
 
 // ** import utils
 import { authClient } from '@/lib/auth-client';
@@ -51,6 +52,7 @@ export function Providers({ children }: ProvidersProps) {
             }}
         >
             {children}
+            <Toaster />
         </AuthUIProvider>
     );
 }

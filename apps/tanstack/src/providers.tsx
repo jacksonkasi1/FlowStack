@@ -6,6 +6,7 @@ import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack'
 import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack'
 import { Link, useRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from './components/ui/sonner'
 
 // ** import utils
 import { authClient } from '@/lib/auth-client'
@@ -50,6 +51,7 @@ export function Providers({ children }: ProvidersProps) {
           }}
         >
           {children}
+          <Toaster />
         </AuthUIProviderTanstack>
       </AuthQueryProvider>
     </QueryClientProvider>
