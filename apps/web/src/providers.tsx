@@ -12,9 +12,16 @@ import { authClient } from "@/lib/auth-client";
 
 // ** import config
 import { APP_URLS } from "@/config/urls";
+import {
+  getOrganizationProviderConfig,
+  createLogoUploadHandler,
+  createLogoDeleteHandler,
+} from "@/config/organization";
 
 // ** import rest-api
 import { deleteAvatar, uploadAvatar } from "@/rest-api/storage";
+import { getUploadUrl } from "@/rest-api/storage/get-upload-url";
+import { deleteFile } from "@/rest-api/storage/delete-file";
 
 interface LinkWrapperProps {
   href: string;
@@ -37,6 +44,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const navigate = useNavigate();
 
+  const logoUploadHandler = createLogoUploadHandler(getUploadUrl, deleteFile);
+  const logoDeleteHandler = createLogoDeleteHandler(deleteFile);
+
   return (
     <ThemeProvider defaultTheme="light" storageKey="flowstack-ui-theme">
       <AuthUIProvider
@@ -56,6 +66,10 @@ export function Providers({ children }: ProvidersProps) {
           upload: uploadAvatar,
           delete: deleteAvatar,
         }}
+        {...getOrganizationProviderConfig({
+          logoUpload: logoUploadHandler,
+          logoDelete: logoDeleteHandler,
+        })}
       >
         {children}
         <Toaster />

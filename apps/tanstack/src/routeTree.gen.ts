@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
+import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
+import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
 import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
@@ -23,6 +26,21 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
+  id: '/organization/settings',
+  path: '/organization/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
+  id: '/organization/members',
+  path: '/organization/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationIdRoute = InvitationIdRouteImport.update({
+  id: '/invitation/$id',
+  path: '/invitation/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
@@ -47,6 +65,9 @@ export interface FileRoutesByFullPath {
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/invitation/$id': typeof InvitationIdRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +75,9 @@ export interface FileRoutesByTo {
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/invitation/$id': typeof InvitationIdRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +86,9 @@ export interface FileRoutesById {
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/invitation/$id': typeof InvitationIdRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +98,9 @@ export interface FileRouteTypes {
     | '/account/$accountView'
     | '/account/settings'
     | '/auth/$authView'
+    | '/invitation/$id'
+    | '/organization/members'
+    | '/organization/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +108,9 @@ export interface FileRouteTypes {
     | '/account/$accountView'
     | '/account/settings'
     | '/auth/$authView'
+    | '/invitation/$id'
+    | '/organization/members'
+    | '/organization/settings'
   id:
     | '__root__'
     | '/'
@@ -85,6 +118,9 @@ export interface FileRouteTypes {
     | '/account/$accountView'
     | '/account/settings'
     | '/auth/$authView'
+    | '/invitation/$id'
+    | '/organization/members'
+    | '/organization/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +129,9 @@ export interface RootRouteChildren {
   AccountAccountViewRoute: typeof AccountAccountViewRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
   AuthAuthViewRoute: typeof AuthAuthViewRoute
+  InvitationIdRoute: typeof InvitationIdRoute
+  OrganizationMembersRoute: typeof OrganizationMembersRoute
+  OrganizationSettingsRoute: typeof OrganizationSettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +148,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/settings': {
+      id: '/organization/settings'
+      path: '/organization/settings'
+      fullPath: '/organization/settings'
+      preLoaderRoute: typeof OrganizationSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/members': {
+      id: '/organization/members'
+      path: '/organization/members'
+      fullPath: '/organization/members'
+      preLoaderRoute: typeof OrganizationMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invitation/$id': {
+      id: '/invitation/$id'
+      path: '/invitation/$id'
+      fullPath: '/invitation/$id'
+      preLoaderRoute: typeof InvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/$authView': {
@@ -141,6 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   AccountAccountViewRoute: AccountAccountViewRoute,
   AccountSettingsRoute: AccountSettingsRoute,
   AuthAuthViewRoute: AuthAuthViewRoute,
+  InvitationIdRoute: InvitationIdRoute,
+  OrganizationMembersRoute: OrganizationMembersRoute,
+  OrganizationSettingsRoute: OrganizationSettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
