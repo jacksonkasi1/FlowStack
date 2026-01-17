@@ -9,6 +9,9 @@ import { Toaster } from "@/components/ui/sonner";
 // ** import utils
 import { authClient } from "@/lib/auth-client";
 
+// ** import config
+import { APP_URLS } from "@/config/urls";
+
 // ** import rest-api
 import { deleteAvatar, uploadAvatar } from "@/rest-api/storage";
 
@@ -33,15 +36,11 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const navigate = useNavigate();
 
-  // Frontend base URL for OAuth callbacks (not the API server URL)
-  const frontendBaseURL =
-    import.meta.env.VITE_FRONTEND_URL || window.location.origin;
-
   return (
     <AuthUIProvider
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       authClient={authClient as any}
-      baseURL={frontendBaseURL}
+      baseURL={APP_URLS.frontend}
       navigate={navigate}
       Link={LinkWrapper}
       social={{
