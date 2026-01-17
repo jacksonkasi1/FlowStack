@@ -4,10 +4,10 @@ import { Hono } from "hono";
 // ** import utils
 import { r2 } from "@repo/storage";
 
+// ** import config
+import { env } from "@/config/env";
+
 const route = new Hono();
-
-// Validation patterns for file names
-
 
 route.get("/upload-url", async (c) => {
   const fileName = c.req.query("fileName");
@@ -29,7 +29,16 @@ route.get("/upload-url", async (c) => {
       organizationId: organizationId || undefined,
     });
 
-    return c.json(result);
+    // Construct publicUrl from R2_PUBLIC_URL + filePath
+    const publicUrl = env.R2_PUBLIC_URL
+      ? `${env.R2_PUBLIC_URL}/${result.filePath}`
+      : result.filePath;
+
+    return c.json({
+      signedUrl: result.signedUrl,
+      filePath: result.filePath,
+      publicUrl,
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Upload URL generation failed";
