@@ -16,7 +16,7 @@ function Dashboard() {
 
       <SignedIn>
         <div className="flex min-h-screen flex-col">
-          <header className="flex items-center justify-between border-b px-6 py-4">
+          <header className="flex items-center justify-between border-b px-6 py-4 h-[42px]">
             <h1 className="text-xl font-semibold">FlowStack</h1>
             <UserButton size='icon' />
           </header>
