@@ -3,12 +3,12 @@ import axiosInstance from "@/config/axios";
 
 // ** import types
 export interface DeleteFileParams {
-    filePath?: string;
-    publicUrl?: string;
+  filePath?: string;
+  publicUrl?: string;
 }
 
 export interface DeleteFileResponse {
-    success: boolean;
+  success: boolean;
 }
 
 /**
@@ -18,31 +18,31 @@ export interface DeleteFileResponse {
  * @returns Promise with success response
  */
 export const deleteFile = async (
-    params: DeleteFileParams,
+  params: DeleteFileParams,
 ): Promise<DeleteFileResponse> => {
-    let filePath = params.filePath;
+  let filePath = params.filePath;
 
-    // Extract file path from public URL if provided
-    if (!filePath && params.publicUrl) {
-        try {
-            const url = new URL(params.publicUrl);
-            filePath = url.pathname.substring(1); // Remove leading slash
-        } catch (error) {
-            throw new Error("Invalid public URL provided");
-        }
+  // Extract file path from public URL if provided
+  if (!filePath && params.publicUrl) {
+    try {
+      const url = new URL(params.publicUrl);
+      filePath = url.pathname.substring(1); // Remove leading slash
+    } catch (error) {
+      throw new Error("Invalid public URL provided");
     }
+  }
 
-    if (!filePath) {
-        throw new Error("Either filePath or publicUrl must be provided");
-    }
+  if (!filePath) {
+    throw new Error("Either filePath or publicUrl must be provided");
+  }
 
-    const queryParams = new URLSearchParams({
-        filePath,
-    });
+  const queryParams = new URLSearchParams({
+    filePath,
+  });
 
-    const response = await axiosInstance.delete<DeleteFileResponse>(
-        `/api/storage/delete?${queryParams.toString()}`,
-    );
+  const response = await axiosInstance.delete<DeleteFileResponse>(
+    `/api/storage/delete?${queryParams.toString()}`,
+  );
 
-    return response.data;
+  return response.data;
 };

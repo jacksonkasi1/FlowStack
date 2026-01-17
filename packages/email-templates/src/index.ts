@@ -15,10 +15,7 @@ export {
   type InviteUserEmailProps,
 } from "../emails/invite-user";
 
-export {
-  MagicLinkEmail,
-  type MagicLinkEmailProps,
-} from "../emails/magic-link";
+export { MagicLinkEmail, type MagicLinkEmailProps } from "../emails/magic-link";
 
 import { InviteUserEmail } from "../emails/invite-user";
 import { MagicLinkEmail } from "../emails/magic-link";

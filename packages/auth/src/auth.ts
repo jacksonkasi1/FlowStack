@@ -18,7 +18,6 @@ import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
 import checkUserRole from "./utils/user-is-admin";
 
-
 // ** import types
 import type { Env } from "./types";
 
@@ -59,7 +58,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
    */
   const buildEmailUrlWithFrontendCallback = (
     originalUrl: string,
-    frontendPath: string = "/dashboard"
+    frontendPath: string = "/dashboard",
   ): string => {
     try {
       const urlObj = new URL(originalUrl);
@@ -92,7 +91,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       // Direct link to frontend reset password page with token
       return `${frontendURL}/reset-password?token=${token}`;
     } catch (error) {
-      logger.warn(`Failed to parse password reset URL: ${error instanceof Error ? error.message : String(error)}`);
+      logger.warn(
+        `Failed to parse password reset URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return originalUrl;
     }
   };
@@ -165,7 +166,10 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         // Backend URL with frontend callbackURL - server will redirect after verification
-        const verificationUrl = buildEmailUrlWithFrontendCallback(url, "/dashboard");
+        const verificationUrl = buildEmailUrlWithFrontendCallback(
+          url,
+          "/dashboard",
+        );
 
         try {
           await sendVerificationEmail(env, {
@@ -186,7 +190,10 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       magicLink({
         async sendMagicLink({ email, url }) {
           // Use front end URL with callback
-          const magicLinkUrl = buildEmailUrlWithFrontendCallback(url, "/dashboard");
+          const magicLinkUrl = buildEmailUrlWithFrontendCallback(
+            url,
+            "/dashboard",
+          );
 
           await sendMagicLink(env, {
             to: {

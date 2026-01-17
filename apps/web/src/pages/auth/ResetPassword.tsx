@@ -1,5 +1,5 @@
 // ** import lib
-import { AuthView } from '@daveyplate/better-auth-ui';
+import { AuthView } from "@daveyplate/better-auth-ui";
 
 export default function ResetPassword() {
   return (

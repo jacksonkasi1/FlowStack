@@ -1,12 +1,12 @@
 // ** import lib
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut } from '@daveyplate/better-auth-ui';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 
 // ** import pages
-import AuthPage from '@/pages/auth/AuthPage';
-import ResetPassword from '@/pages/auth/ResetPassword';
-import Dashboard from '@/pages/Dashboard';
-import Settings from '@/pages/Settings';
+import AuthPage from "@/pages/auth/AuthPage";
+import ResetPassword from "@/pages/auth/ResetPassword";
+import Dashboard from "@/pages/Dashboard";
+import Settings from "@/pages/Settings";
 
 export default function App() {
   return (

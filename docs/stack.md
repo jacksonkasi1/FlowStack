@@ -9,50 +9,50 @@ You can replace parts of the stack if you know what you're doing.
 
 ## Frontend
 
-* **Next.js (App Router)** — primary frontend
-* **Vite** — supported for non-Next frontend apps
-* **TypeScript** — strict by default
-* **Tailwind CSS** — styling foundation
-* **shadcn/ui** — component primitives
-* **tnks-data-table** — data-heavy tables
+- **Next.js (App Router)** — primary frontend
+- **Vite** — supported for non-Next frontend apps
+- **TypeScript** — strict by default
+- **Tailwind CSS** — styling foundation
+- **shadcn/ui** — component primitives
+- **tnks-data-table** — data-heavy tables
 
 ---
 
 ## Backend
 
-* **Hono.js** — HTTP framework
-* **Drizzle ORM** — database access
-* **PostgreSQL** — primary database
+- **Hono.js** — HTTP framework
+- **Drizzle ORM** — database access
+- **PostgreSQL** — primary database
 
 ---
 
 ## Auth & Access
 
-* **Better Auth** — authentication core
-* **Better Auth UI** — optional UI helpers
-* **FlexAuth (RBAC)** — role & permission system
+- **Better Auth** — authentication core
+- **Better Auth UI** — optional UI helpers
+- **FlexAuth (RBAC)** — role & permission system
 
 ---
 
 ## Email
 
-* **React Email** — email templates
-* **ZeptoMail** — default email provider
+- **React Email** — email templates
+- **ZeptoMail** — default email provider
 
 ---
 
 ## Storage
 
-* **Cloudflare R2**
-* **Amazon S3**
-* **Google Cloud Storage (GCS)**
+- **Cloudflare R2**
+- **Amazon S3**
+- **Google Cloud Storage (GCS)**
 
 ---
 
 ## Deployment
 
-* **Google Cloud Run (GCR)** — primary deployment target
-* **Docker** — first-class support
+- **Google Cloud Run (GCR)** — primary deployment target
+- **Docker** — first-class support
 
 ---
 
@@ -60,9 +60,9 @@ You can replace parts of the stack if you know what you're doing.
 
 FlowStack chooses tools that are:
 
-* explicit over magical
-* composable over monolithic
-* boring in production
+- explicit over magical
+- composable over monolithic
+- boring in production
 
 The stack may evolve, but **the architecture does not depend on any single tool**.
 

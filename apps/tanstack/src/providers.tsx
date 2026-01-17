@@ -1,5 +1,4 @@
 // ** import types
-import type { ReactNode } from 'react'
 
 // ** import lib
 import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack'
@@ -7,6 +6,7 @@ import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack'
 import { Link, useRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from './components/ui/sonner'
+import type { ReactNode } from 'react'
 
 // ** import utils
 import { authClient } from '@/lib/auth-client'

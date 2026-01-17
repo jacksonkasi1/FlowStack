@@ -20,7 +20,9 @@ export async function sendResetPassword(
   props: SendResetPasswordProps,
 ): Promise<void> {
   if (!env.ZEPTOMAIL_API_KEY) {
-    throw new Error("ZEPTOMAIL_API_KEY is required to send reset password emails");
+    throw new Error(
+      "ZEPTOMAIL_API_KEY is required to send reset password emails",
+    );
   }
 
   const emailClient = createEmailClientFromEnv({

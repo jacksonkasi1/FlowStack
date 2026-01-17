@@ -8,23 +8,23 @@ Always organize imports with proper comment headers and spacing:
 
 ```typescript
 // ** import types
-import type { TypeName, AnotherType } from '@/types/module'
+import type { TypeName, AnotherType } from "@/types/module";
 
 // ** import utils
-import { utilFunction } from 'wxt/utils/module'
+import { utilFunction } from "wxt/utils/module";
 
 // ** import lib
-import { LibClass } from '@/lib/module'
-import { AnotherClass } from './localModule'
+import { LibClass } from "@/lib/module";
+import { AnotherClass } from "./localModule";
 
 // ** import apis
-import { apiFunction } from '@/api/module'
+import { apiFunction } from "@/api/module";
 
 // ** import constants
-import { CONSTANT_VALUE } from './constants'
+import { CONSTANT_VALUE } from "./constants";
 
 // ** import styles
-import '@/entrypoints/style.css'
+import "@/entrypoints/style.css";
 ```
 
 ### Rules
@@ -38,7 +38,7 @@ import '@/entrypoints/style.css'
 ### Categories
 
 - `// ** import types` - TypeScript type imports only
-- `// ** import utils` - Utility functions and helpers  
+- `// ** import utils` - Utility functions and helpers
 - `// ** import lib` - Library/class imports from local modules
 - `// ** import apis` - API-related imports
 - `// ** import constants` - Constant/configuration imports
@@ -47,28 +47,31 @@ import '@/entrypoints/style.css'
 ### Examples
 
 ✅ **Good:**
+
 ```typescript
 // ** import types
-import type { FormField } from '@/types/extension'
+import type { FormField } from "@/types/extension";
 
 // ** import lib
-import { ElementUtils } from './elementUtils'
-import { SoundManager } from '@/lib/utils/soundManager'
+import { ElementUtils } from "./elementUtils";
+import { SoundManager } from "@/lib/utils/soundManager";
 ```
 
 ❌ **Bad:**
+
 ```typescript
-import type { FormField } from '@/types/extension'
-import { ElementUtils } from './elementUtils'
-import { SoundManager } from '@/lib/utils/soundManager'
+import type { FormField } from "@/types/extension";
+import { ElementUtils } from "./elementUtils";
+import { SoundManager } from "@/lib/utils/soundManager";
 ```
 
 ❌ **Bad:**
+
 ```typescript
 // ** import types
-import type { FormField } from '@/types/extension'
+import type { FormField } from "@/types/extension";
 // ** import lib utilities
-import { ElementUtils } from './elementUtils'
+import { ElementUtils } from "./elementUtils";
 ```
 
 This pattern ensures consistent, readable import organization across the entire codebase.
@@ -86,6 +89,7 @@ This pattern ensures consistent, readable import organization across the entire 
 ### API Function Organization
 
 #### Structure Pattern
+
 ```
 apps/admin-cms/src/api/
 ├── config/
@@ -103,12 +107,13 @@ apps/admin-cms/src/api/
 ```
 
 #### API Function Template
+
 ```typescript
 // ** import config
-import axiosInstance from '@/config/axios';
+import axiosInstance from "@/config/axios";
 
 // ** import types
-import type { RequestType, ResponseType } from '@/types/feature';
+import type { RequestType, ResponseType } from "@/types/feature";
 
 /**
  * Brief description of what this API function does
@@ -117,12 +122,9 @@ import type { RequestType, ResponseType } from '@/types/feature';
  * @returns Promise with response type
  */
 export const functionName = async (
-  data: RequestType
+  data: RequestType,
 ): Promise<ResponseType> => {
-  const response = await axiosInstance.post<ResponseType>(
-    '/endpoint',
-    data
-  );
+  const response = await axiosInstance.post<ResponseType>("/endpoint", data);
 
   return response.data;
 };
@@ -131,20 +133,22 @@ export const functionName = async (
 ### File Upload Management
 
 #### Upload Path Configuration
+
 - **Central Configuration**: All upload destinations defined in `src/config/upload-paths.ts`
 - **Path Consistency**: Use predefined constants instead of hardcoded strings
 - **Feature-Based Paths**: Organize upload paths by application feature
 
 ```typescript
 // ✅ Good: Using centralized upload paths
-import { UPLOAD_PATHS } from '@/config/upload-paths';
+import { UPLOAD_PATHS } from "@/config/upload-paths";
 const path = UPLOAD_PATHS.ONBOARDING.BANK_DOCUMENTS;
 
 // ❌ Bad: Hardcoded upload paths
-const path = 'bank-documents';
+const path = "bank-documents";
 ```
 
 #### Upload API Organization
+
 - **Dedicated Folder**: All upload-related APIs in `src/api/upload/`
 - **Function Separation**: One API function per file for upload operations
 - **Consistent Naming**: Use descriptive, action-based file names
@@ -152,6 +156,7 @@ const path = 'bank-documents';
 ### Reusable UI Configuration
 
 #### Data Organization
+
 ```
 apps/admin-cms/src/data/
 ├── dropdown-options.ts       # Global dropdown configurations
@@ -162,6 +167,7 @@ apps/admin-cms/src/data/
 ```
 
 #### Configuration Pattern
+
 ```typescript
 // ** Centralized dropdown options
 export interface StatusOption {
@@ -171,18 +177,19 @@ export interface StatusOption {
 }
 
 export const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'active', label: 'Active', color: 'green' },
-  { value: 'inactive', label: 'Inactive', color: 'red' }
+  { value: "active", label: "Active", color: "green" },
+  { value: "inactive", label: "Inactive", color: "red" },
 ];
 ```
 
 ### Component Integration Rules
 
 #### API Usage in Components
+
 ```typescript
 // ✅ Good: Import API functions, keep components clean
-import { submitOnboardingSignup } from '@/api/onboarding/signup';
-import { STATUS_OPTIONS } from '@/data/products/status-options';
+import { submitOnboardingSignup } from "@/api/onboarding/signup";
+import { STATUS_OPTIONS } from "@/data/products/status-options";
 
 const MyComponent = () => {
   const handleSubmit = async (data) => {
@@ -198,12 +205,13 @@ const MyComponent = () => {
 // ❌ Bad: Inline API calls in components
 const MyComponent = () => {
   const handleSubmit = async (data) => {
-    const response = await axios.post('/onboarding/signup', data);
+    const response = await axios.post("/onboarding/signup", data);
   };
 };
 ```
 
 #### Benefits of This Architecture
+
 - **Maintainability**: Easy to locate and update API logic
 - **Reusability**: API functions can be shared across components
 - **Testing**: API functions can be unit tested independently
@@ -213,6 +221,7 @@ const MyComponent = () => {
 ### Quality Checklist
 
 Before implementing new API functionality:
+
 - [ ] API function is in appropriate domain folder
 - [ ] Uses centralized axios configuration
 - [ ] Follows established naming conventions
@@ -228,11 +237,13 @@ Before implementing new API functionality:
 When API files become large or contain multiple endpoints, follow these splitting rules:
 
 #### 1. Single Responsibility Principle
+
 - **One API endpoint per file**
-- **One schema per file** 
+- **One schema per file**
 - Each file should handle exactly one operation
 
 #### 2. Domain-Based Folder Structure
+
 ```
 apps/gcr-server/src/routes/products/
 ├── brand/                     # Brand domain
@@ -251,6 +262,7 @@ apps/gcr-server/src/routes/products/
 ```
 
 #### 3. Schema Organization (Mirror API Structure)
+
 ```
 apps/gcr-server/src/schema/products/
 ├── brand/
@@ -264,6 +276,7 @@ apps/gcr-server/src/schema/products/
 ```
 
 #### 4. File Naming Conventions
+
 - Use **kebab-case** for file names
 - Use **descriptive action-resource** naming:
   - `get-products.ts` - List products
@@ -273,6 +286,7 @@ apps/gcr-server/src/schema/products/
   - `bulk-delete-products.ts` - Bulk operations
 
 #### 5. Index File Pattern
+
 Each domain folder must have an `index.ts` that exports the domain router:
 
 ```typescript
@@ -287,6 +301,7 @@ productRoutes.route("/", getProductsRoute);
 ```
 
 #### 6. Main Router Integration
+
 ```typescript
 // apps/gcr-server/src/routes/products/index.ts
 import { Hono } from "hono";
@@ -301,18 +316,22 @@ export { products };
 ```
 
 #### 7. Export Patterns
+
 - **Individual files**: Export named route constants
-- **Index files**: Export domain routers  
+- **Index files**: Export domain routers
 - **Schema files**: Export individual schemas
 - **Schema index**: Re-export all schemas from domain
 
 ### When NOT to Split
+
 - Files under 150 lines
 - Single endpoint with minimal logic
 - Tightly coupled operations that share significant logic
 
 ### Quality Checklist
+
 Before splitting files, ensure:
+
 - [ ] Each file has single responsibility
 - [ ] Proper middleware usage maintained
 - [ ] Import paths updated correctly

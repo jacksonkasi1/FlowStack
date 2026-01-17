@@ -1,5 +1,8 @@
 export { getUploadUrl } from "./get-upload-url";
-export type { GetUploadUrlParams, GetUploadUrlResponse } from "./get-upload-url";
+export type {
+  GetUploadUrlParams,
+  GetUploadUrlResponse,
+} from "./get-upload-url";
 
 export { deleteFile } from "./delete-file";
 export type { DeleteFileParams, DeleteFileResponse } from "./delete-file";

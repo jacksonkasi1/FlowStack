@@ -1,17 +1,17 @@
 // ** import config
-import axiosInstance from "@/config/axios";
+import axiosInstance from '@/config/axios'
 
 // ** import types
 export interface GetUploadUrlParams {
-    fileName: string;
-    contentType?: string;
-    organizationId?: string;
+  fileName: string
+  contentType?: string
+  organizationId?: string
 }
 
 export interface GetUploadUrlResponse {
-    signedUrl: string;
-    filePath: string;
-    publicUrl: string;
+  signedUrl: string
+  filePath: string
+  publicUrl: string
 }
 
 /**
@@ -21,17 +21,17 @@ export interface GetUploadUrlResponse {
  * @returns Promise with signed URL and file path
  */
 export const getUploadUrl = async (
-    params: GetUploadUrlParams,
+  params: GetUploadUrlParams,
 ): Promise<GetUploadUrlResponse> => {
-    const queryParams = new URLSearchParams({
-        fileName: params.fileName,
-        ...(params.contentType && { contentType: params.contentType }),
-        ...(params.organizationId && { organizationId: params.organizationId }),
-    });
+  const queryParams = new URLSearchParams({
+    fileName: params.fileName,
+    ...(params.contentType && { contentType: params.contentType }),
+    ...(params.organizationId && { organizationId: params.organizationId }),
+  })
 
-    const response = await axiosInstance.get<GetUploadUrlResponse>(
-        `/api/storage/upload-url?${queryParams.toString()}`,
-    );
+  const response = await axiosInstance.get<GetUploadUrlResponse>(
+    `/api/storage/upload-url?${queryParams.toString()}`,
+  )
 
-    return response.data;
-};
+  return response.data
+}

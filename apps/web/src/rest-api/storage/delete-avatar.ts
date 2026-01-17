@@ -7,5 +7,5 @@ import { deleteFile } from "./delete-file";
  * @param url - The public URL of the avatar to delete
  */
 export const deleteAvatar = async (url: string): Promise<void> => {
-    await deleteFile({ publicUrl: url });
+  await deleteFile({ publicUrl: url });
 };

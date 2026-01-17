@@ -37,7 +37,6 @@ function RedirectTo({ to }: { to: string }) {
   const router = useRouter()
 
   useEffect(() => {
-     
     router.navigate({ to: to as any, replace: true })
   }, [router, to])
 
