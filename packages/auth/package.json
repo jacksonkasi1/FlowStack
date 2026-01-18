@@ -18,12 +18,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth-extended/onboarding": "^0.1.1",
     "@react-email/render": "^2.0.2",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/email-templates": "workspace:*",
     "@repo/logs": "workspace:*",
+    "@repo/onboarding": "workspace:*",
     "better-auth": "^1.4.15"
   },
   "devDependencies": {
