@@ -17,6 +17,24 @@ import {
 import type { GetUploadUrlFn, DeleteFileFn } from '@repo/shared'
 
 /**
+ * Organization enforcement settings
+ *
+ * Controls whether users must belong to an organization to use the product.
+ * This should match the backend config in packages/auth/src/config/organization.ts
+ */
+export const ORGANIZATION_CONFIG = {
+  /**
+   * If true, users MUST belong to an organization to use the product.
+   * Users without an organization will be redirected to onboarding to create one.
+   *
+   * If false, users can access the product without an organization.
+   *
+   * @default true
+   */
+  requireOrganization: true,
+} as const;
+
+/**
  * Create logo upload handler using shared implementation
  */
 export const createLogoUploadHandler = (getUploadUrl: GetUploadUrlFn) =>

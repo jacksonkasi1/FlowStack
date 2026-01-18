@@ -11,6 +11,9 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Toaster } from 'sonner'
 
+// ** import components
+import { RequireOnboarding } from '@/components/auth/RequireOnboarding'
+
 // ** import utils
 import { Providers } from '../providers'
 import appCss from '../styles.css?url'
@@ -45,7 +48,9 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <Providers>
-      <Outlet />
+      <RequireOnboarding>
+        <Outlet />
+      </RequireOnboarding>
     </Providers>
   )
 }
