@@ -2,88 +2,62 @@
  * Organization Configuration
  *
  * This file contains utilities for the AuthUIProvider organization settings.
- * For configurable options, see @repo/shared.
+ * Core handlers are imported from @repo/shared for reusability.
  */
-
-// ** import types
-import type { GetUploadUrlResponse } from "@/rest-api/storage/get-upload-url";
-import type { DeleteFileResponse } from "@/rest-api/storage/delete-file";
 
 // ** import shared config
 import {
-  getUIUserFields,
   ORGANIZATION_LOGO,
+  createImageUploadHandler,
+  createImageDeleteHandler,
 } from "@repo/shared";
 
-/**
- * Create a logo upload handler for the AuthUIProvider
- */
-export const createLogoUploadHandler = (
-  getUploadUrl: (params: {
-    fileName: string;
-    contentType?: string;
-  }) => Promise<GetUploadUrlResponse>,
-) => {
-  return async (file: File): Promise<string> => {
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      throw new Error("Please upload an image file");
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      throw new Error("Image size must be less than 5MB");
-    }
-
-    const { signedUrl, publicUrl } = await getUploadUrl({
-      fileName: file.name,
-      contentType: file.type,
-    });
-
-    const uploadResponse = await fetch(signedUrl, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": file.type,
-      },
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error("Failed to upload organization logo");
-    }
-
-    return publicUrl;
-  };
-};
+// ** import types
+import type { GetUploadUrlFn, DeleteFileFn } from "@repo/shared";
 
 /**
- * Create a logo delete handler for the AuthUIProvider
+ * Organization enforcement settings
+ *
+ * Controls whether users must belong to an organization to use the product.
+ * This should match the backend config in packages/auth/src/config/organization.ts
  */
-export const createLogoDeleteHandler = (
-  deleteFile: (params: { publicUrl: string }) => Promise<DeleteFileResponse>,
-) => {
-  return async (logoUrl: string): Promise<void> => {
-    await deleteFile({ publicUrl: logoUrl });
-  };
-};
+export const ORGANIZATION_CONFIG = {
+  /**
+   * If true, users MUST belong to an organization to use the product.
+   * Users without an organization will be redirected to onboarding to create one.
+   *
+   * If false, users can access the product without an organization.
+   *
+   * @default true
+   */
+  requireOrganization: true,
+} as const;
+
+/**
+ * Create logo upload handler using shared implementation
+ */
+export const createLogoUploadHandler = (getUploadUrl: GetUploadUrlFn) =>
+  createImageUploadHandler(getUploadUrl);
+
+/**
+ * Create logo delete handler using shared implementation
+ */
+export const createLogoDeleteHandler = (deleteFile: DeleteFileFn) =>
+  createImageDeleteHandler(deleteFile);
 
 /**
  * Get configuration for AuthUIProvider
  *
- * Combines user metadata fields and organization settings from @repo/shared.
+ * Simplified for the new onboarding flow - signup only requires name.
+ * Organization is created during onboarding.
  */
 export const getOrganizationProviderConfig = (options?: {
   logoUpload?: (file: File) => Promise<string>;
   logoDelete?: (filePath: string) => Promise<void>;
-  /** Disable organization features (for onboarding page) */
-  disableOrganization?: boolean;
 }) => {
-  // Get additional fields from shared config
-  const additionalFields = getUIUserFields();
-
-  // Add name field (always required for sign-up)
-  const allFields: Record<string, {
+  // Only name field is required for signup
+  // Organization details are captured during onboarding
+  const additionalFields: Record<string, {
     label: string;
     placeholder?: string;
     description?: string;
@@ -96,23 +70,12 @@ export const getOrganizationProviderConfig = (options?: {
       required: true,
       type: "string",
     },
-    ...additionalFields,
   };
 
-  // Skip organization config if disabled
-  if (options?.disableOrganization) {
-    return {
-      additionalFields: allFields,
-      signUp: {
-        fields: Object.keys(allFields),
-      },
-    };
-  }
-
   return {
-    additionalFields: allFields,
+    additionalFields,
     signUp: {
-      fields: Object.keys(allFields),
+      fields: ["name"],
     },
     organization: {
       logo: options?.logoUpload
