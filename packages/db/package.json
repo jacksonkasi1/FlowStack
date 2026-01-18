@@ -18,8 +18,8 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
-    "drizzle-orm": "^0.38.4",
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.7.1",
     "nanoid": "^5.1.5",
     "zod": "^3.24.4"
