@@ -53,3 +53,5 @@ yarn-error.log*
 *.tsbuildinfo
 
 .sisyphus
+.explorer/better-auth-ui
+opencode.json

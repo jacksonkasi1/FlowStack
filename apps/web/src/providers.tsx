@@ -44,7 +44,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const navigate = useNavigate();
 
-  const logoUploadHandler = createLogoUploadHandler(getUploadUrl, deleteFile);
+  const logoUploadHandler = createLogoUploadHandler(getUploadUrl);
   const logoDeleteHandler = createLogoDeleteHandler(deleteFile);
 
   return (

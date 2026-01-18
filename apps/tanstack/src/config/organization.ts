@@ -13,6 +13,16 @@ export interface OrganizationLogoConfig {
   enabled: boolean
 }
 
+export interface SignUpField {
+  key: string
+  label: string
+  placeholder?: string
+  description?: string
+  required?: boolean
+  type?: 'string' | 'number' | 'boolean' | 'select'
+  options?: { label: string; value: string }[]
+}
+
 export interface OrganizationRole {
   role: string
   label: string
@@ -26,11 +36,17 @@ export interface OrganizationConfig {
     members: string
     invitation: string
   }
+  signUpFields: SignUpField[]
+  navigation: {
+    showTeamLink: boolean
+    showOrganizationLink: boolean
+    showProfileLink: boolean
+  }
 }
 
 export const organizationConfig: OrganizationConfig = {
   logo: {
-    size: 256 * 1024,
+    size: 256, // Size in pixels (width x height)
     extension: ['png', 'jpg', 'jpeg', 'webp'],
     enabled: true,
   },
@@ -40,6 +56,21 @@ export const organizationConfig: OrganizationConfig = {
     members: '/organization/members',
     invitation: '/invitation',
   },
+  signUpFields: [
+    {
+      key: 'organizationName',
+      label: 'Organization Name',
+      placeholder: 'Enter your organization name',
+      description: 'This will be your workspace name',
+      required: true,
+      type: 'string',
+    },
+  ],
+  navigation: {
+    showTeamLink: true,
+    showOrganizationLink: true,
+    showProfileLink: true,
+  },
 }
 
 export const createLogoUploadHandler = (
@@ -47,15 +78,25 @@ export const createLogoUploadHandler = (
     fileName: string
     contentType?: string
   }) => Promise<GetUploadUrlResponse>,
-  deleteFile: (params: { filePath: string }) => Promise<DeleteFileResponse>,
 ) => {
   return async (file: File): Promise<string> => {
-    const { signedUrl, filePath } = await getUploadUrl({
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Please upload an image file')
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB')
+    }
+
+    const { signedUrl, publicUrl } = await getUploadUrl({
       fileName: file.name,
       contentType: file.type,
     })
 
-    await fetch(signedUrl, {
+    const uploadResponse = await fetch(signedUrl, {
       method: 'PUT',
       body: file,
       headers: {
@@ -63,15 +104,19 @@ export const createLogoUploadHandler = (
       },
     })
 
-    return filePath
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload organization logo')
+    }
+
+    return publicUrl
   }
 }
 
 export const createLogoDeleteHandler = (
-  deleteFile: (params: { filePath: string }) => Promise<DeleteFileResponse>,
+  deleteFile: (params: { publicUrl: string }) => Promise<DeleteFileResponse>,
 ) => {
-  return async (filePath: string): Promise<void> => {
-    await deleteFile({ filePath })
+  return async (logoUrl: string): Promise<void> => {
+    await deleteFile({ publicUrl: logoUrl })
   }
 }
 
@@ -79,15 +124,49 @@ export const getOrganizationProviderConfig = (options?: {
   logoUpload?: (file: File) => Promise<string>
   logoDelete?: (filePath: string) => Promise<void>
 }) => {
+  type FieldConfig = {
+    label: string
+    placeholder?: string
+    description?: string
+    required?: boolean
+    type: 'string'
+    options?: { label: string; value: string }[]
+  }
+
+  const additionalFields: Record<string, FieldConfig> = {}
+
+  additionalFields.name = {
+    label: 'Name',
+    placeholder: 'Enter your name',
+    required: true,
+    type: 'string',
+  }
+
+  for (const field of organizationConfig.signUpFields) {
+    additionalFields[field.key] = {
+      label: field.label,
+      placeholder: field.placeholder,
+      description: field.description,
+      required: field.required ?? false,
+      type: 'string',
+      ...(field.options && { options: field.options }),
+    }
+  }
+
   return {
-    logo: options?.logoUpload
-      ? {
+    additionalFields,
+    signUp: {
+      fields: Object.keys(additionalFields),
+    },
+    organization: {
+      logo: options?.logoUpload
+        ? {
           upload: options.logoUpload,
-          delete: options.logoDelete,
           size: organizationConfig.logo.size,
           extension: organizationConfig.logo.extension[0],
         }
-      : undefined,
-    customRoles: organizationConfig.customRoles,
+        : undefined,
+      customRoles: organizationConfig.customRoles,
+    },
   }
 }

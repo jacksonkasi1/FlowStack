@@ -8,6 +8,13 @@
       "when": 1768644903334,
       "tag": "0000_yellow_mach_iv",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768705838526,
+      "tag": "0001_sturdy_pyro",
+      "breakpoints": true
     }
   ]
 }

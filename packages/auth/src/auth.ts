@@ -1,12 +1,17 @@
 // ** import core packages
 import { db } from "@repo/db";
+import {
+  organization as organizationTable,
+  member as memberTable,
+} from "@repo/db";
+import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
   admin,
   bearer,
   magicLink,
-  organization,
+  organization as organizationPlugin,
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
@@ -23,6 +28,23 @@ import checkUserRole from "./utils/user-is-admin";
 
 // ** import types
 import type { Env } from "./types";
+
+/**
+ * Generate a URL-friendly slug from organization name
+ * Format: org-name-with-dashes-xxxx (4-char suffix)
+ */
+function generateOrganizationSlug(name: string): string {
+  const normalized = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "") // Remove special chars
+    .replace(/[\s_-]+/g, "-") // Replace spaces/underscores with dashes
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing dashes
+
+  // Generate a minimal 4-character random suffix
+  const randomId = Math.random().toString(36).substring(2, 6);
+  return `${normalized}-${randomId}`;
+}
 
 export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
   if (!env.BETTER_AUTH_URL) {
@@ -117,6 +139,17 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
+    user: {
+      additionalFields: {
+        organizationName: {
+          type: "string",
+          required: false,
+          returned: false,
+          input: true,
+        },
+      },
+    },
+
     advanced: {
       useSecureCookies: isSecure,
       cookiePrefix: "better-auth",
@@ -187,6 +220,83 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (session) => {
+            try {
+              // Get the user's first organization (as owner or member)
+              const userMemberships = await db
+                .select()
+                .from(memberTable)
+                .where(eq(memberTable.userId, session.userId))
+                .limit(1);
+
+              if (userMemberships.length > 0) {
+                return {
+                  data: {
+                    ...session,
+                    activeOrganizationId: userMemberships[0].organizationId,
+                  },
+                };
+              }
+
+              return { data: session };
+            } catch (error) {
+              logger.error(
+                `Failed to set active organization: ${error instanceof Error ? error.message : String(error)}`,
+              );
+              return { data: session };
+            }
+          },
+        },
+      },
+      user: {
+        create: {
+          after: async (user: {
+            id: string;
+            organizationName?: string;
+          }) => {
+            try {
+              // Check if user signed up with an organization name
+              const organizationName = user.organizationName;
+
+              if (organizationName) {
+                // Create organization with the provided name
+                const orgId = crypto.randomUUID();
+                const slug = generateOrganizationSlug(organizationName);
+
+                await db.insert(organizationTable).values({
+                  id: orgId,
+                  name: organizationName,
+                  slug,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
+
+                // Add user as owner of the organization
+                await db.insert(memberTable).values({
+                  id: crypto.randomUUID(),
+                  organizationId: orgId,
+                  userId: user.id,
+                  role: "owner",
+                  createdAt: new Date(),
+                });
+
+                logger.info(
+                  `Created organization "${organizationName}" (${slug}) for user ${user.id}`,
+                );
+              }
+            } catch (error) {
+              logger.error(
+                `Failed to create organization after user signup: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          },
+        },
+      },
+    },
+
     plugins: [
       bearer(),
       username(),
@@ -207,8 +317,13 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           });
         },
       }),
-      organization({
-        async sendInvitationEmail(data) {
+      organizationPlugin({
+        async sendInvitationEmail(data: {
+          id: string;
+          email: string;
+          organization: { name: string };
+          inviter: { user: { name: string; email: string } };
+        }) {
           const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}/${data.id}`;
 
           await sendOrganizationInvitation(env, {
@@ -228,7 +343,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           });
         },
 
-        allowUserToCreateOrganization: async (user) => {
+        allowUserToCreateOrganization: async (user: { id: string }) => {
           return await checkUserRole(user.id, env);
         },
       }),

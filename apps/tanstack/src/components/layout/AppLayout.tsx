@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react'
 
 // ** import lib
-import { UserButton, OrganizationSwitcher } from '@daveyplate/better-auth-ui'
+import { UserButton } from '@daveyplate/better-auth-ui'
 import { Link } from '@tanstack/react-router'
 
 // ** import components
@@ -16,21 +16,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b px-6 py-4 h-16">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <Link to="/dashboard">
             <h1 className="text-xl font-semibold hover:opacity-80 transition-opacity">
               FlowStack
             </h1>
           </Link>
-          <OrganizationSwitcher
-            trigger={
-              <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Switch Organization
-              </button>
-            }
-          />
+          <nav className="flex items-center gap-4">
+            <Link
+              to="/organization/members"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Team
+            </Link>
+            <Link
+              to="/organization/settings"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Organization
+            </Link>
+          </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/account/settings"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Profile
+          </Link>
           <ModeToggle />
           <UserButton size="icon" />
         </div>
