@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-// ** import config
-import { ONBOARDING_CONFIG } from "@/config/onboarding";
+// ** import utils
+import { authClient } from "@/lib/auth-client";
 
-// ** import rest-api
-import { checkOnboardingStatus } from "@/rest-api/onboarding";
+// ** import config
+import { ORGANIZATION_CONFIG } from "@/config/organization";
 
 interface RequireOnboardingProps {
     children: React.ReactNode;
@@ -14,7 +14,9 @@ interface RequireOnboardingProps {
 
 /**
  * Guard component that checks if user needs onboarding
- * Redirects to onboarding page if incomplete
+ * Redirects to onboarding page if:
+ * - User has shouldOnboard = true
+ * - User has no active organization AND requireOrganization is enabled
  */
 export function RequireOnboarding({ children }: RequireOnboardingProps) {
     const navigate = useNavigate();
@@ -22,34 +24,56 @@ export function RequireOnboarding({ children }: RequireOnboardingProps) {
     const [isChecking, setIsChecking] = useState(true);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
-    useEffect(() => {
-        // Skip check if onboarding is disabled
-        if (!ONBOARDING_CONFIG.enabled) {
-            setIsChecking(false);
-            return;
-        }
+    // Routes that bypass onboarding check
+    const bypassRoutes = [
+        "/auth",
+        "/onboarding",
+        "/reset-password",
+        "/invitation",
+        "/accept-invitation",
+    ];
 
+    useEffect(() => {
         // Skip check if on bypass route
         const currentPath = location.pathname;
-        const shouldBypass = ONBOARDING_CONFIG.bypassRoutes.some((route) => {
-            if (route.endsWith("/*")) {
-                return currentPath.startsWith(route.slice(0, -2));
-            }
-            return currentPath === route;
-        });
+        const shouldBypass = bypassRoutes.some((route) =>
+            currentPath.startsWith(route)
+        );
 
         if (shouldBypass) {
             setIsChecking(false);
             return;
         }
 
-        // Check onboarding status via API
+        // Check onboarding status via session
         const checkStatus = async () => {
             try {
-                const { shouldOnboard } = await checkOnboardingStatus();
-                if (shouldOnboard) {
+                // Force fresh fetch to get updated session data
+                const result = await authClient.getSession({
+                    fetchOptions: { cache: "no-store" },
+                });
+                const session = result.data?.session as any;
+                const user = result.data?.user as any;
+
+                // Check 1: User explicitly needs onboarding
+                if (user?.shouldOnboard) {
                     setNeedsOnboarding(true);
-                    navigate(ONBOARDING_CONFIG.onboardingPath);
+
+                    // Build redirect path from currentOnboardingStep
+                    const currentStep = user.currentOnboardingStep || "createOrganization";
+                    const stepPath = `/onboarding/${currentStep.replace(/([A-Z])/g, "-$1").toLowerCase().replace(/^-/, "")}`;
+
+                    navigate(stepPath, { replace: true });
+                    return;
+                }
+
+                // Check 2: User has no active organization AND requireOrganization is enabled
+                // This handles the edge case where user was removed from all organizations
+                if (ORGANIZATION_CONFIG.requireOrganization && !session?.activeOrganizationId) {
+                    // Force onboarding - user has no organization access
+                    setNeedsOnboarding(true);
+                    navigate("/onboarding/create-organization", { replace: true });
+                    return;
                 }
             } catch (error) {
                 console.error("Failed to check onboarding status:", error);
