@@ -59,16 +59,8 @@ export interface UserMetadataField {
  * ```
  */
 export const USER_METADATA_FIELDS: UserMetadataField[] = [
-    {
-        key: "organizationName",
-        label: "Organization Name",
-        placeholder: "Enter your organization name",
-        description: "This will be your workspace name",
-        required: true,
-        type: "string",
-        createsOrganization: true,
-        returned: false,
-    },
+    // Add custom signup fields here
+    // Organization creation is now handled via onboarding plugin
 ];
 
 // Type for the metadata object based on defined fields

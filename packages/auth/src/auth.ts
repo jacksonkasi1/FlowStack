@@ -429,3 +429,6 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 }
 
 export type { Session as AuthSession, User as AuthUser } from "better-auth";
+
+// Export type for auth instance (for client-side type inference)
+export type auth = ReturnType<typeof configureAuth>;

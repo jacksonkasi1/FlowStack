@@ -6,6 +6,8 @@ import { AuthUIProvider } from "@daveyplate/better-auth-ui";
 import { useNavigate, Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { onboardingClient } from "@better-auth-extended/onboarding/client";
+import type { auth } from "@repo/auth";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
