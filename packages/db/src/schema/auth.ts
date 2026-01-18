@@ -15,6 +15,9 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  // Onboarding plugin fields
+  shouldOnboard: boolean("should_onboard").default(true),
+  completedOnboardingSteps: text("completed_onboarding_steps"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
