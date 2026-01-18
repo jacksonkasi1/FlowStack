@@ -6,6 +6,7 @@ import {
 } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
   admin,
@@ -15,7 +16,10 @@ import {
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
-import { getOrganizationCreationFields } from "@repo/shared";
+import {
+  getOrganizationCreationFields,
+  getUserMetadataFieldKeys,
+} from "@repo/shared";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
@@ -140,8 +144,35 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
-    // Note: additionalFields removed - better-auth requires real columns for those
-    // Organization name is handled via frontend and user.create.after hook
+    // Capture additional fields from signup and inject into metadata
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/sign-up/email") {
+          const metadataFieldKeys = getUserMetadataFieldKeys();
+          const capturedMetadata: Record<string, unknown> = {};
+
+          // Capture configured fields from the signup body
+          for (const key of metadataFieldKeys) {
+            if (ctx.body?.[key]) {
+              capturedMetadata[key] = ctx.body[key];
+            }
+          }
+
+          // Inject metadata into the request body
+          if (Object.keys(capturedMetadata).length > 0) {
+            return {
+              context: {
+                ...ctx,
+                body: {
+                  ...ctx.body,
+                  metadata: capturedMetadata,
+                },
+              },
+            };
+          }
+        }
+      }),
+    },
 
     advanced: {
       useSecureCookies: isSecure,
@@ -249,18 +280,21 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           after: async (user: {
             id: string;
             metadata?: Record<string, unknown>;
-          } & Record<string, unknown>) => {
+          }) => {
             try {
-              // Check for organization creation fields from shared config
+              // Check for organization creation fields from metadata
               const orgCreationFields = getOrganizationCreationFields();
               let organizationName: string | undefined;
 
-              // Look for organization name in user object (passed from additionalFields)
-              for (const fieldKey of orgCreationFields) {
-                const value = user[fieldKey];
-                if (typeof value === "string" && value.trim()) {
-                  organizationName = value.trim();
-                  break;
+              // Look for organization name in user.metadata (captured by hooks.before)
+              const metadata = user.metadata;
+              if (metadata) {
+                for (const fieldKey of orgCreationFields) {
+                  const value = metadata[fieldKey];
+                  if (typeof value === "string" && value.trim()) {
+                    organizationName = value.trim();
+                    break;
+                  }
                 }
               }
 
