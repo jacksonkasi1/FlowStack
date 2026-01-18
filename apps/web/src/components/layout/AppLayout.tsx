@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 // ** import components
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -49,7 +50,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
+      <EmailVerificationBanner />
+
       <main className="flex-1">{children}</main>
     </div>
   );
 }
+

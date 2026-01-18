@@ -1,6 +1,3 @@
-// ** import lib
-import { Navigate } from "react-router-dom";
-
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
