@@ -2,71 +2,31 @@
  * Organization Configuration
  *
  * This file contains utilities for the AuthUIProvider organization settings.
- * For configurable options, see @repo/shared.
+ * Core handlers are imported from @repo/shared for reusability.
  */
-
-// ** import types
-import type { GetUploadUrlResponse } from '@/rest-api/storage/get-upload-url'
-import type { DeleteFileResponse } from '@/rest-api/storage/delete-file'
 
 // ** import shared config
 import {
   getUIUserFields,
   ORGANIZATION_LOGO,
+  createImageUploadHandler,
+  createImageDeleteHandler,
 } from '@repo/shared'
 
-/**
- * Create a logo upload handler for the AuthUIProvider
- */
-export const createLogoUploadHandler = (
-  getUploadUrl: (params: {
-    fileName: string
-    contentType?: string
-  }) => Promise<GetUploadUrlResponse>,
-) => {
-  return async (file: File): Promise<string> => {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      throw new Error('Please upload an image file')
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024
-    if (file.size > maxSize) {
-      throw new Error('Image size must be less than 5MB')
-    }
-
-    const { signedUrl, publicUrl } = await getUploadUrl({
-      fileName: file.name,
-      contentType: file.type,
-    })
-
-    const uploadResponse = await fetch(signedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-    })
-
-    if (!uploadResponse.ok) {
-      throw new Error('Failed to upload organization logo')
-    }
-
-    return publicUrl
-  }
-}
+// ** import types
+import type { GetUploadUrlFn, DeleteFileFn } from '@repo/shared'
 
 /**
- * Create a logo delete handler for the AuthUIProvider
+ * Create logo upload handler using shared implementation
  */
-export const createLogoDeleteHandler = (
-  deleteFile: (params: { publicUrl: string }) => Promise<DeleteFileResponse>,
-) => {
-  return async (logoUrl: string): Promise<void> => {
-    await deleteFile({ publicUrl: logoUrl })
-  }
-}
+export const createLogoUploadHandler = (getUploadUrl: GetUploadUrlFn) =>
+  createImageUploadHandler(getUploadUrl)
+
+/**
+ * Create logo delete handler using shared implementation
+ */
+export const createLogoDeleteHandler = (deleteFile: DeleteFileFn) =>
+  createImageDeleteHandler(deleteFile)
 
 /**
  * Get configuration for AuthUIProvider
@@ -76,6 +36,8 @@ export const createLogoDeleteHandler = (
 export const getOrganizationProviderConfig = (options?: {
   logoUpload?: (file: File) => Promise<string>
   logoDelete?: (filePath: string) => Promise<void>
+  /** Disable organization features (for onboarding page) */
+  disableOrganization?: boolean
 }) => {
   // Get additional fields from shared config
   const additionalFields = getUIUserFields()
@@ -95,6 +57,16 @@ export const getOrganizationProviderConfig = (options?: {
       type: 'string',
     },
     ...additionalFields,
+  }
+
+  // Skip organization config if disabled
+  if (options?.disableOrganization) {
+    return {
+      additionalFields: allFields,
+      signUp: {
+        fields: Object.keys(allFields),
+      },
+    }
   }
 
   return {

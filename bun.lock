@@ -82,6 +82,7 @@
       "dependencies": {
         "@better-auth-extended/onboarding": "^0.1.1",
         "@daveyplate/better-auth-ui": "^3.3.15",
+        "@radix-ui/react-label": "^2.1.8",
         "@radix-ui/react-slot": "^1.2.4",
         "@repo/logs": "*",
         "@repo/shared": "*",
@@ -114,12 +115,12 @@
       "name": "@repo/auth",
       "version": "1.0.0",
       "dependencies": {
-        "@better-auth-extended/onboarding": "^0.1.1",
         "@react-email/render": "^2.0.2",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/email-templates": "workspace:*",
         "@repo/logs": "workspace:*",
+        "@repo/onboarding": "workspace:*",
         "better-auth": "^1.4.15",
       },
       "devDependencies": {
@@ -179,6 +180,18 @@
       "devDependencies": {
         "@repo/typescript-config": "*",
         "typescript": "^5.7.2",
+      },
+    },
+    "packages/onboarding": {
+      "name": "@repo/onboarding",
+      "version": "1.0.0",
+      "dependencies": {
+        "better-auth": "^1.4.15",
+        "zod": "^3.23.8",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "*",
+        "@types/node": "^22",
       },
     },
     "packages/shared": {
@@ -805,6 +818,8 @@
     "@repo/eslint-config": ["@repo/eslint-config@workspace:packages/eslint-config"],
 
     "@repo/logs": ["@repo/logs@workspace:packages/logs"],
+
+    "@repo/onboarding": ["@repo/onboarding@workspace:packages/onboarding"],
 
     "@repo/shared": ["@repo/shared@workspace:packages/shared"],
 
