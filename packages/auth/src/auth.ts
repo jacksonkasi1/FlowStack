@@ -15,10 +15,7 @@ import {
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
-import {
-  getAuthUserFields,
-  getOrganizationCreationFields,
-} from "@repo/shared";
+import { getOrganizationCreationFields } from "@repo/shared";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
@@ -143,9 +140,8 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
-    user: {
-      additionalFields: getAuthUserFields(),
-    },
+    // Note: additionalFields removed - better-auth requires real columns for those
+    // Organization name is handled via frontend and user.create.after hook
 
     advanced: {
       useSecureCookies: isSecure,
