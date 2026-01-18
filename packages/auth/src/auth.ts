@@ -20,6 +20,7 @@ import {
   getOrganizationCreationFields,
   getUserMetadataFieldKeys,
 } from "@repo/shared";
+import { signupMetadataStore } from "./signup-metadata-store";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
@@ -144,10 +145,10 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
-    // Capture additional fields from signup and inject into metadata
+    // Capture additional fields from signup and store for databaseHooks
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path === "/sign-up/email") {
+        if (ctx.path === "/sign-up/email" && ctx.body?.email) {
           const metadataFieldKeys = getUserMetadataFieldKeys();
           const capturedMetadata: Record<string, unknown> = {};
 
@@ -158,17 +159,12 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
             }
           }
 
-          // Inject metadata into the request body
+          // Store metadata keyed by email for databaseHooks.user.create.before to retrieve
           if (Object.keys(capturedMetadata).length > 0) {
-            return {
-              context: {
-                ...ctx,
-                body: {
-                  ...ctx.body,
-                  metadata: capturedMetadata,
-                },
-              },
-            };
+            signupMetadataStore.set(ctx.body.email as string, {
+              metadata: capturedMetadata,
+              timestamp: Date.now(),
+            });
           }
         }
       }),
@@ -277,6 +273,20 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
       user: {
         create: {
+          before: async (user: { email: string; metadata?: Record<string, unknown> }) => {
+            // Retrieve and inject metadata stored by hooks.before
+            const storedEntry = signupMetadataStore.get(user.email);
+            if (storedEntry) {
+              signupMetadataStore.delete(user.email); // Clean up immediately
+              return {
+                data: {
+                  ...user,
+                  metadata: storedEntry.metadata,
+                },
+              };
+            }
+            return { data: user };
+          },
           after: async (user: {
             id: string;
             metadata?: Record<string, unknown>;
