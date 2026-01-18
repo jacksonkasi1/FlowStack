@@ -24,7 +24,7 @@
     "@repo/email": "workspace:*",
     "@repo/email-templates": "workspace:*",
     "@repo/logs": "workspace:*",
-    "better-auth": "^1.4.12"
+    "better-auth": "^1.4.15"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
