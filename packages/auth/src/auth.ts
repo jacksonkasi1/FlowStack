@@ -15,12 +15,13 @@ import {
   organization as organizationPlugin,
   username,
 } from "better-auth/plugins";
-import { logger } from "@repo/logs";
 import {
-  getOrganizationCreationFields,
-  getUserMetadataFieldKeys,
-} from "@repo/shared";
-import { signupMetadataStore } from "./signup-metadata-store";
+  onboarding,
+  createOnboardingStep,
+} from "@better-auth-extended/onboarding";
+import { z } from "zod";
+import { logger } from "@repo/logs";
+import { getOrganizationCreationFields } from "@repo/shared";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
@@ -145,30 +146,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
-    // Capture additional fields from signup and store for databaseHooks
-    hooks: {
-      before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path === "/sign-up/email" && ctx.body?.email) {
-          const metadataFieldKeys = getUserMetadataFieldKeys();
-          const capturedMetadata: Record<string, unknown> = {};
 
-          // Capture configured fields from the signup body
-          for (const key of metadataFieldKeys) {
-            if (ctx.body?.[key]) {
-              capturedMetadata[key] = ctx.body[key];
-            }
-          }
-
-          // Store metadata keyed by email for databaseHooks.user.create.before to retrieve
-          if (Object.keys(capturedMetadata).length > 0) {
-            signupMetadataStore.set(ctx.body.email as string, {
-              metadata: capturedMetadata,
-              timestamp: Date.now(),
-            });
-          }
-        }
-      }),
-    },
 
     advanced: {
       useSecureCookies: isSecure,
@@ -273,20 +251,6 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
       user: {
         create: {
-          before: async (user: { email: string; metadata?: Record<string, unknown> }) => {
-            // Retrieve and inject metadata stored by hooks.before
-            const storedEntry = signupMetadataStore.get(user.email);
-            if (storedEntry) {
-              signupMetadataStore.delete(user.email); // Clean up immediately
-              return {
-                data: {
-                  ...user,
-                  metadata: storedEntry.metadata,
-                },
-              };
-            }
-            return { data: user };
-          },
           after: async (user: {
             id: string;
             metadata?: Record<string, unknown>;
@@ -396,6 +360,70 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       }),
 
       admin(),
+
+      onboarding({
+        steps: {
+          createOrganization: createOnboardingStep({
+            input: z.object({
+              organizationName: z
+                .string()
+                .min(2, "Organization name must be at least 2 characters")
+                .max(100, "Organization name must be less than 100 characters"),
+            }) as any, // Type workaround for better-auth-extended compatibility
+            async handler(ctx) {
+              const { organizationName } = ctx.body;
+
+              // Onboarding runs after authentication, so session should exist
+              if (!ctx.context.session) {
+                throw ctx.error("UNAUTHORIZED", {
+                  message: "User must be authenticated to complete onboarding",
+                });
+              }
+
+              const userId = ctx.context.session.user.id;
+
+              try {
+                // Create organization
+                const orgId = crypto.randomUUID();
+                const slug = generateOrganizationSlug(organizationName);
+
+                await db.insert(organizationTable).values({
+                  id: orgId,
+                  name: organizationName,
+                  slug,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
+
+                // Add user as owner
+                await db.insert(memberTable).values({
+                  id: crypto.randomUUID(),
+                  organizationId: orgId,
+                  userId,
+                  role: "owner",
+                  createdAt: new Date(),
+                });
+
+                logger.info(
+                  `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
+                );
+
+                return { organizationId: orgId, organizationName, slug };
+              } catch (error) {
+                logger.error(
+                  `Failed to create organization during onboarding: ${error instanceof Error ? error.message : String(error)}`,
+                );
+                throw ctx.error("INTERNAL_SERVER_ERROR", {
+                  message: "Failed to create organization",
+                });
+              }
+            },
+            required: true,
+            once: true,
+          }),
+        },
+        completionStep: "createOrganization",
+      }) as any, // Type workaround for better-auth-extended compatibility
     ],
   });
 }
