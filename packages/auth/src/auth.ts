@@ -3,6 +3,8 @@ import { db } from "@repo/db";
 import {
   organization as organizationTable,
   member as memberTable,
+  session as sessionTable,
+  user as userTable,
 } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
@@ -15,16 +17,14 @@ import {
   organization as organizationPlugin,
   username,
 } from "better-auth/plugins";
-import {
-  onboarding,
-  createOnboardingStep,
-} from "@better-auth-extended/onboarding";
+import { onboarding, createOnboardingStep } from "@repo/onboarding";
 import { z } from "zod";
 import { logger } from "@repo/logs";
-import { getOrganizationCreationFields } from "@repo/shared";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
+import { CREATOR_ROLE } from "./config/roles";
+import { ORGANIZATION_CONFIG } from "./config/organization";
 
 // ** import utils
 import { sendMagicLink } from "./email/send-magic-link";
@@ -172,9 +172,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
     emailAndPassword: {
       enabled: true,
-      autoSignIn: false,
+      autoSignIn: true, // Auto sign-in after signup for immediate dashboard access
       minPasswordLength: 8,
-      requireEmailVerification: true,
+      requireEmailVerification: false, // Non-blocking - handled via banner in frontend
 
       sendResetPassword: async ({ user, url }) => {
         // Direct link to frontend reset password form with token
@@ -218,6 +218,112 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
+    hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        // Only run on get-session endpoint
+        if (ctx.path !== "/get-session") {
+          return;
+        }
+
+        // In after hooks, session might be in different places
+        const ctxSession = ctx.context.session as any;
+        const returnedData = (ctx.context as any).returned as any;
+
+        logger.info(`[hooks.after] get-session called. ctxSession exists: ${!!ctxSession}, returned exists: ${!!returnedData}`);
+
+        // Try to find session data from either location
+        const sessionData = ctxSession?.session || returnedData?.session;
+        const userData = ctxSession?.user || returnedData?.user;
+
+        // Skip if no session data or already has active org
+        if (!sessionData || sessionData.activeOrganizationId) {
+          logger.info(`[hooks.after] Skipping: sessionData=${!!sessionData}, activeOrg=${sessionData?.activeOrganizationId}`);
+          return;
+        }
+
+        if (!userData) {
+          logger.info(`[hooks.after] Skipping: no user data`);
+          return;
+        }
+
+        try {
+          // Get user's memberships
+          const memberships = await db
+            .select()
+            .from(memberTable)
+            .where(eq(memberTable.userId, userData.id));
+
+          logger.info(`[hooks.after] User ${userData.id} has ${memberships.length} org(s)`);
+
+          // If exactly 1 org, set it as active
+          if (memberships.length === 1) {
+            const orgId = memberships[0].organizationId;
+
+            // Update session in database
+            await db
+              .update(sessionTable)
+              .set({ activeOrganizationId: orgId })
+              .where(eq(sessionTable.id, sessionData.id));
+
+            logger.info(
+              `Auto-activated org ${orgId} for user ${userData.id} (single org fallback)`,
+            );
+          }
+
+          // Bidirectional sync between org membership and onboarding state
+          if (memberships.length > 0) {
+            // User HAS org membership - clear onboarding if set
+            const user = await db
+              .select({ shouldOnboard: userTable.shouldOnboard })
+              .from(userTable)
+              .where(eq(userTable.id, userData.id))
+              .limit(1);
+
+            if (user.length > 0 && user[0].shouldOnboard) {
+              // User has org but shouldOnboard is true - clear it
+              await db
+                .update(userTable)
+                .set({
+                  shouldOnboard: false,
+                  currentOnboardingStep: null,
+                })
+                .where(eq(userTable.id, userData.id));
+
+              logger.info(
+                `Cleared onboarding for user ${userData.id} (has organization membership)`,
+              );
+            }
+          } else if (ORGANIZATION_CONFIG.requireOrganization) {
+            // User has NO membership and requireOrganization is enabled - force onboarding
+            const user = await db
+              .select({ shouldOnboard: userTable.shouldOnboard })
+              .from(userTable)
+              .where(eq(userTable.id, userData.id))
+              .limit(1);
+
+            if (user.length > 0 && !user[0].shouldOnboard) {
+              // User has no org and onboarding is not set - re-enable it
+              await db
+                .update(userTable)
+                .set({
+                  shouldOnboard: true,
+                  currentOnboardingStep: "createOrganization",
+                })
+                .where(eq(userTable.id, userData.id));
+
+              logger.info(
+                `Re-enabled onboarding for user ${userData.id} (no organization membership)`,
+              );
+            }
+          }
+        } catch (error) {
+          logger.error(
+            `Failed to auto-set active org: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }),
+    },
+
     databaseHooks: {
       session: {
         create: {
@@ -245,63 +351,6 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
                 `Failed to set active organization: ${error instanceof Error ? error.message : String(error)}`,
               );
               return { data: session };
-            }
-          },
-        },
-      },
-      user: {
-        create: {
-          after: async (user: {
-            id: string;
-            metadata?: Record<string, unknown>;
-          }) => {
-            try {
-              // Check for organization creation fields from metadata
-              const orgCreationFields = getOrganizationCreationFields();
-              let organizationName: string | undefined;
-
-              // Look for organization name in user.metadata (captured by hooks.before)
-              const metadata = user.metadata;
-              if (metadata) {
-                for (const fieldKey of orgCreationFields) {
-                  const value = metadata[fieldKey];
-                  if (typeof value === "string" && value.trim()) {
-                    organizationName = value.trim();
-                    break;
-                  }
-                }
-              }
-
-              if (organizationName) {
-                // Create organization with the provided name
-                const orgId = crypto.randomUUID();
-                const slug = generateOrganizationSlug(organizationName);
-
-                await db.insert(organizationTable).values({
-                  id: orgId,
-                  name: organizationName,
-                  slug,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                });
-
-                // Add user as owner of the organization
-                await db.insert(memberTable).values({
-                  id: crypto.randomUUID(),
-                  organizationId: orgId,
-                  userId: user.id,
-                  role: "owner",
-                  createdAt: new Date(),
-                });
-
-                logger.info(
-                  `Created organization "${organizationName}" (${slug}) for user ${user.id}`,
-                );
-              }
-            } catch (error) {
-              logger.error(
-                `Failed to create organization after user signup: ${error instanceof Error ? error.message : String(error)}`,
-              );
             }
           },
         },
@@ -335,7 +384,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           organization: { name: string };
           inviter: { user: { name: string; email: string } };
         }) {
-          const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}/${data.id}`;
+          const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}?invitationId=${data.id}`;
 
           await sendOrganizationInvitation(env, {
             from: {
@@ -357,73 +406,163 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         allowUserToCreateOrganization: async (user: { id: string }) => {
           return await checkUserRole(user.id, env);
         },
+
+        // Organization hooks for handling invitation acceptance
+        organizationHooks: {
+          // When user accepts invitation, skip onboarding since they're joining an existing org
+          afterAcceptInvitation: async ({ user }) => {
+            try {
+              // Mark onboarding as complete - user joined via invitation, no need to create org
+              await db
+                .update(userTable)
+                .set({
+                  shouldOnboard: false,
+                  currentOnboardingStep: null,
+                })
+                .where(eq(userTable.id, user.id));
+
+              logger.info(
+                `Cleared onboarding for user ${user.id} after accepting invitation`,
+              );
+            } catch (error) {
+              logger.error(
+                `Failed to clear onboarding after invitation: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          },
+        },
       }),
 
       admin(),
 
+      // Onboarding plugin with multi-step wizard
       onboarding({
         steps: {
+          // Step 1: Create organization (required)
           createOrganization: createOnboardingStep({
             input: z.object({
               organizationName: z
                 .string()
                 .min(2, "Organization name must be at least 2 characters")
                 .max(100, "Organization name must be less than 100 characters"),
-            }) as any, // Type workaround for better-auth-extended compatibility
+              logo: z.string().optional(),
+            }),
             async handler(ctx) {
-              const { organizationName } = ctx.body;
+              const { organizationName, logo } = ctx.body;
+              const session = ctx.context.session;
 
-              // Onboarding runs after authentication, so session should exist
-              if (!ctx.context.session) {
-                throw ctx.error("UNAUTHORIZED", {
-                  message: "User must be authenticated to complete onboarding",
-                });
+              if (!session) {
+                throw new Error("User must be authenticated");
               }
 
-              const userId = ctx.context.session.user.id;
+              const userId = session.user.id;
 
-              try {
-                // Create organization
-                const orgId = crypto.randomUUID();
-                const slug = generateOrganizationSlug(organizationName);
+              // Create organization
+              const orgId = crypto.randomUUID();
+              const slug = generateOrganizationSlug(organizationName);
 
-                await db.insert(organizationTable).values({
-                  id: orgId,
-                  name: organizationName,
-                  slug,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                });
+              await db.insert(organizationTable).values({
+                id: orgId,
+                name: organizationName,
+                slug,
+                logo: logo || null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
 
-                // Add user as owner
-                await db.insert(memberTable).values({
-                  id: crypto.randomUUID(),
-                  organizationId: orgId,
-                  userId,
-                  role: "owner",
-                  createdAt: new Date(),
-                });
+              // Add user as owner
+              await db.insert(memberTable).values({
+                id: crypto.randomUUID(),
+                organizationId: orgId,
+                userId,
+                role: CREATOR_ROLE,
+                createdAt: new Date(),
+              });
 
-                logger.info(
-                  `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
-                );
+              logger.info(
+                `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
+              );
 
-                return { organizationId: orgId, organizationName, slug };
-              } catch (error) {
-                logger.error(
-                  `Failed to create organization during onboarding: ${error instanceof Error ? error.message : String(error)}`,
-                );
-                throw ctx.error("INTERNAL_SERVER_ERROR", {
-                  message: "Failed to create organization",
-                });
+              // Set the new org as active in the current session
+              if (session.session?.id) {
+                await db
+                  .update(sessionTable)
+                  .set({ activeOrganizationId: orgId })
+                  .where(eq(sessionTable.id, session.session.id));
+
+                logger.info(`Set org ${orgId} as active for session ${session.session.id}`);
               }
+
+              return { organizationId: orgId, organizationName, slug };
             },
             required: true,
             once: true,
+            order: 1,
+          }),
+
+          // Step 2: Invite members (optional, can be skipped)
+          inviteMembers: createOnboardingStep({
+            input: z.object({
+              emails: z.array(z.string().email()).optional(),
+            }),
+            async handler(ctx) {
+              const { emails } = ctx.body;
+              const session = ctx.context.session;
+
+              if (!session || !emails || emails.length === 0) {
+                return { invited: [] };
+              }
+
+              // Get user's organization
+              const membership = await db
+                .select()
+                .from(memberTable)
+                .where(eq(memberTable.userId, session.user.id))
+                .limit(1);
+
+              if (membership.length === 0) {
+                return { invited: [] };
+              }
+
+              // Invitations will be handled by the organization plugin
+              // This step just marks completion
+              logger.info(
+                `User ${session.user.id} completed invite step with ${emails.length} emails`,
+              );
+
+              return { invited: emails };
+            },
+            required: false, // Can be skipped
+            once: true,
+            order: 2,
           }),
         },
-        completionStep: "createOrganization",
-      }) as any, // Type workaround for better-auth-extended compatibility
+        completionStep: "inviteMembers",
+        onboardingPath: "/onboarding",
+
+        // Skip onboarding for users signing up via invitation link
+        // They will join an existing organization, not create a new one
+        autoEnableOnSignUp: (ctx) => {
+          try {
+            // Check if signup includes a redirect to invitation acceptance
+            const url = ctx.request?.url;
+            if (!url) return true;
+
+            const urlObj = new URL(url);
+            const redirectTo = urlObj.searchParams.get("redirectTo") || "";
+
+            // If redirecting to accept-invitation, skip onboarding
+            if (redirectTo.includes("/accept-invitation")) {
+              logger.info("Skipping onboarding for user signing up via invitation");
+              return false;
+            }
+
+            return true;
+          } catch {
+            return true;
+          }
+        },
+      }),
     ],
   });
 }
