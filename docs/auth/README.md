@@ -7,6 +7,7 @@ Quick reference guides for FlowStack authentication setup using [Better Auth](ht
 | Topic                                       | Description                                                 |
 | ------------------------------------------- | ----------------------------------------------------------- |
 | [Configuration](./configuration.md)         | ⭐ Centralized config reference (URLs, redirects, env vars) |
+| [User Metadata](./user-metadata.md)         | ⭐ Adding custom fields to user signup                      |
 | [Protected Routes](./protected-routes.md)   | Protect pages requiring authentication                      |
 | [OAuth Redirects](./oauth-redirects.md)     | Handle redirects after Google/social login                  |
 | [Adding Providers](./adding-providers.md)   | Add new OAuth providers (GitHub, Discord, etc.)             |

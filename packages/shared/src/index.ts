@@ -3,6 +3,7 @@ export * from "./types/index";
 
 // ** import shared config
 export * from "./config/settings";
+export * from "./config/user-metadata";
 
 // Shared utilities can be added here
 export const sharedUtility = () => {

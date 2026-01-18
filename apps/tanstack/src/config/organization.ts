@@ -7,21 +7,21 @@
 import type { GetUploadUrlResponse } from '@/rest-api/storage/get-upload-url'
 import type { DeleteFileResponse } from '@/rest-api/storage/delete-file'
 
+// ** import shared config
+import {
+  USER_METADATA_FIELDS,
+  getUIUserFields,
+  type UserMetadataField,
+} from '@repo/shared'
+
 export interface OrganizationLogoConfig {
   size: number
   extension: string[]
   enabled: boolean
 }
 
-export interface SignUpField {
-  key: string
-  label: string
-  placeholder?: string
-  description?: string
-  required?: boolean
-  type?: 'string' | 'number' | 'boolean' | 'select'
-  options?: { label: string; value: string }[]
-}
+// Re-export for backward compatibility
+export type SignUpField = UserMetadataField
 
 export interface OrganizationRole {
   role: string
@@ -56,16 +56,8 @@ export const organizationConfig: OrganizationConfig = {
     members: '/organization/members',
     invitation: '/invitation',
   },
-  signUpFields: [
-    {
-      key: 'organizationName',
-      label: 'Organization Name',
-      placeholder: 'Enter your organization name',
-      description: 'This will be your workspace name',
-      required: true,
-      type: 'string',
-    },
-  ],
+  // Use shared user metadata fields for sign-up
+  signUpFields: USER_METADATA_FIELDS,
   navigation: {
     showTeamLink: true,
     showOrganizationLink: true,
@@ -124,39 +116,30 @@ export const getOrganizationProviderConfig = (options?: {
   logoUpload?: (file: File) => Promise<string>
   logoDelete?: (filePath: string) => Promise<void>
 }) => {
-  type FieldConfig = {
+  // Get additional fields from shared config
+  const additionalFields = getUIUserFields()
+
+  // Add name field (always required for sign-up)
+  const allFields: Record<string, {
     label: string
     placeholder?: string
     description?: string
     required?: boolean
     type: 'string'
-    options?: { label: string; value: string }[]
-  }
-
-  const additionalFields: Record<string, FieldConfig> = {}
-
-  additionalFields.name = {
-    label: 'Name',
-    placeholder: 'Enter your name',
-    required: true,
-    type: 'string',
-  }
-
-  for (const field of organizationConfig.signUpFields) {
-    additionalFields[field.key] = {
-      label: field.label,
-      placeholder: field.placeholder,
-      description: field.description,
-      required: field.required ?? false,
+  }> = {
+    name: {
+      label: 'Name',
+      placeholder: 'Enter your name',
+      required: true,
       type: 'string',
-      ...(field.options && { options: field.options }),
-    }
+    },
+    ...additionalFields,
   }
 
   return {
-    additionalFields,
+    additionalFields: allFields,
     signUp: {
-      fields: Object.keys(additionalFields),
+      fields: Object.keys(allFields),
     },
     organization: {
       logo: options?.logoUpload

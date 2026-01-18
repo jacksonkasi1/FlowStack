@@ -1,5 +1,5 @@
 // ** import core packages
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = ["super_admin", "admin", "user"] as const;
 export type UserRole = (typeof userRoleEnum)[number];
@@ -10,7 +10,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
-  organizationName: text("organizationName"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   role: text("role").$type<UserRole>().notNull().default("user"),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),

@@ -15,6 +15,10 @@ import {
   username,
 } from "better-auth/plugins";
 import { logger } from "@repo/logs";
+import {
+  getAuthUserFields,
+  getOrganizationCreationFields,
+} from "@repo/shared";
 
 // ** import config
 import { AUTH_REDIRECTS } from "./config/redirects";
@@ -140,14 +144,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
     },
 
     user: {
-      additionalFields: {
-        organizationName: {
-          type: "string",
-          required: false,
-          returned: false,
-          input: true,
-        },
-      },
+      additionalFields: getAuthUserFields(),
     },
 
     advanced: {
@@ -255,11 +252,21 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         create: {
           after: async (user: {
             id: string;
-            organizationName?: string;
-          }) => {
+            metadata?: Record<string, unknown>;
+          } & Record<string, unknown>) => {
             try {
-              // Check if user signed up with an organization name
-              const organizationName = user.organizationName;
+              // Check for organization creation fields from shared config
+              const orgCreationFields = getOrganizationCreationFields();
+              let organizationName: string | undefined;
+
+              // Look for organization name in user object (passed from additionalFields)
+              for (const fieldKey of orgCreationFields) {
+                const value = user[fieldKey];
+                if (typeof value === "string" && value.trim()) {
+                  organizationName = value.trim();
+                  break;
+                }
+              }
 
               if (organizationName) {
                 // Create organization with the provided name

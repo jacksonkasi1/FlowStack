@@ -15,6 +15,10 @@
     "./config/settings": {
       "import": "./src/config/settings.ts",
       "types": "./src/config/settings.ts"
+    },
+    "./config/user-metadata": {
+      "import": "./src/config/user-metadata.ts",
+      "types": "./src/config/user-metadata.ts"
     }
   },
   "scripts": {
