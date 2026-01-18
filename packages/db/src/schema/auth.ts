@@ -17,7 +17,8 @@ export const user = pgTable("user", {
   banExpires: timestamp("ban_expires"),
   // Onboarding plugin fields
   shouldOnboard: boolean("should_onboard").default(true),
-  completedOnboardingSteps: text("completed_onboarding_steps"),
+  currentOnboardingStep: text("current_onboarding_step"), // Current step in onboarding flow
+  completedOnboardingSteps: text("completed_onboarding_steps"), // JSON array of completed step IDs
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

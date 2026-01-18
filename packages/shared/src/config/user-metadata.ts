@@ -13,7 +13,6 @@
  * 🔒 CORE FUNCTIONS (DO NOT EDIT):
  * - getAuthUserFields()
  * - getUIUserFields()
- * - getOrganizationCreationFields()
  * - getUserMetadataFieldKeys()
  * These are internal helpers used by the system.
  */
@@ -59,8 +58,8 @@ export interface UserMetadataField {
  * ```
  */
 export const USER_METADATA_FIELDS: UserMetadataField[] = [
-    // Add custom signup fields here
-    // Organization creation is now handled via onboarding plugin
+    // Organization is now created during onboarding, not signup
+    // Add any additional metadata fields you want to capture during signup here
 ];
 
 // Type for the metadata object based on defined fields
@@ -155,18 +154,6 @@ export function getUIUserFields(): Record<
     }
 
     return fields;
-}
-
-/**
- * 🔒 CORE FUNCTION - DO NOT EDIT
- *
- * Get field keys that trigger organization creation
- *
- * @internal
- * @returns Array of field keys that have `createsOrganization: true`
- */
-export function getOrganizationCreationFields(): string[] {
-    return USER_METADATA_FIELDS.filter((f) => f.createsOrganization).map((f) => f.key);
 }
 
 /**
