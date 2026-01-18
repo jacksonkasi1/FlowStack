@@ -4,6 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+// ** import config
+import { AUTH_REDIRECTS } from "@/config/redirects";
+
+// ** import rest-api
+import { completeOnboardingStep } from "@/rest-api/onboarding";
+
 export default function Onboarding() {
     const navigate = useNavigate();
     const [organizationName, setOrganizationName] = useState("");
@@ -20,27 +26,13 @@ export default function Onboarding() {
         setIsLoading(true);
 
         try {
-            // Call the onboarding API directly
-            const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-            const response = await fetch(`${baseURL}/api/auth/onboarding/complete-step`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    stepId: "createOrganization",
-                    data: { organizationName: organizationName.trim() },
-                }),
+            // Complete the onboarding step via API
+            await completeOnboardingStep("createOrganization", {
+                organizationName: organizationName.trim(),
             });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || "Failed to create organization");
-            }
-
             toast.success("Organization created successfully!");
-            navigate("/dashboard");
+            navigate(AUTH_REDIRECTS.afterLogin);
         } catch (error) {
             console.error("Failed to create organization:", error);
             toast.error(

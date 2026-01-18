@@ -1,8 +1,11 @@
 /**
  * Onboarding Configuration
- * 
+ *
  * Controls whether users are required to complete onboarding before accessing the app.
  */
+
+// ** import config
+import { AUTH_REDIRECTS } from "@/config/redirects";
 
 export const ONBOARDING_CONFIG = {
     /**
@@ -12,16 +15,16 @@ export const ONBOARDING_CONFIG = {
     enabled: true,
 
     /**
-     * Redirect path for onboarding
+     * Redirect path for onboarding (from centralized config)
      */
-    onboardingPath: "/onboarding",
+    onboardingPath: AUTH_REDIRECTS.onboarding,
 
     /**
      * Routes that should bypass onboarding check
      * Users can access these even without completing onboarding
      */
     bypassRoutes: [
-        "/onboarding",
+        AUTH_REDIRECTS.onboarding,
         "/auth/*",
         "/reset-password",
         "/invitation/*",

@@ -3,18 +3,20 @@ import { createAuthClient } from "better-auth/react";
 import { organizationClient, adminClient } from "better-auth/client/plugins";
 import { onboardingClient } from "@better-auth-extended/onboarding/client";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// ** import config
+import { APP_URLS } from "@/config/urls";
+import { AUTH_REDIRECTS } from "@/config/redirects";
 
 export const authClient = createAuthClient({
-  baseURL,
+  baseURL: APP_URLS.api,
   plugins: [
     organizationClient(),
     adminClient(),
-    // Use without type parameter - type inference doesn't work across packages
+    // Note: Using 'as any' workaround for type compatibility
     onboardingClient({
       onOnboardingRedirect: () => {
-        window.location.href = "/onboarding";
+        window.location.href = AUTH_REDIRECTS.onboarding;
       },
-    }) as any, // Type workaround
+    }) as any,
   ],
 });

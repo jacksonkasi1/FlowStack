@@ -5,6 +5,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 // ** import config
 import { ONBOARDING_CONFIG } from "@/config/onboarding";
 
+// ** import rest-api
+import { checkOnboardingStatus } from "@/rest-api/onboarding";
+
 interface RequireOnboardingProps {
     children: React.ReactNode;
 }
@@ -40,20 +43,13 @@ export function RequireOnboarding({ children }: RequireOnboardingProps) {
             return;
         }
 
-        // Check onboarding status
-        const checkOnboardingStatus = async () => {
+        // Check onboarding status via API
+        const checkStatus = async () => {
             try {
-                const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-                const response = await fetch(`${baseURL}/api/auth/onboarding/should-onboard`, {
-                    credentials: "include",
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.shouldOnboard) {
-                        setNeedsOnboarding(true);
-                        navigate(ONBOARDING_CONFIG.onboardingPath);
-                    }
+                const { shouldOnboard } = await checkOnboardingStatus();
+                if (shouldOnboard) {
+                    setNeedsOnboarding(true);
+                    navigate(ONBOARDING_CONFIG.onboardingPath);
                 }
             } catch (error) {
                 console.error("Failed to check onboarding status:", error);
@@ -62,7 +58,7 @@ export function RequireOnboarding({ children }: RequireOnboardingProps) {
             }
         };
 
-        checkOnboardingStatus();
+        checkStatus();
     }, [navigate, location.pathname]);
 
     // Show loading state while checking
