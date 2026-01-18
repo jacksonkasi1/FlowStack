@@ -27,7 +27,7 @@ export const deleteFile = async (
     try {
       const url = new URL(params.publicUrl);
       filePath = url.pathname.substring(1); // Remove leading slash
-    } catch (error) {
+    } catch {
       throw new Error("Invalid public URL provided");
     }
   }
