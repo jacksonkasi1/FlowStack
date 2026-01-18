@@ -10,6 +10,10 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
+/**
+ * Protects routes - requires user to be signed in
+ * Does NOT check onboarding status - use RequireOnboarding for that
+ */
 export function ProtectedRoute({
   children,
   redirectTo = "/auth/sign-in",
