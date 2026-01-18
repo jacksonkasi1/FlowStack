@@ -10,9 +10,9 @@ import { AUTH_REDIRECTS } from "@/config/redirects";
 export const ONBOARDING_CONFIG = {
     /**
      * Enable/disable onboarding requirement
-     * Set to false to allow users to skip onboarding
+     * Set to false since organization is created during signup
      */
-    enabled: true,
+    enabled: false,
 
     /**
      * Redirect path for onboarding (from centralized config)

@@ -6,24 +6,16 @@ import { AuthUIProvider } from "@daveyplate/better-auth-ui";
 import { useNavigate, Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { onboardingClient } from "@better-auth-extended/onboarding/client";
-import type { auth } from "@repo/auth";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
 
 // ** import config
 import { APP_URLS } from "@/config/urls";
-import {
-  getOrganizationProviderConfig,
-  createLogoUploadHandler,
-  createLogoDeleteHandler,
-} from "@/config/organization";
+import { getOrganizationProviderConfig } from "@/config/organization";
 
 // ** import rest-api
 import { deleteAvatar, uploadAvatar } from "@/rest-api/storage";
-import { getUploadUrl } from "@/rest-api/storage/get-upload-url";
-import { deleteFile } from "@/rest-api/storage/delete-file";
 
 interface LinkWrapperProps {
   href: string;
@@ -46,8 +38,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   const navigate = useNavigate();
 
-  const logoUploadHandler = createLogoUploadHandler(getUploadUrl);
-  const logoDeleteHandler = createLogoDeleteHandler(deleteFile);
+  // Get organization provider config (simplified - only name field for signup)
+  const orgConfig = getOrganizationProviderConfig();
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="flowstack-ui-theme">
@@ -55,6 +47,7 @@ export function Providers({ children }: ProvidersProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         authClient={authClient as any}
         baseURL={APP_URLS.frontend}
+        redirectTo="/dashboard"
         navigate={navigate}
         Link={LinkWrapper}
         social={{
@@ -68,10 +61,8 @@ export function Providers({ children }: ProvidersProps) {
           upload: uploadAvatar,
           delete: deleteAvatar,
         }}
-        {...getOrganizationProviderConfig({
-          logoUpload: logoUploadHandler,
-          logoDelete: logoDeleteHandler,
-        })}
+        additionalFields={orgConfig.additionalFields}
+        signUp={orgConfig.signUp}
       >
         {children}
         <Toaster />
