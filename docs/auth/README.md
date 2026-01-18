@@ -4,16 +4,17 @@ Quick reference guides for FlowStack authentication setup using [Better Auth](ht
 
 ## Quick Links
 
-| Topic                                       | Description                                                 |
-| ------------------------------------------- | ----------------------------------------------------------- |
-| [Configuration](./configuration.md)         | ⭐ Centralized config reference (URLs, redirects, env vars) |
-| [User Metadata](./user-metadata.md)         | ⭐ Adding custom fields to user signup                      |
-| [Protected Routes](./protected-routes.md)   | Protect pages requiring authentication                      |
-| [OAuth Redirects](./oauth-redirects.md)     | Handle redirects after Google/social login                  |
-| [Adding Providers](./adding-providers.md)   | Add new OAuth providers (GitHub, Discord, etc.)             |
-| [Cross-Domain Auth](./cross-domain-auth.md) | Multi-subdomain & cross-domain login                        |
-| [Email Templates](./email-templates.md)     | Customize verification & reset emails                       |
-| [Troubleshooting](./troubleshooting.md)     | Common issues and solutions                                 |
+| Topic                                                     | Description                                                 |
+| --------------------------------------------------------- | ----------------------------------------------------------- |
+| [Configuration](./configuration.md)                       | ⭐ Centralized config reference (URLs, redirects, env vars) |
+| [User Metadata](./user-metadata.md)                       | ⭐ Adding custom fields to user signup                      |
+| [Organization Invitations](./organization-invitations.md) | ⭐ Invitation flow, hooks, and membership enforcement       |
+| [Protected Routes](./protected-routes.md)                 | Protect pages requiring authentication                      |
+| [OAuth Redirects](./oauth-redirects.md)                   | Handle redirects after Google/social login                  |
+| [Adding Providers](./adding-providers.md)                 | Add new OAuth providers (GitHub, Discord, etc.)             |
+| [Cross-Domain Auth](./cross-domain-auth.md)               | Multi-subdomain & cross-domain login                        |
+| [Email Templates](./email-templates.md)                   | Customize verification & reset emails                       |
+| [Troubleshooting](./troubleshooting.md)                   | Common issues and solutions                                 |
 
 ---
 
