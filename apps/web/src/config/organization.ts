@@ -76,6 +76,8 @@ export const createLogoDeleteHandler = (
 export const getOrganizationProviderConfig = (options?: {
   logoUpload?: (file: File) => Promise<string>;
   logoDelete?: (filePath: string) => Promise<void>;
+  /** Disable organization features (for onboarding page) */
+  disableOrganization?: boolean;
 }) => {
   // Get additional fields from shared config
   const additionalFields = getUIUserFields();
@@ -96,6 +98,16 @@ export const getOrganizationProviderConfig = (options?: {
     },
     ...additionalFields,
   };
+
+  // Skip organization config if disabled
+  if (options?.disableOrganization) {
+    return {
+      additionalFields: allFields,
+      signUp: {
+        fields: Object.keys(allFields),
+      },
+    };
+  }
 
   return {
     additionalFields: allFields,
