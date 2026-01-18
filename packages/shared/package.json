@@ -19,6 +19,10 @@
     "./config/user-metadata": {
       "import": "./src/config/user-metadata.ts",
       "types": "./src/config/user-metadata.ts"
+    },
+    "./config/organization": {
+      "import": "./src/config/organization.ts",
+      "types": "./src/config/organization.ts"
     }
   },
   "scripts": {

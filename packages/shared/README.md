@@ -31,6 +31,22 @@ import { USER_METADATA_FIELDS, getAuthUserFields } from '@repo/shared';
 
 ---
 
+### Organization Configuration
+
+**File:** `src/config/organization.ts`
+
+Shared organization settings like logo upload config and custom roles.
+
+```typescript
+import { ORGANIZATION_LOGO, ORGANIZATION_ROLES } from '@repo/shared';
+```
+
+**To configure:**
+- `ORGANIZATION_LOGO` - logo dimensions and allowed extensions
+- `ORGANIZATION_ROLES` - custom roles beyond default owner/admin/member
+
+---
+
 ### UI Settings
 
 **File:** `src/config/settings.ts`
