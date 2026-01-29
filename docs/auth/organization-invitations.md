@@ -1,6 +1,18 @@
 # Organization Invitations
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 15 min | **Prerequisites:** [Onboarding](./onboarding.md)
+
 Guide for implementing and customizing the organization invitation flow.
+
+---
+
+## What You'll Learn
+
+- ✅ Implement organization invitation system
+- ✅ Handle invitation acceptance for new and existing users
+- ✅ Configure organization membership requirements
+
+---
 
 ## Overview
 

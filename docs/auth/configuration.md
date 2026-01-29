@@ -1,6 +1,19 @@
 # Configuration Reference
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 10 min | **Prerequisites:** [Quick Start](../getting-started/quickstart.md)
+
 Centralized configuration files for authentication setup.
+
+---
+
+## What You'll Learn
+
+- ✅ Understand all configuration files
+- ✅ Change redirect paths
+- ✅ Customize URLs for different environments
+- ✅ Configure organization requirements
+
+---
 
 ## Configuration Files
 

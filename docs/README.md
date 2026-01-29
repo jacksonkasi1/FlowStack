@@ -34,7 +34,7 @@ Advanced customization and production patterns:
 
 1. [Cross-Domain Auth](./auth/cross-domain-auth.md) — Multi-subdomain login
 2. [User Metadata](./auth/user-metadata.md) — Custom user fields
-3. [Custom Plugins](./advanced/custom-plugins.md) — Extend the system
+3. [Better Auth Plugins](https://www.better-auth.com/docs/plugins/overview) — Extend the system
 
 ---
 

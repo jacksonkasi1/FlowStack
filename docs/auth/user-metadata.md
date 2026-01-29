@@ -1,6 +1,18 @@
 # User Metadata Configuration
 
+> **Level:** 🔴 Advanced | **Time:** ⏱️ 15 min | **Prerequisites:** [Configuration](./configuration.md)
+
 This guide explains how to configure additional user fields that are captured during signup.
+
+---
+
+## What You'll Learn
+
+- ✅ Add custom fields to user signup
+- ✅ Configure metadata storage
+- ✅ Use centralized user field configuration
+
+---
 
 ## Overview
 

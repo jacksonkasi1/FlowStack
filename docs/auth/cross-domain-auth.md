@@ -1,6 +1,18 @@
 # Cross-Domain Authentication
 
+> **Level:** 🔴 Advanced | **Time:** ⏱️ 20 min | **Prerequisites:** [Configuration](./configuration.md)
+
 Configure auth for multi-subdomain or cross-domain setups.
+
+---
+
+## What You'll Learn
+
+- ✅ Set up authentication across multiple domains
+- ✅ Configure cookie sharing for subdomains
+- ✅ Handle CORS for cross-domain requests
+
+---
 
 ## Use Cases
 
@@ -78,5 +90,4 @@ app.use(
 
 ## References
 
-- [Better Auth Trusted Origins](https://www.better-auth.com/docs/reference/options#trustedorigins)
-- [Cookie Configuration](https://www.better-auth.com/docs/reference/options#advanced)
+- [Better Auth Documentation](https://www.better-auth.com/docs)

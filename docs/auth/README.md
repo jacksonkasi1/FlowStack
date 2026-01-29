@@ -75,7 +75,6 @@ Deep customization for complex requirements:
 ## 🔗 External References
 
 - 📚 [Better Auth Docs](https://www.better-auth.com/docs)
-- 📚 [Better Auth UI Docs](https://www.better-auth.com/docs/integrations/ui-libraries)
 - 🔧 [OAuth Concepts](https://www.better-auth.com/docs/concepts/oauth)
 - 🔧 [Social Providers Options](https://www.better-auth.com/docs/reference/options#socialproviders)
 

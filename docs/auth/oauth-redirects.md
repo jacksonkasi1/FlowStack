@@ -1,6 +1,18 @@
 # OAuth Redirects
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 10 min | **Prerequisites:** [Configuration](./configuration.md)
+
 How to configure redirects after social login (Google, GitHub, etc.).
+
+---
+
+## What You'll Learn
+
+- ✅ Fix OAuth redirect issues
+- ✅ Configure frontend URL for callbacks
+- ✅ Use centralized redirect configuration
+
+---
 
 ## The Problem
 
