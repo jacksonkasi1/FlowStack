@@ -5,6 +5,8 @@ export * from "./types/index";
 export * from "./config/settings";
 export * from "./config/user-metadata";
 export * from "./config/organization";
+export * from "./config/auth-mode";
+
 
 // ** import storage utilities
 export * from "./storage";

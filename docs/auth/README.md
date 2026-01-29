@@ -12,8 +12,10 @@ Start here if you're new to FlowStack auth:
 
 | Guide | Time | Description |
 |-------|------|-------------|
+| [Auth Modes](./auth-modes.md) | ⏱️ 10 min | Switch between simple and organization auth |
 | [Protected Routes](./protected-routes.md) | ⏱️ 5 min | Protect pages requiring authentication |
 | [Configuration](./configuration.md) | ⏱️ 10 min | Centralized config reference |
+
 
 ### 🟡 Intermediate
 

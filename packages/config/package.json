@@ -23,6 +23,10 @@
     "./config/organization": {
       "import": "./src/config/organization.ts",
       "types": "./src/config/organization.ts"
+    },
+    "./config/auth-mode": {
+      "import": "./src/config/auth-mode.ts",
+      "types": "./src/config/auth-mode.ts"
     }
   },
   "scripts": {
