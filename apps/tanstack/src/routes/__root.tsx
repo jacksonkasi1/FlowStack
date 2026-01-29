@@ -12,7 +12,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Toaster } from 'sonner'
 
 // ** import components
-import { RequireOnboarding } from '@/components/auth/RequireOnboarding'
+import { RequireOnboarding } from '@repo/auth-ui/guards/tanstack-router'
 
 // ** import utils
 import { Providers } from '../providers'

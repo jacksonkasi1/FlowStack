@@ -17,7 +17,7 @@
     "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/logs": "workspace:*",
-    "@repo/shared": "workspace:*",
+    "@repo/config": "workspace:*",
     "@repo/storage": "workspace:*",
     "@t3-oss/env-core": "^0.13.10",
     "hono": "^4.11.4",

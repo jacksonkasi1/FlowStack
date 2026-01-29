@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 
 // ** import components
-import { RequireOnboarding } from "@/components/auth/RequireOnboarding";
+import { RequireOnboarding } from "@repo/auth-ui/guards/react-router";
 
 // ** import pages
 import AuthPage from "@/pages/auth/AuthPage";

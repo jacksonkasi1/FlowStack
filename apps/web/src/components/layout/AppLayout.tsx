@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 
 // ** import components
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
+import { EmailVerificationBanner } from "@repo/auth-ui/guards/react-router";
 
 interface AppLayoutProps {
   children: ReactNode;

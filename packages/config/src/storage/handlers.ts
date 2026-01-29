@@ -6,7 +6,7 @@
  *
  * Usage in apps:
  * ```typescript
- * import { createImageUploadHandler, createImageDeleteHandler } from '@repo/shared'
+ * import { createImageUploadHandler, createImageDeleteHandler } from '@repo/config'
  *
  * const uploadHandler = createImageUploadHandler(getUploadUrl)
  * const deleteHandler = createImageDeleteHandler(deleteFile)

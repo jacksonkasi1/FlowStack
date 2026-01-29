@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { AcceptInvitationCard } from '@daveyplate/better-auth-ui'
 
 // ** import components
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { ProtectedRoute } from '@repo/auth-ui/guards/tanstack-router'
 
 export const Route = createFileRoute('/invitation/$id')({
   component: AcceptInvitationPage,

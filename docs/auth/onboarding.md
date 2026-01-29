@@ -1,6 +1,19 @@
 # Onboarding System
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 20 min | **Prerequisites:** [Protected Routes](./protected-routes.md)
+
 Guide for implementing and customizing the multi-step onboarding flow.
+
+---
+
+## What You'll Learn
+
+- ✅ Set up multi-step user onboarding
+- ✅ Create custom onboarding steps
+- ✅ Configure required vs optional steps
+- ✅ Handle organization creation during onboarding
+
+---
 
 ## Overview
 
@@ -231,10 +244,17 @@ export default function Onboarding({ step }: OnboardingProps) {
 
 ### 3. RequireOnboarding Guard
 
-**File:** `apps/web/src/components/auth/RequireOnboarding.tsx`
+Use `@repo/auth-ui` for route protection with fully configurable paths:
 
-Wrap your routes to enforce onboarding:
+```tsx
+// For React Router DOM (apps/web)
+import { RequireOnboarding } from "@repo/auth-ui/guards/react-router";
 
+// For TanStack Router (apps/tanstack)
+import { RequireOnboarding } from "@repo/auth-ui/guards/tanstack-router";
+```
+
+**Basic Usage:**
 ```tsx
 <RequireOnboarding>
   <Routes>
@@ -243,9 +263,37 @@ Wrap your routes to enforce onboarding:
 </RequireOnboarding>
 ```
 
+**With Custom Paths:**
+```tsx
+<RequireOnboarding
+  onboardingPath="/setup"
+  createOrgPath="/setup/org"
+  stepPathMap={{
+    createOrganization: "/setup/org",
+    inviteMembers: "/setup/invite"
+  }}
+  bypassRoutes={["/auth", "/api"]}
+>
+  <Routes>
+    {/* Protected routes */}
+  </Routes>
+</RequireOnboarding>
+```
+
+**Props:**
+| Prop | Default | Description |
+|------|---------|-------------|
+| `onboardingPath` | `/onboarding` | Base path for onboarding |
+| `createOrgPath` | `/onboarding/create-organization` | Org creation redirect |
+| `stepPathMap` | `{}` | Custom step-to-path mapping |
+| `bypassRoutes` | `["/auth", "/onboarding", ...]` | Routes that bypass check |
+| `onRedirect` | - | Callback before redirect |
+| `disabled` | `false` | Disable guard entirely |
+| `requireOrganization` | `true` | Require org membership |
+
 The guard:
 - Checks `session.user.shouldOnboard` on route changes
-- Redirects to `/onboarding/{currentStep}` if incomplete
+- Redirects to the configured onboarding path if incomplete
 - Bypasses check for auth/onboarding routes
 
 ---

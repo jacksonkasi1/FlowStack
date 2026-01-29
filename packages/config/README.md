@@ -1,4 +1,4 @@
-# @repo/shared
+# @repo/config
 
 Shared types, configurations, and utilities used across FlowStack applications.
 
@@ -19,7 +19,7 @@ This package provides centralized configuration and type definitions that are re
 Centralized configuration for additional user signup fields. Define custom fields once and they automatically appear in all signup forms.
 
 ```typescript
-import { USER_METADATA_FIELDS, getAuthUserFields } from '@repo/shared';
+import { USER_METADATA_FIELDS, getAuthUserFields } from '@repo/config';
 ```
 
 **To add a new field:**
@@ -38,7 +38,7 @@ import { USER_METADATA_FIELDS, getAuthUserFields } from '@repo/shared';
 Shared organization settings like logo upload config and custom roles.
 
 ```typescript
-import { ORGANIZATION_LOGO, ORGANIZATION_ROLES } from '@repo/shared';
+import { ORGANIZATION_LOGO, ORGANIZATION_ROLES } from '@repo/config';
 ```
 
 **To configure:**
@@ -54,7 +54,7 @@ import { ORGANIZATION_LOGO, ORGANIZATION_ROLES } from '@repo/shared';
 Shared UI configuration like minimal card styles used across web and tanstack apps.
 
 ```typescript
-import { minimalCardStyles } from '@repo/shared/config/settings';
+import { minimalCardStyles } from '@repo/config';
 ```
 
 ---
@@ -66,7 +66,7 @@ import { minimalCardStyles } from '@repo/shared/config/settings';
 Common TypeScript types and interfaces.
 
 ```typescript
-import type { ApiResponse } from '@repo/shared/types';
+import type { ApiResponse } from '@repo/config/types';
 ```
 
 ---
@@ -77,18 +77,18 @@ Import from the package:
 
 ```typescript
 // Default exports
-import { USER_METADATA_FIELDS } from '@repo/shared';
+import { USER_METADATA_FIELDS } from '@repo/config';
 
 // Specific subpaths
-import { getAuthUserFields } from '@repo/shared/config/user-metadata';
-import { minimalCardStyles } from '@repo/shared/config/settings';
-import type { ApiResponse } from '@repo/shared/types';
+import { getAuthUserFields } from '@repo/config';
+import { minimalCardStyles } from '@repo/config';
+import type { ApiResponse } from '@repo/config/types';
 ```
 
 ## Package Exports
 
 Available import paths:
-- `@repo/shared` - Main exports
-- `@repo/shared/types` - Type definitions only
-- `@repo/shared/config/settings` - UI settings
-- `@repo/shared/config/user-metadata` - User metadata config
+- `@repo/config` - Main exports
+- `@repo/config/types` - Type definitions only
+- `@repo/config/config/settings` - UI settings
+- `@repo/config/config/user-metadata` - User metadata config

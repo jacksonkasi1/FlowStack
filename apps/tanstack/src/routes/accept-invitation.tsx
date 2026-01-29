@@ -8,26 +8,34 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/accept-invitation")({
     component: AcceptInvitationPage,
+    validateSearch: (search: Record<string, unknown>) => {
+        return {
+            invitationId: search.invitationId as string | undefined,
+        };
+    },
 });
 
 function AcceptInvitationPage() {
     const navigate = useNavigate();
-    const { invitationId } = Route.useSearch<{ invitationId?: string }>();
+    const { invitationId } = Route.useSearch();
 
     // Build redirect URL to preserve invitation context after auth
     const currentUrl = `/accept-invitation?invitationId=${invitationId}`;
 
     const handleSignIn = () => {
+        // Use type assertion to work with dynamic routes
         navigate({
-            to: "/auth/sign-in",
-            search: { redirectTo: currentUrl },
+            to: "/auth/$authView" as const,
+            params: { authView: "sign-in" },
+            search: { redirectTo: currentUrl } as Record<string, unknown>,
         });
     };
 
     const handleSignUp = () => {
         navigate({
-            to: "/auth/sign-up",
-            search: { redirectTo: currentUrl },
+            to: "/auth/$authView" as const,
+            params: { authView: "sign-up" },
+            search: { redirectTo: currentUrl } as Record<string, unknown>,
         });
     };
 

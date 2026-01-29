@@ -10,10 +10,10 @@ import {
 
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@repo/auth-ui/guards/react-router";
 
 // ** import shared config
-import { minimalCardStyles } from "@repo/shared/config/settings";
+import { minimalCardStyles } from "@repo/config";
 
 export default function Settings() {
   return (

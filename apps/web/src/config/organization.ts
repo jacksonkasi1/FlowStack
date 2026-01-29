@@ -2,18 +2,18 @@
  * Organization Configuration
  *
  * This file contains utilities for the AuthUIProvider organization settings.
- * Core handlers are imported from @repo/shared for reusability.
+ * Core handlers are imported from @repo/config for reusability.
  */
 
-// ** import shared config
+// ** import config
 import {
   ORGANIZATION_LOGO,
   createImageUploadHandler,
   createImageDeleteHandler,
-} from "@repo/shared";
+} from "@repo/config";
 
 // ** import types
-import type { GetUploadUrlFn, DeleteFileFn } from "@repo/shared";
+import type { GetUploadUrlFn, DeleteFileFn } from "@repo/config";
 
 /**
  * Organization enforcement settings

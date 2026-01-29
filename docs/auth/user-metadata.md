@@ -6,11 +6,11 @@ This guide explains how to configure additional user fields that are captured du
 
 FlowStack uses a centralized configuration for user metadata fields. Instead of adding columns to the database for each custom field, all additional data is stored in a flexible `metadata` JSON column.
 
-**Configuration Location:** `packages/shared/src/config/user-metadata.ts`
+**Configuration Location:** `packages/config/src/config/user-metadata.ts`
 
 ## Adding a New Field
 
-1. Open `packages/shared/src/config/user-metadata.ts`
+1. Open `packages/config/src/config/user-metadata.ts`
 2. Add your field to the `USER_METADATA_FIELDS` array:
 
 ```typescript
@@ -57,7 +57,7 @@ export const USER_METADATA_FIELDS: UserMetadataField[] = [
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  @repo/shared/src/config/user-metadata.ts                   │
+│  @repo/config/src/config/user-metadata.ts                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  USER_METADATA_FIELDS = [{ key, label, ... }]       │    │
 │  └─────────────────────────────────────────────────────┘    │
@@ -78,7 +78,7 @@ export const USER_METADATA_FIELDS: UserMetadataField[] = [
 Returns field configuration for Better Auth's `user.additionalFields`:
 
 ```typescript
-import { getAuthUserFields } from "@repo/shared";
+import { getAuthUserFields } from "@repo/config";
 
 const auth = betterAuth({
   user: {
@@ -92,7 +92,7 @@ const auth = betterAuth({
 Returns field configuration for AuthUIProvider:
 
 ```typescript
-import { getUIUserFields } from "@repo/shared";
+import { getUIUserFields } from "@repo/config";
 
 const additionalFields = getUIUserFields();
 ```
@@ -102,7 +102,7 @@ const additionalFields = getUIUserFields();
 Returns keys of fields that trigger organization creation:
 
 ```typescript
-import { getOrganizationCreationFields } from "@repo/shared";
+import { getOrganizationCreationFields } from "@repo/config";
 
 const orgFields = getOrganizationCreationFields();
 // Returns: ["organizationName"]

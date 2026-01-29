@@ -1,6 +1,6 @@
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@repo/auth-ui/guards/react-router";
 
 // ** import lib
 import { OrganizationSettingsCards } from "@daveyplate/better-auth-ui";

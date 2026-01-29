@@ -6,7 +6,7 @@
 
 // ** import types
 import type { GenericEndpointContext } from "better-auth";
-import type { OnboardingOptions, OnboardingStep } from "./types";
+import type { OnboardingOptions } from "./types";
 
 export interface OnboardingAdapter {
     getCompletedSteps: (userId: string) => Promise<Set<string>>;

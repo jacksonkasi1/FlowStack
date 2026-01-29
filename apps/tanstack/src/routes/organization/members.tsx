@@ -4,7 +4,7 @@ import { OrganizationMembersCard } from '@daveyplate/better-auth-ui'
 
 // ** import components
 import { AppLayout } from '@/components/layout/AppLayout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { ProtectedRoute } from '@repo/auth-ui/guards/tanstack-router'
 
 export const Route = createFileRoute('/organization/members')({
   component: OrganizationMembersPage,

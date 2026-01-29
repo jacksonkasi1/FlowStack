@@ -6,7 +6,7 @@
  */
 
 // ** import types
-import type { BetterAuthPlugin, PrettifyDeep } from "better-auth";
+import type { BetterAuthPlugin } from "better-auth";
 import type { OnboardingOptions, OnboardingStep, StepCompletionResponse, OnboardingStatusResponse } from "./types";
 
 // ** import lib
@@ -16,7 +16,7 @@ import {
     createAuthMiddleware,
     APIError,
     sessionMiddleware,
-    type AuthEndpoint,
+    type AuthEndpoint as _AuthEndpoint,
 } from "better-auth/api";
 
 // ** import utils
