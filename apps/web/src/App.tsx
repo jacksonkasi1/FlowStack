@@ -4,6 +4,7 @@ import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 
 // ** import components
 import { RequireOnboarding } from "@repo/auth-ui/guards/react-router";
+import { isOrganizationMode } from "@repo/config";
 
 // ** import pages
 import AuthPage from "@/pages/auth/AuthPage";
@@ -34,20 +35,26 @@ export default function App() {
         />
         <Route path="/auth/:pathname" element={<AuthPage />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/onboarding/create-organization" element={<Onboarding step="createOrganization" />} />
-        <Route path="/onboarding/invite-members" element={<Onboarding step="inviteMembers" />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/account/settings" element={<Settings />} />
-        <Route
-          path="/organization/settings"
-          element={<OrganizationSettingsPage />}
-        />
-        <Route
-          path="/organization/members"
-          element={<OrganizationMembersPage />}
-        />
-        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+
+        {/* Organization & Onboarding Routes - Only enabled in organization mode */}
+        {isOrganizationMode() && (
+          <>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding/create-organization" element={<Onboarding step="createOrganization" />} />
+            <Route path="/onboarding/invite-members" element={<Onboarding step="inviteMembers" />} />
+            <Route
+              path="/organization/settings"
+              element={<OrganizationSettingsPage />}
+            />
+            <Route
+              path="/organization/members"
+              element={<OrganizationMembersPage />}
+            />
+            <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+          </>
+        )}
       </Routes>
     </RequireOnboarding>
   );

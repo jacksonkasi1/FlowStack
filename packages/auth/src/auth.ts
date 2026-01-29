@@ -25,6 +25,7 @@ import { logger } from "@repo/logs";
 import { AUTH_REDIRECTS } from "./config/redirects";
 import { CREATOR_ROLE } from "./config/roles";
 import { ORGANIZATION_CONFIG } from "./config/organization";
+import { isOnboardingEnabled } from "@repo/config";
 
 // ** import utils
 import { sendMagicLink } from "./email/send-magic-link";
@@ -543,6 +544,11 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         // Skip onboarding for users signing up via invitation link
         // They will join an existing organization, not create a new one
         autoEnableOnSignUp: (ctx) => {
+          // Check if onboarding is enabled globally
+          if (!isOnboardingEnabled()) {
+            return false;
+          }
+
           try {
             // Check if signup includes a redirect to invitation acceptance
             const url = ctx.request?.url;

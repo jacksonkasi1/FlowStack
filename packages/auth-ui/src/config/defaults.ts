@@ -5,6 +5,9 @@
  * These can be overridden via AuthUIProvider config prop.
  */
 
+// ** import config
+import { requiresOrganization } from "@repo/config";
+
 // ** import types
 import type { AuthUIConfig } from "../types";
 
@@ -37,7 +40,7 @@ export const DEFAULT_CONFIG: Required<AuthUIConfig> = {
             organizationInvitation: "/accept-invitation",
         },
         organization: {
-            requireOrganization: true,
+            requireOrganization: requiresOrganization(),
         },
     },
     onboarding: {
