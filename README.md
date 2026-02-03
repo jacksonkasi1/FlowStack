@@ -189,7 +189,7 @@ Breaking changes may happen early while the foundation is being refined.
 > Scale is not about features.
 > Scale is about clarity.
 
-FlowStack exists to keep that clarity intact as products grow.
+FlowStack exists to keep that clarity intact as products grow..
 
 ---
 
