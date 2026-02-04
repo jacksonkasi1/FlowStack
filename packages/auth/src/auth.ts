@@ -271,30 +271,11 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
             );
           }
 
-          // Bidirectional sync between org membership and onboarding state
-          if (memberships.length > 0) {
-            // User HAS org membership - clear onboarding if set
-            const user = await db
-              .select({ shouldOnboard: userTable.shouldOnboard })
-              .from(userTable)
-              .where(eq(userTable.id, userData.id))
-              .limit(1);
+          // Note: Removed aggressive auto-clear of shouldOnboard when user has org
+          // The onboarding plugin is the sole authority on when onboarding is complete
+          // Having an org doesn't mean all onboarding steps are done (e.g., invite members step)
 
-            if (user.length > 0 && user[0].shouldOnboard) {
-              // User has org but shouldOnboard is true - clear it
-              await db
-                .update(userTable)
-                .set({
-                  shouldOnboard: false,
-                  currentOnboardingStep: null,
-                })
-                .where(eq(userTable.id, userData.id));
-
-              logger.info(
-                `Cleared onboarding for user ${userData.id} (has organization membership)`,
-              );
-            }
-          } else if (ORGANIZATION_CONFIG.requireOrganization) {
+          if (memberships.length === 0 && ORGANIZATION_CONFIG.requireOrganization) {
             // User has NO membership and requireOrganization is enabled - force onboarding
             const user = await db
               .select({ shouldOnboard: userTable.shouldOnboard })

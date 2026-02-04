@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 
 // ** import lib
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,23 +17,23 @@ import { APP_URLS } from "@/config/urls";
 import { authClient } from "@/lib/auth-client";
 
 interface OnboardingProps {
-    step?: "createOrganization" | "inviteMembers";
+  step?: "createOrganization" | "inviteMembers";
 }
 
 // Step configuration
 const STEPS = {
-    createOrganization: {
-        title: "Create Your Organization",
-        description: "Set up your workspace to get started",
-        path: "/onboarding/create-organization",
-        order: 1,
-    },
-    inviteMembers: {
-        title: "Invite Team Members",
-        description: "Add colleagues to your organization (optional)",
-        path: "/onboarding/invite-members",
-        order: 2,
-    },
+  createOrganization: {
+    title: "Create Your Organization",
+    description: "Set up your workspace to get started",
+    path: "/onboarding/create-organization",
+    order: 1,
+  },
+  inviteMembers: {
+    title: "Invite Team Members",
+    description: "Add colleagues to your organization (optional)",
+    path: "/onboarding/invite-members",
+    order: 2,
+  },
 };
 
 const STEP_ORDER = ["createOrganization", "inviteMembers"] as const;
@@ -41,256 +41,338 @@ const STEP_ORDER = ["createOrganization", "inviteMembers"] as const;
 /**
  * Call onboarding API endpoint directly
  */
-async function callOnboardingApi(endpoint: string, data?: Record<string, unknown>) {
-    const response = await fetch(`${APP_URLS.api}/api/auth/onboarding/${endpoint}`, {
-        method: data ? "POST" : "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: data ? JSON.stringify(data) : undefined,
-    });
+async function callOnboardingApi(
+  endpoint: string,
+  data?: Record<string, unknown>,
+) {
+  const response = await fetch(
+    `${APP_URLS.api}/api/auth/onboarding/${endpoint}`,
+    {
+      method: data ? "POST" : "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: data ? JSON.stringify(data) : undefined,
+    },
+  );
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Request failed" }));
-        throw new Error(error.message || `API error: ${response.status}`);
-    }
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Request failed" }));
+    throw new Error(error.message || `API error: ${response.status}`);
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export default function Onboarding({ step }: OnboardingProps) {
-    const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isAuthChecking, setIsAuthChecking] = useState(true);
-    const [currentStep, setCurrentStep] = useState<string | null>(step || null);
-    const [organizationName, setOrganizationName] = useState("");
-    const [inviteEmails, setInviteEmails] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string | null>(step || null);
+  const [organizationName, setOrganizationName] = useState("");
+  const [inviteEmails, setInviteEmails] = useState("");
 
-    // Check auth and fetch onboarding status on mount
-    useEffect(() => {
-        const checkAuthAndStatus = async () => {
-            try {
-                // First check if user is authenticated
-                const sessionResult = await authClient.getSession();
-                const user = sessionResult.data?.user as any;
+  // Track steps completed in this session to handle timing issues
+  // Get from navigation state if available
+  const [localCompletedSteps, setLocalCompletedSteps] = useState<string[]>(
+    (location.state as any)?.completedSteps || []
+  );
 
-                if (!user) {
-                    navigate("/auth/sign-in", { replace: true });
-                    return;
-                }
+  // Check auth and fetch onboarding status on mount
+  useEffect(() => {
+    const checkAuthAndStatus = async () => {
+      try {
+        // First check if user is authenticated
+        const sessionResult = await authClient.getSession();
+        const user = sessionResult.data?.user as any;
 
-                // Check onboarding status from session
-                if (!user.shouldOnboard) {
-                    // Onboarding complete, go to dashboard
-                    navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
-                    return;
-                }
+        if (!user) {
+          setIsRedirecting(true);
+          navigate("/auth/sign-in", { replace: true });
+          return;
+        }
 
-                // Determine current step from session or use provided step
-                const serverStep = user.currentOnboardingStep || "createOrganization";
+        // Debug logging
+        console.log("[Onboarding Debug]", {
+          shouldOnboard: user.shouldOnboard,
+          currentOnboardingStep: user.currentOnboardingStep,
+          completedOnboardingSteps: user.completedOnboardingSteps,
+          currentPageStep: step,
+          localCompletedSteps,
+        });
 
-                // If no step prop provided, redirect to the correct step based on session
-                if (!step) {
-                    const stepPath = STEPS[serverStep as keyof typeof STEPS]?.path;
-                    if (stepPath) {
-                        navigate(stepPath, { replace: true });
-                        return;
-                    }
-                }
+        // Check onboarding status from session
+        if (!user.shouldOnboard) {
+          // Onboarding complete, go to dashboard
+          console.log("[Onboarding] Redirecting to dashboard - onboarding complete");
+          setIsRedirecting(true);
+          navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+          return;
+        }
 
-                // If step prop doesn't match server step, redirect to server step
-                // (unless the user has already completed the provided step)
-                if (step && step !== serverStep) {
-                    const completedSteps = JSON.parse(user.completedOnboardingSteps || "[]");
-                    if (!completedSteps.includes(step)) {
-                        // User trying to access a step they shouldn't - redirect to correct step
-                        const stepPath = STEPS[serverStep as keyof typeof STEPS]?.path;
-                        if (stepPath) {
-                            navigate(stepPath, { replace: true });
-                            return;
-                        }
-                    }
-                }
+        // Determine current step from session or use provided step
+        const serverStep = user.currentOnboardingStep || "createOrganization";
+        console.log("[Onboarding] Server step:", serverStep);
 
-                setCurrentStep(step || serverStep);
-            } catch (error) {
-                console.error("Failed to check auth/onboarding status:", error);
-                navigate("/auth/sign-in", { replace: true });
-            } finally {
-                setIsAuthChecking(false);
-            }
-        };
-
-        checkAuthAndStatus();
-    }, [step, navigate]);
-
-    const handleOrganizationSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!organizationName.trim()) {
-            toast.error("Please enter an organization name");
+        // If no step prop provided, redirect to the correct step based on session
+        if (!step) {
+          const stepPath = STEPS[serverStep as keyof typeof STEPS]?.path;
+          if (stepPath) {
+            setIsRedirecting(true);
+            navigate(stepPath, { replace: true });
             return;
+          }
         }
 
-        setIsLoading(true);
-        try {
-            // Call the step endpoint directly
-            await callOnboardingApi("step/create-organization", {
-                organizationName: organizationName.trim(),
-            });
+        // If step prop doesn't match server step, redirect to server step
+        // (unless the user has already completed the previous steps or is progressing forward)
+        if (step && step !== serverStep) {
+          const completedSteps = JSON.parse(
+            user.completedOnboardingSteps || "[]",
+          );
 
-            toast.success("Organization created!");
+          // Merge server completed steps with local completed steps
+          const allCompletedSteps = [
+            ...new Set([...completedSteps, ...localCompletedSteps]),
+          ];
 
-            // Navigate to next step
-            navigate(STEPS.inviteMembers.path);
-        } catch (error) {
-            console.error("Failed to create organization:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to create organization");
-        } finally {
-            setIsLoading(false);
+          // Get the step order indices
+          const currentStepIndex = STEP_ORDER.indexOf(
+            step as (typeof STEP_ORDER)[number],
+          );
+          const serverStepIndex = STEP_ORDER.indexOf(
+            serverStep as (typeof STEP_ORDER)[number],
+          );
+
+          // Allow access if:
+          // 1. User has completed this step already, OR
+          // 2. User is only one step ahead (just completed previous step)
+          const hasCompletedStep = allCompletedSteps.includes(step);
+          const isOneStepAhead =
+            currentStepIndex === serverStepIndex + 1 &&
+            allCompletedSteps.includes(serverStep);
+
+          if (!hasCompletedStep && !isOneStepAhead) {
+            // User trying to access a step they shouldn't - redirect to correct step
+            const stepPath = STEPS[serverStep as keyof typeof STEPS]?.path;
+            if (stepPath) {
+              setIsRedirecting(true);
+              navigate(stepPath, { replace: true });
+              return;
+            }
+          }
         }
+
+        setCurrentStep(step || serverStep);
+      } catch (error) {
+        console.error("Failed to check auth/onboarding status:", error);
+        setIsRedirecting(true);
+        navigate("/auth/sign-in", { replace: true });
+      } finally {
+        setIsAuthChecking(false);
+      }
     };
 
-    const handleInviteSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
+    checkAuthAndStatus();
+  }, [step, navigate]);
 
-        try {
-            const emails = inviteEmails
-                .split(",")
-                .map((email) => email.trim())
-                .filter((email) => email);
-
-            // Call the step endpoint directly
-            await callOnboardingApi("step/invite-members", { emails });
-
-            toast.success("Onboarding complete!");
-            toast.info("Verification email sent. Please check your inbox.");
-
-            // Small delay to ensure session is updated, then navigate
-            setTimeout(() => {
-                navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
-            }, 100);
-        } catch (error) {
-            console.error("Failed to complete step:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to complete step");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSkip = async () => {
-        setIsLoading(true);
-        try {
-            // Call the skip endpoint directly
-            await callOnboardingApi("skip-step/invite-members", {});
-
-            toast.success("Onboarding complete!");
-            toast.info("Verification email sent. Please check your inbox.");
-
-            // Small delay to ensure session is updated, then navigate
-            setTimeout(() => {
-                navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
-            }, 100);
-        } catch (error) {
-            console.error("Failed to skip step:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to skip step");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Show loading while checking auth or determining step
-    if (isAuthChecking || !currentStep) {
-        return (
-            <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-                <div className="animate-pulse text-muted-foreground">Loading...</div>
-            </div>
-        );
+  const handleOrganizationSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!organizationName.trim()) {
+      toast.error("Please enter an organization name");
+      return;
     }
 
-    const stepConfig = STEPS[currentStep as keyof typeof STEPS];
-    const stepIndex = STEP_ORDER.indexOf(currentStep as (typeof STEP_ORDER)[number]);
+    setIsLoading(true);
+    try {
+      // Call the step endpoint directly
+      await callOnboardingApi("step/create-organization", {
+        organizationName: organizationName.trim(),
+      });
 
+      toast.success("Organization created!");
+
+      // Mark step as completed locally to allow navigation even if server session isn't updated yet
+      const updatedCompletedSteps = [
+        ...localCompletedSteps,
+        "createOrganization",
+      ];
+
+      // Refresh session to get updated onboarding status before navigating
+      await authClient.getSession({ fetchOptions: { cache: "no-store" } });
+
+      // Small delay to ensure session is fully updated, then navigate with state
+      setTimeout(() => {
+        navigate(STEPS.inviteMembers.path, {
+          state: { completedSteps: updatedCompletedSteps },
+        });
+      }, 100);
+    } catch (error) {
+      console.error("Failed to create organization:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create organization",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInviteSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const emails = inviteEmails
+        .split(",")
+        .map((email) => email.trim())
+        .filter((email) => email);
+
+      // Call the step endpoint directly
+      await callOnboardingApi("step/invite-members", { emails });
+
+      toast.success("Onboarding complete!");
+      toast.info("Verification email sent. Please check your inbox.");
+
+      // Small delay to ensure session is updated, then navigate
+      setTimeout(() => {
+        navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error("Failed to complete step:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to complete step",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    setIsLoading(true);
+    try {
+      // Call the skip endpoint directly
+      await callOnboardingApi("skip-step/invite-members", {});
+
+      toast.success("Onboarding complete!");
+      toast.info("Verification email sent. Please check your inbox.");
+
+      // Small delay to ensure session is updated, then navigate
+      setTimeout(() => {
+        navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error("Failed to skip step:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to skip step",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show loading while checking auth, redirecting, or determining step
+  if (isAuthChecking || isRedirecting || !currentStep) {
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-            <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
-                {/* Progress indicator */}
-                <div className="flex justify-center gap-2 mb-4">
-                    {STEP_ORDER.map((s, index) => (
-                        <div
-                            key={s}
-                            className={`h-2 w-8 rounded-full transition-colors ${index <= stepIndex ? "bg-primary" : "bg-muted"
-                                }`}
-                        />
-                    ))}
-                </div>
-
-                <div className="space-y-2 text-center">
-                    <h1 className="text-2xl font-bold">{stepConfig?.title}</h1>
-                    <p className="text-sm text-muted-foreground">{stepConfig?.description}</p>
-                </div>
-
-                {/* Step 1: Create Organization */}
-                {currentStep === "createOrganization" && (
-                    <form onSubmit={handleOrganizationSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="organizationName">Organization Name</Label>
-                            <Input
-                                id="organizationName"
-                                type="text"
-                                placeholder="Enter your organization name"
-                                value={organizationName}
-                                onChange={(e) => setOrganizationName(e.target.value)}
-                                disabled={isLoading}
-                                required
-                                minLength={2}
-                                maxLength={100}
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                This will be your workspace name
-                            </p>
-                        </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? "Creating..." : "Create Organization"}
-                        </Button>
-                    </form>
-                )}
-
-                {/* Step 2: Invite Members */}
-                {currentStep === "inviteMembers" && (
-                    <form onSubmit={handleInviteSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="emails">Team Member Emails</Label>
-                            <Input
-                                id="emails"
-                                type="text"
-                                placeholder="email1@example.com, email2@example.com"
-                                value={inviteEmails}
-                                onChange={(e) => setInviteEmails(e.target.value)}
-                                disabled={isLoading}
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Enter email addresses separated by commas
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? "Sending..." : "Send Invitations"}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full"
-                                onClick={handleSkip}
-                                disabled={isLoading}
-                            >
-                                Skip for now
-                            </Button>
-                        </div>
-                    </form>
-                )}
-            </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+      </div>
     );
+  }
+
+  const stepConfig = STEPS[currentStep as keyof typeof STEPS];
+  const stepIndex = STEP_ORDER.indexOf(
+    currentStep as (typeof STEP_ORDER)[number],
+  );
+
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+        {/* Progress indicator */}
+        <div className="flex justify-center gap-2 mb-4">
+          {STEP_ORDER.map((s, index) => (
+            <div
+              key={s}
+              className={`h-2 w-8 rounded-full transition-colors ${
+                index <= stepIndex ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">{stepConfig?.title}</h1>
+          <p className="text-sm text-muted-foreground">
+            {stepConfig?.description}
+          </p>
+        </div>
+
+        {/* Step 1: Create Organization */}
+        {currentStep === "createOrganization" && (
+          <form onSubmit={handleOrganizationSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="organizationName">Organization Name</Label>
+              <Input
+                id="organizationName"
+                type="text"
+                placeholder="Enter your organization name"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                disabled={isLoading}
+                required
+                minLength={2}
+                maxLength={100}
+              />
+              <p className="text-sm text-muted-foreground">
+                This will be your workspace name
+              </p>
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create Organization"}
+            </Button>
+          </form>
+        )}
+
+        {/* Step 2: Invite Members */}
+        {currentStep === "inviteMembers" && (
+          <form onSubmit={handleInviteSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="emails">Team Member Emails</Label>
+              <Input
+                id="emails"
+                type="text"
+                placeholder="email1@example.com, email2@example.com"
+                value={inviteEmails}
+                onChange={(e) => setInviteEmails(e.target.value)}
+                disabled={isLoading}
+              />
+              <p className="text-sm text-muted-foreground">
+                Enter email addresses separated by commas
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Sending..." : "Send Invitations"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={handleSkip}
+                disabled={isLoading}
+              >
+                Skip for now
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
 }
