@@ -18,3 +18,5 @@
 
 export { RequireOnboarding } from "./RequireOnboarding";
 export { ProtectedRoute } from "./ProtectedRoute";
+export { EmailVerificationBanner } from "./EmailVerificationBanner";
+export { useEmailVerificationStatus } from "./useEmailVerificationStatus";

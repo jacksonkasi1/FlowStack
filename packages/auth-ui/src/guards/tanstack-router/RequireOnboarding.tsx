@@ -32,6 +32,12 @@ import { onboardingClient } from "@repo/onboarding/client";
 
 // ** import types
 import type { ReactNode } from "react";
+import type { EmailVerificationMode } from "../../types";
+
+type AuthSessionClient = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getSession: (...args: any[]) => Promise<any>;
+};
 
 /**
  * Default configuration values
@@ -39,20 +45,27 @@ import type { ReactNode } from "react";
 const DEFAULTS = {
     onboardingPath: "/onboarding",
     createOrgPath: "/onboarding/create-organization",
-    bypassRoutes: ["/auth", "/onboarding", "/reset-password"],
+    bypassRoutes: ["/auth", "/onboarding", "/reset-password", "/accept-invitation", "/invitation"],
     requireOrganization: true,
+    emailVerificationMode: "force_redirect" as EmailVerificationMode,
+    emailVerificationRedirectPath: "/account/verify-email",
+    emailVerificationBypassRoutes: ["/account/verify-email"],
 };
 
 interface RequireOnboardingProps {
     children: ReactNode;
+    authClient?: AuthSessionClient;
     disabled?: boolean;
-    bypassRoutes?: string[];
+    bypassRoutes?: readonly string[];
     onboardingPath?: string;
     createOrgPath?: string;
     stepPathMap?: Record<string, string>;
     onRedirect?: (path: string) => void;
     loadingComponent?: ReactNode;
     requireOrganization?: boolean;
+    emailVerificationMode?: EmailVerificationMode;
+    emailVerificationRedirectPath?: string;
+    emailVerificationBypassRoutes?: readonly string[];
 }
 
 function DefaultLoadingComponent() {
@@ -72,6 +85,7 @@ function stepToPath(step: string): string {
 
 export function RequireOnboarding({
     children,
+    authClient,
     disabled = false,
     bypassRoutes = DEFAULTS.bypassRoutes,
     onboardingPath = DEFAULTS.onboardingPath,
@@ -80,12 +94,15 @@ export function RequireOnboarding({
     onRedirect,
     loadingComponent,
     requireOrganization = DEFAULTS.requireOrganization,
+    emailVerificationMode = DEFAULTS.emailVerificationMode,
+    emailVerificationRedirectPath = DEFAULTS.emailVerificationRedirectPath,
+    emailVerificationBypassRoutes = DEFAULTS.emailVerificationBypassRoutes,
 }: RequireOnboardingProps) {
     const navigate = useNavigate();
     const location = useLocation();
 
     const [isChecking, setIsChecking] = useState(true);
-    const [needsOnboarding, setNeedsOnboarding] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     if (disabled) {
         return <>{children}</>;
@@ -99,6 +116,7 @@ export function RequireOnboarding({
     };
 
     const redirectTo = (path: string) => {
+        setIsRedirecting(true);
         onRedirect?.(path);
         navigate({ to: path, replace: true });
     };
@@ -111,16 +129,21 @@ export function RequireOnboarding({
 
         if (shouldBypass) {
             setIsChecking(false);
+            setIsRedirecting(false);
             return;
         }
 
         const checkStatus = async () => {
+            // Clear stale redirect state for the new check.
+            setIsRedirecting(false);
             try {
-                const authClient = createAuthClient({
-                    plugins: [organizationClient(), adminClient(), onboardingClient()],
-                });
+                const client =
+                    authClient ||
+                    createAuthClient({
+                        plugins: [organizationClient(), adminClient() as any, onboardingClient()],
+                    });
 
-                const result = await authClient.getSession({
+                const result = await client.getSession({
                     fetchOptions: { cache: "no-store" },
                 });
 
@@ -129,17 +152,36 @@ export function RequireOnboarding({
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const user = result.data?.user as any;
 
+                // Let auth-specific guards handle unauthenticated users.
+                if (!user) {
+                    return;
+                }
+
                 if (user?.shouldOnboard) {
-                    setNeedsOnboarding(true);
                     const currentStep = user.currentOnboardingStep || "createOrganization";
                     redirectTo(getStepPath(currentStep));
                     return;
                 }
 
                 if (requireOrganization && !session?.activeOrganizationId) {
-                    setNeedsOnboarding(true);
                     redirectTo(createOrgPath);
                     return;
+                }
+
+                // Email verification gating (after onboarding + organization checks)
+                if (emailVerificationMode === "force_redirect" && !user?.emailVerified) {
+                    const verificationBypassRoutes = [
+                        emailVerificationRedirectPath,
+                        ...emailVerificationBypassRoutes,
+                    ];
+                    const canAccessUnverifiedRoute = verificationBypassRoutes.some((route) =>
+                        currentPath.startsWith(route),
+                    );
+
+                    if (!canAccessUnverifiedRoute) {
+                        redirectTo(emailVerificationRedirectPath);
+                        return;
+                    }
                 }
             } catch (error) {
                 console.error("Failed to check onboarding status:", error);
@@ -149,14 +191,22 @@ export function RequireOnboarding({
         };
 
         checkStatus();
-    }, [navigate, location.pathname, requireOrganization, bypassRoutes, onboardingPath, createOrgPath, stepPathMap]);
+    }, [
+        authClient,
+        navigate,
+        location.pathname,
+        requireOrganization,
+        bypassRoutes,
+        onboardingPath,
+        createOrgPath,
+        stepPathMap,
+        emailVerificationMode,
+        emailVerificationRedirectPath,
+        emailVerificationBypassRoutes,
+    ]);
 
-    if (isChecking) {
+    if (isChecking || isRedirecting) {
         return <>{loadingComponent ?? <DefaultLoadingComponent />}</>;
-    }
-
-    if (needsOnboarding) {
-        return null;
     }
 
     return <>{children}</>;
