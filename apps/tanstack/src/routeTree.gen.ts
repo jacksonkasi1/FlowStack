@@ -12,10 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
 import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
+import { Route as OnboardingInviteMembersRouteImport } from './routes/onboarding/invite-members'
+import { Route as OnboardingCreateOrganizationRouteImport } from './routes/onboarding/create-organization'
 import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
 import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
+import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
 
@@ -34,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
   id: '/organization/settings',
   path: '/organization/settings',
@@ -44,6 +53,17 @@ const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
   path: '/organization/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingInviteMembersRoute = OnboardingInviteMembersRouteImport.update({
+  id: '/onboarding/invite-members',
+  path: '/onboarding/invite-members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingCreateOrganizationRoute =
+  OnboardingCreateOrganizationRouteImport.update({
+    id: '/onboarding/create-organization',
+    path: '/onboarding/create-organization',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
   id: '/invitation/$id',
   path: '/invitation/$id',
@@ -52,6 +72,11 @@ const InvitationIdRoute = InvitationIdRouteImport.update({
 const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
   id: '/auth/$authView',
   path: '/auth/$authView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountVerifyEmailRoute = AccountVerifyEmailRouteImport.update({
+  id: '/account/verify-email',
+  path: '/account/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
@@ -71,10 +96,14 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
+  '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
   '/organization/members': typeof OrganizationMembersRoute
   '/organization/settings': typeof OrganizationSettingsRoute
+  '/onboarding': typeof OnboardingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,10 +111,14 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
+  '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
   '/organization/members': typeof OrganizationMembersRoute
   '/organization/settings': typeof OrganizationSettingsRoute
+  '/onboarding': typeof OnboardingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,10 +127,14 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
+  '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
   '/organization/members': typeof OrganizationMembersRoute
   '/organization/settings': typeof OrganizationSettingsRoute
+  '/onboarding/': typeof OnboardingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,10 +144,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/account/$accountView'
     | '/account/settings'
+    | '/account/verify-email'
     | '/auth/$authView'
     | '/invitation/$id'
+    | '/onboarding/create-organization'
+    | '/onboarding/invite-members'
     | '/organization/members'
     | '/organization/settings'
+    | '/onboarding'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -118,10 +159,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/account/$accountView'
     | '/account/settings'
+    | '/account/verify-email'
     | '/auth/$authView'
     | '/invitation/$id'
+    | '/onboarding/create-organization'
+    | '/onboarding/invite-members'
     | '/organization/members'
     | '/organization/settings'
+    | '/onboarding'
   id:
     | '__root__'
     | '/'
@@ -129,10 +174,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/account/$accountView'
     | '/account/settings'
+    | '/account/verify-email'
     | '/auth/$authView'
     | '/invitation/$id'
+    | '/onboarding/create-organization'
+    | '/onboarding/invite-members'
     | '/organization/members'
     | '/organization/settings'
+    | '/onboarding/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -141,10 +190,14 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   AccountAccountViewRoute: typeof AccountAccountViewRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
+  AccountVerifyEmailRoute: typeof AccountVerifyEmailRoute
   AuthAuthViewRoute: typeof AuthAuthViewRoute
   InvitationIdRoute: typeof InvitationIdRoute
+  OnboardingCreateOrganizationRoute: typeof OnboardingCreateOrganizationRoute
+  OnboardingInviteMembersRoute: typeof OnboardingInviteMembersRoute
   OrganizationMembersRoute: typeof OrganizationMembersRoute
   OrganizationSettingsRoute: typeof OrganizationSettingsRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -170,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organization/settings': {
       id: '/organization/settings'
       path: '/organization/settings'
@@ -184,6 +244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizationMembersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding/invite-members': {
+      id: '/onboarding/invite-members'
+      path: '/onboarding/invite-members'
+      fullPath: '/onboarding/invite-members'
+      preLoaderRoute: typeof OnboardingInviteMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/create-organization': {
+      id: '/onboarding/create-organization'
+      path: '/onboarding/create-organization'
+      fullPath: '/onboarding/create-organization'
+      preLoaderRoute: typeof OnboardingCreateOrganizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invitation/$id': {
       id: '/invitation/$id'
       path: '/invitation/$id'
@@ -196,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/$authView'
       fullPath: '/auth/$authView'
       preLoaderRoute: typeof AuthAuthViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/verify-email': {
+      id: '/account/verify-email'
+      path: '/account/verify-email'
+      fullPath: '/account/verify-email'
+      preLoaderRoute: typeof AccountVerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/settings': {
@@ -221,10 +302,14 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   AccountAccountViewRoute: AccountAccountViewRoute,
   AccountSettingsRoute: AccountSettingsRoute,
+  AccountVerifyEmailRoute: AccountVerifyEmailRoute,
   AuthAuthViewRoute: AuthAuthViewRoute,
   InvitationIdRoute: InvitationIdRoute,
+  OnboardingCreateOrganizationRoute: OnboardingCreateOrganizationRoute,
+  OnboardingInviteMembersRoute: OnboardingInviteMembersRoute,
   OrganizationMembersRoute: OrganizationMembersRoute,
   OrganizationSettingsRoute: OrganizationSettingsRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
