@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 
 // ** import lib
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,19 +69,12 @@ async function callOnboardingApi(
 
 export default function Onboarding({ step }: OnboardingProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [currentStep, setCurrentStep] = useState<string | null>(step || null);
   const [organizationName, setOrganizationName] = useState("");
   const [inviteEmails, setInviteEmails] = useState("");
-
-  // Track steps completed in this session to handle timing issues
-  // Get from navigation state if available
-  const [localCompletedSteps, setLocalCompletedSteps] = useState<string[]>(
-    (location.state as any)?.completedSteps || []
-  );
 
   // Check auth and fetch onboarding status on mount
   useEffect(() => {
@@ -97,19 +90,9 @@ export default function Onboarding({ step }: OnboardingProps) {
           return;
         }
 
-        // Debug logging
-        console.log("[Onboarding Debug]", {
-          shouldOnboard: user.shouldOnboard,
-          currentOnboardingStep: user.currentOnboardingStep,
-          completedOnboardingSteps: user.completedOnboardingSteps,
-          currentPageStep: step,
-          localCompletedSteps,
-        });
-
         // Check onboarding status from session
         if (!user.shouldOnboard) {
           // Onboarding complete, go to dashboard
-          console.log("[Onboarding] Redirecting to dashboard - onboarding complete");
           setIsRedirecting(true);
           navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
           return;
@@ -117,7 +100,6 @@ export default function Onboarding({ step }: OnboardingProps) {
 
         // Determine current step from session or use provided step
         const serverStep = user.currentOnboardingStep || "createOrganization";
-        console.log("[Onboarding] Server step:", serverStep);
 
         // If no step prop provided, redirect to the correct step based on session
         if (!step) {
@@ -130,34 +112,12 @@ export default function Onboarding({ step }: OnboardingProps) {
         }
 
         // If step prop doesn't match server step, redirect to server step
-        // (unless the user has already completed the previous steps or is progressing forward)
+        // (unless the user has already completed the provided step)
         if (step && step !== serverStep) {
           const completedSteps = JSON.parse(
             user.completedOnboardingSteps || "[]",
           );
-
-          // Merge server completed steps with local completed steps
-          const allCompletedSteps = [
-            ...new Set([...completedSteps, ...localCompletedSteps]),
-          ];
-
-          // Get the step order indices
-          const currentStepIndex = STEP_ORDER.indexOf(
-            step as (typeof STEP_ORDER)[number],
-          );
-          const serverStepIndex = STEP_ORDER.indexOf(
-            serverStep as (typeof STEP_ORDER)[number],
-          );
-
-          // Allow access if:
-          // 1. User has completed this step already, OR
-          // 2. User is only one step ahead (just completed previous step)
-          const hasCompletedStep = allCompletedSteps.includes(step);
-          const isOneStepAhead =
-            currentStepIndex === serverStepIndex + 1 &&
-            allCompletedSteps.includes(serverStep);
-
-          if (!hasCompletedStep && !isOneStepAhead) {
+          if (!completedSteps.includes(step)) {
             // User trying to access a step they shouldn't - redirect to correct step
             const stepPath = STEPS[serverStep as keyof typeof STEPS]?.path;
             if (stepPath) {
@@ -197,21 +157,7 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       toast.success("Organization created!");
 
-      // Mark step as completed locally to allow navigation even if server session isn't updated yet
-      const updatedCompletedSteps = [
-        ...localCompletedSteps,
-        "createOrganization",
-      ];
-
-      // Refresh session to get updated onboarding status before navigating
-      await authClient.getSession({ fetchOptions: { cache: "no-store" } });
-
-      // Small delay to ensure session is fully updated, then navigate with state
-      setTimeout(() => {
-        navigate(STEPS.inviteMembers.path, {
-          state: { completedSteps: updatedCompletedSteps },
-        });
-      }, 100);
+      navigate(STEPS.inviteMembers.path);
     } catch (error) {
       console.error("Failed to create organization:", error);
       toast.error(
@@ -238,12 +184,8 @@ export default function Onboarding({ step }: OnboardingProps) {
       await callOnboardingApi("step/invite-members", { emails });
 
       toast.success("Onboarding complete!");
-      toast.info("Verification email sent. Please check your inbox.");
 
-      // Small delay to ensure session is updated, then navigate
-      setTimeout(() => {
-        navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
-      }, 100);
+      navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
     } catch (error) {
       console.error("Failed to complete step:", error);
       toast.error(
@@ -261,12 +203,8 @@ export default function Onboarding({ step }: OnboardingProps) {
       await callOnboardingApi("skip-step/invite-members", {});
 
       toast.success("Onboarding complete!");
-      toast.info("Verification email sent. Please check your inbox.");
 
-      // Small delay to ensure session is updated, then navigate
-      setTimeout(() => {
-        navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
-      }, 100);
+      navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
     } catch (error) {
       console.error("Failed to skip step:", error);
       toast.error(

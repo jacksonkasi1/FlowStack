@@ -166,8 +166,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
     session: {
       cookieCache: {
-        enabled: true,
-        maxAge: 5 * 60,
+        // Prevent stale session fields (e.g. shouldOnboard/activeOrganizationId)
+        // from causing onboarding/dashboard redirect loops immediately after updates.
+        enabled: false,
       },
     },
 

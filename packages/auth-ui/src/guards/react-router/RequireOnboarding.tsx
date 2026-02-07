@@ -35,7 +35,10 @@ import { onboardingClient } from "@repo/onboarding/client";
 
 // ** import types
 import type { ReactNode } from "react";
-import type { InferSessionAPI } from "better-auth/react";
+type AuthSessionClient = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getSession: (...args: any[]) => Promise<any>;
+};
 
 /**
  * Default configuration values
@@ -43,7 +46,7 @@ import type { InferSessionAPI } from "better-auth/react";
 const DEFAULTS = {
   onboardingPath: "/onboarding",
   createOrgPath: "/onboarding/create-organization",
-  bypassRoutes: ["/auth", "/onboarding", "/reset-password"],
+  bypassRoutes: ["/auth", "/onboarding", "/reset-password", "/accept-invitation"],
   requireOrganization: true,
 };
 
@@ -55,7 +58,7 @@ interface RequireOnboardingProps {
    * Better Auth client instance with organization and onboarding plugins
    * If not provided, will create a default client
    */
-  authClient?: InferSessionAPI<any>;
+  authClient?: AuthSessionClient;
 
   // === Control ===
   /**
@@ -213,6 +216,12 @@ export function RequireOnboarding({
         const session = result.data?.session as any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = result.data?.user as any;
+
+        // Let auth-specific guards handle unauthenticated users.
+        // This prevents redirecting signed-out users into onboarding flows.
+        if (!user) {
+          return;
+        }
 
         // Check 1: User explicitly needs onboarding
         if (user?.shouldOnboard) {
