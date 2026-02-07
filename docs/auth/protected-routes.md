@@ -106,4 +106,5 @@ export default function Dashboard() {
 ## 👉 Next Steps
 
 - [Onboarding Flow](./onboarding.md) — Add multi-step user setup
+- [Email Verification Policy](./email-verification-policy.md) — Force redirect or banner for unverified users
 - [Configuration](./configuration.md) — Customize redirect paths

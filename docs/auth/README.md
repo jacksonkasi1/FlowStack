@@ -24,6 +24,7 @@ For developers building real features:
 | Guide | Time | Description |
 |-------|------|-------------|
 | [Onboarding](./onboarding.md) | ⏱️ 20 min | Multi-step onboarding system |
+| [Email Verification Policy](./email-verification-policy.md) | ⏱️ 10 min | Force redirect or banner for unverified users |
 | [Organization Invitations](./organization-invitations.md) | ⏱️ 15 min | Team invite flows |
 | [Adding Providers](./adding-providers.md) | ⏱️ 10 min | Add OAuth providers (GitHub, etc.) |
 | [OAuth Redirects](./oauth-redirects.md) | ⏱️ 10 min | Handle social login redirects |
