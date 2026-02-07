@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 // ** import components
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { EmailVerificationBanner } from "@repo/auth-ui/guards/react-router";
+import { authClient } from "@/lib/auth-client";
+import { EMAIL_VERIFICATION_CONFIG } from "@/config/email-verification";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -50,10 +52,13 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      <EmailVerificationBanner />
+      <EmailVerificationBanner
+        mode={EMAIL_VERIFICATION_CONFIG.mode}
+        message={EMAIL_VERIFICATION_CONFIG.bannerMessage}
+        authClient={authClient}
+      />
 
       <main className="flex-1">{children}</main>
     </div>
   );
 }
-

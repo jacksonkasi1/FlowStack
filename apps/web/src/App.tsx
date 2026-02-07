@@ -12,14 +12,23 @@ import ResetPassword from "@/pages/auth/ResetPassword";
 import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import Settings from "@/pages/Settings";
+import VerifyEmailPage from "@/pages/account/VerifyEmail";
 import OrganizationSettingsPage from "@/pages/organization/Settings";
 import OrganizationMembersPage from "@/pages/organization/Members";
 import AcceptInvitationPage from "@/pages/organization/AcceptInvite";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
+import { EMAIL_VERIFICATION_CONFIG } from "@/config/email-verification";
 
 export default function App() {
+  const guardProps = {
+    authClient,
+    emailVerificationMode: EMAIL_VERIFICATION_CONFIG.mode,
+    emailVerificationRedirectPath: EMAIL_VERIFICATION_CONFIG.redirectPath,
+    emailVerificationBypassRoutes: EMAIL_VERIFICATION_CONFIG.bypassRoutes,
+  } as const;
+
   return (
     <Routes>
       {/* Auth routes - no guard needed */}
@@ -50,7 +59,7 @@ export default function App() {
       <Route
         path="/"
         element={
-          <RequireOnboarding authClient={authClient}>
+          <RequireOnboarding {...guardProps}>
             <SignedIn>
               <Navigate to="/dashboard" replace />
             </SignedIn>
@@ -63,7 +72,7 @@ export default function App() {
       <Route
         path="/dashboard"
         element={
-          <RequireOnboarding authClient={authClient}>
+          <RequireOnboarding {...guardProps}>
             <Dashboard />
           </RequireOnboarding>
         }
@@ -71,8 +80,16 @@ export default function App() {
       <Route
         path="/account/settings"
         element={
-          <RequireOnboarding authClient={authClient}>
+          <RequireOnboarding {...guardProps}>
             <Settings />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path={EMAIL_VERIFICATION_CONFIG.redirectPath}
+        element={
+          <RequireOnboarding {...guardProps}>
+            <VerifyEmailPage />
           </RequireOnboarding>
         }
       />
@@ -83,7 +100,7 @@ export default function App() {
           <Route
             path="/organization/settings"
             element={
-              <RequireOnboarding authClient={authClient}>
+              <RequireOnboarding {...guardProps}>
                 <OrganizationSettingsPage />
               </RequireOnboarding>
             }
@@ -91,7 +108,7 @@ export default function App() {
           <Route
             path="/organization/members"
             element={
-              <RequireOnboarding authClient={authClient}>
+              <RequireOnboarding {...guardProps}>
                 <OrganizationMembersPage />
               </RequireOnboarding>
             }
