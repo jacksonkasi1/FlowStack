@@ -31,7 +31,12 @@
  */
 
 // ** Types - kept minimal for consumers who need them
-export type { AuthUIConfig, OnboardingConfig, AuthConfig } from "./types";
+export type {
+  AuthUIConfig,
+  OnboardingConfig,
+  AuthConfig,
+  EmailVerificationMode,
+} from "./types";
 
 // ** Config utilities
 export { DEFAULT_CONFIG, defaultStepPathTransform } from "./config/defaults";

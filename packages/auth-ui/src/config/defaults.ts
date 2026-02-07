@@ -42,6 +42,11 @@ export const DEFAULT_CONFIG: Required<AuthUIConfig> = {
         organization: {
             requireOrganization: requiresOrganization(),
         },
+        emailVerification: {
+            mode: "force_redirect",
+            redirectPath: "/account/verify-email",
+            bypassRoutes: ["/account/verify-email"],
+        },
     },
     onboarding: {
         enabled: true,
@@ -66,6 +71,10 @@ export function mergeConfig(userConfig?: AuthUIConfig): Required<AuthUIConfig> {
             organization: {
                 ...DEFAULT_CONFIG.auth.organization,
                 ...userConfig.auth?.organization,
+            },
+            emailVerification: {
+                ...DEFAULT_CONFIG.auth.emailVerification,
+                ...userConfig.auth?.emailVerification,
             },
         },
         onboarding: {

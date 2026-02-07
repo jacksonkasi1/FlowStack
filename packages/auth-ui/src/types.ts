@@ -8,6 +8,8 @@
 // ** import types
 import type { ReactNode } from "react";
 
+export type EmailVerificationMode = "force_redirect" | "banner" | "none";
+
 /**
  * Router adapter interface - abstracts router-specific navigation
  *
@@ -65,6 +67,32 @@ export interface AuthConfig {
          * @default true
          */
         requireOrganization?: boolean;
+    };
+
+    /**
+     * Email verification behavior for protected app pages.
+     */
+    emailVerification?: {
+        /**
+         * Verification behavior mode.
+         * - "force_redirect": Block access and redirect to verification page
+         * - "banner": Allow access and show verification banner
+         * - "none": Disable verification UX/enforcement
+         * @default "force_redirect"
+         */
+        mode?: EmailVerificationMode;
+
+        /**
+         * Redirect target used when mode is "force_redirect"
+         * @default "/account/verify-email"
+         */
+        redirectPath?: string;
+
+        /**
+         * Additional routes allowed for unverified users while in force redirect mode
+         * @default ["/account/verify-email"]
+         */
+        bypassRoutes?: string[];
     };
 }
 

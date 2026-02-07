@@ -12,77 +12,97 @@ import { organizationClient, adminClient } from "better-auth/client/plugins";
 import { onboardingClient } from "@repo/onboarding/client";
 import { useLocation } from "react-router-dom";
 
+// ** import hooks
+import { useEmailVerificationStatus } from "./useEmailVerificationStatus";
+import type { EmailVerificationMode } from "./RequireOnboarding";
+
 // ** import types
 import type { ReactNode } from "react";
 
 interface EmailVerificationBannerProps {
+    /**
+     * Verification behavior mode.
+     * Banner renders only when mode is "banner".
+     * @default "banner"
+     */
+    mode?: EmailVerificationMode;
+
+    /**
+     * Better Auth client instance
+     */
+    authClient?: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        getSession: (...args: any[]) => Promise<any>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sendVerificationEmail?: (...args: any[]) => Promise<any>;
+    };
+
+    /**
+     * Routes where banner should be hidden
+     */
+    hiddenRoutes?: string[];
+
+    /**
+     * Banner text
+     */
+    message?: string;
+
     /**
      * Custom banner content
      */
     children?: ReactNode;
 }
 
-export function EmailVerificationBanner({ children }: EmailVerificationBannerProps) {
+export function EmailVerificationBanner({
+    mode = "banner",
+    authClient,
+    hiddenRoutes = ["/auth", "/onboarding", "/reset-password"],
+    message = "Verify your email to unlock full access.",
+    children,
+}: EmailVerificationBannerProps) {
     const location = useLocation();
-    const [showBanner, setShowBanner] = useState(false);
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
+    const { user, isVerified, isPending, refetch } = useEmailVerificationStatus({
+        authClient,
+    });
 
-    // Routes that shouldn't show the banner
-    const hiddenRoutes = ["/auth", "/onboarding", "/reset-password"];
+    const shouldHideForRoute = hiddenRoutes.some((r) => location.pathname.startsWith(r));
+    const showBanner = mode === "banner" && !shouldHideForRoute && !isPending && !!user && !isVerified;
 
     useEffect(() => {
-        const checkVerification = async () => {
-            // Hide on certain routes
-            if (hiddenRoutes.some((r) => location.pathname.startsWith(r))) {
-                setShowBanner(false);
-                return;
-            }
-
-            try {
-                const authClient = createAuthClient({
-                    plugins: [organizationClient(), adminClient(), onboardingClient()],
-                });
-
-                const result = await authClient.getSession();
-                const user = result.data?.user;
-
-                if (user && !user.emailVerified) {
-                    setShowBanner(true);
-                } else {
-                    setShowBanner(false);
-                }
-            } catch {
-                setShowBanner(false);
-            }
-        };
-
-        checkVerification();
-    }, [location.pathname]);
+        if (!showBanner) {
+            setSent(false);
+        }
+    }, [showBanner]);
 
     const handleResend = useCallback(async () => {
-        if (sending || sent) return;
+        if (sending || sent || !user?.email) {
+            return;
+        }
 
         setSending(true);
         try {
-            const authClient = createAuthClient({
-                plugins: [organizationClient(), adminClient(), onboardingClient()],
-            });
+            const client =
+                authClient ||
+                createAuthClient({
+                    plugins: [organizationClient(), adminClient() as any, onboardingClient()],
+                });
 
-            const result = await authClient.getSession();
-            const email = result.data?.user?.email;
-
-            if (email) {
-                await authClient.sendVerificationEmail({ email });
-                setSent(true);
-                setTimeout(() => setSent(false), 60000);
+            if (!client.sendVerificationEmail) {
+                return;
             }
+
+            await client.sendVerificationEmail({ email: user.email });
+            setSent(true);
+            setTimeout(() => setSent(false), 60000);
+            await refetch();
         } catch (error) {
             console.error("Failed to send verification email:", error);
         } finally {
             setSending(false);
         }
-    }, [sending, sent]);
+    }, [authClient, refetch, sending, sent, user?.email]);
 
     if (!showBanner) return null;
 
@@ -93,7 +113,7 @@ export function EmailVerificationBanner({ children }: EmailVerificationBannerPro
     return (
         <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800 px-4 py-2">
             <div className="flex items-center justify-center gap-2 text-sm text-amber-800 dark:text-amber-200">
-                <span>Please verify your email address.</span>
+                <span>{message}</span>
                 <button
                     onClick={handleResend}
                     disabled={sending || sent}

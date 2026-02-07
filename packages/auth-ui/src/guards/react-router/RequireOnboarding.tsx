@@ -40,14 +40,24 @@ type AuthSessionClient = {
   getSession: (...args: any[]) => Promise<any>;
 };
 
+export type EmailVerificationMode = "force_redirect" | "banner" | "none";
+
 /**
  * Default configuration values
  */
 const DEFAULTS = {
   onboardingPath: "/onboarding",
   createOrgPath: "/onboarding/create-organization",
-  bypassRoutes: ["/auth", "/onboarding", "/reset-password", "/accept-invitation"],
+  bypassRoutes: [
+    "/auth",
+    "/onboarding",
+    "/reset-password",
+    "/accept-invitation",
+  ],
   requireOrganization: true,
+  emailVerificationMode: "force_redirect" as EmailVerificationMode,
+  emailVerificationRedirectPath: "/account/verify-email",
+  emailVerificationBypassRoutes: ["/account/verify-email"],
 };
 
 interface RequireOnboardingProps {
@@ -71,7 +81,7 @@ interface RequireOnboardingProps {
    * Routes that bypass onboarding check
    * @default ["/auth", "/onboarding", "/reset-password"]
    */
-  bypassRoutes?: string[];
+  bypassRoutes?: readonly string[];
 
   // === Paths (all configurable) ===
   /**
@@ -111,6 +121,27 @@ interface RequireOnboardingProps {
    * @default true
    */
   requireOrganization?: boolean;
+
+  /**
+   * Email verification behavior for protected app pages.
+   * - "force_redirect": Block unverified users and redirect to verification page
+   * - "banner": Allow access (banner mode is handled by EmailVerificationBanner)
+   * - "none": No verification UX/enforcement
+   * @default "force_redirect"
+   */
+  emailVerificationMode?: EmailVerificationMode;
+
+  /**
+   * Verification page path used when mode is "force_redirect"
+   * @default "/account/verify-email"
+   */
+  emailVerificationRedirectPath?: string;
+
+  /**
+   * Additional routes allowed for unverified users in "force_redirect" mode.
+   * @default ["/account/verify-email"]
+   */
+  emailVerificationBypassRoutes?: readonly string[];
 }
 
 /**
@@ -148,6 +179,9 @@ export function RequireOnboarding({
   onRedirect,
   loadingComponent,
   requireOrganization = DEFAULTS.requireOrganization,
+  emailVerificationMode = DEFAULTS.emailVerificationMode,
+  emailVerificationRedirectPath = DEFAULTS.emailVerificationRedirectPath,
+  emailVerificationBypassRoutes = DEFAULTS.emailVerificationBypassRoutes,
 }: RequireOnboardingProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -196,6 +230,10 @@ export function RequireOnboarding({
     }
 
     const checkStatus = async () => {
+      // Reset stale redirect state for the current path check.
+      // If a redirect is needed in this run, redirectTo() will set it back to true.
+      setIsRedirecting(false);
+
       try {
         // Use provided client or create a fallback
         const client =
@@ -236,6 +274,22 @@ export function RequireOnboarding({
           redirectTo(createOrgPath);
           return;
         }
+
+        // Check 3: Email verification gating (after onboarding + organization checks)
+        if (emailVerificationMode === "force_redirect" && !user?.emailVerified) {
+          const verificationBypassRoutes = [
+            emailVerificationRedirectPath,
+            ...emailVerificationBypassRoutes,
+          ];
+          const canAccessUnverifiedRoute = verificationBypassRoutes.some((route) =>
+            currentPath.startsWith(route),
+          );
+
+          if (!canAccessUnverifiedRoute) {
+            redirectTo(emailVerificationRedirectPath);
+            return;
+          }
+        }
       } catch (error) {
         console.error("Failed to check onboarding status:", error);
       } finally {
@@ -253,6 +307,10 @@ export function RequireOnboarding({
     onboardingPath,
     createOrgPath,
     stepPathMap,
+    location.pathname,
+    emailVerificationMode,
+    emailVerificationRedirectPath,
+    emailVerificationBypassRoutes,
   ]);
 
   if (isChecking || isRedirecting) {
