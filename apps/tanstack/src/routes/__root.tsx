@@ -16,6 +16,8 @@ import { RequireOnboarding } from '@repo/auth-ui/guards/tanstack-router'
 
 // ** import utils
 import { Providers } from '../providers'
+import { authClient } from "../lib/auth-client";
+import { EMAIL_VERIFICATION_CONFIG } from "../config/email-verification";
 import appCss from '../styles.css?url'
 import type { ReactNode } from 'react'
 
@@ -48,7 +50,12 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <Providers>
-      <RequireOnboarding>
+      <RequireOnboarding
+        authClient={authClient as any}
+        emailVerificationMode={EMAIL_VERIFICATION_CONFIG.mode}
+        emailVerificationRedirectPath={EMAIL_VERIFICATION_CONFIG.redirectPath}
+        emailVerificationBypassRoutes={EMAIL_VERIFICATION_CONFIG.bypassRoutes}
+      >
         <Outlet />
       </RequireOnboarding>
     </Providers>

@@ -7,6 +7,13 @@ import { Link } from '@tanstack/react-router'
 
 // ** import components
 import { ModeToggle } from '@/components/ui/mode-toggle'
+import { EmailVerificationBanner } from "@repo/auth-ui/guards/tanstack-router";
+
+// ** import utils
+import { authClient } from "@/lib/auth-client";
+
+// ** import config
+import { EMAIL_VERIFICATION_CONFIG } from "@/config/email-verification";
 
 interface AppLayoutProps {
   children: ReactNode
@@ -48,6 +55,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           <UserButton size="icon" />
         </div>
       </header>
+
+      <EmailVerificationBanner
+        mode={EMAIL_VERIFICATION_CONFIG.mode}
+        message={EMAIL_VERIFICATION_CONFIG.bannerMessage}
+        authClient={authClient}
+      />
 
       <main className="flex-1">{children}</main>
     </div>
