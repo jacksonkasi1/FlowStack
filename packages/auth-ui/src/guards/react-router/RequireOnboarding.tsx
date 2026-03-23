@@ -148,8 +148,11 @@ interface RequireOnboardingProps {
  * Default loading component
  */
 function DefaultLoadingComponent() {
-  // Consumers should supply a `loadingComponent` to match their app shell.
-  return null;
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  );
 }
 
 /**
@@ -270,13 +273,16 @@ export function RequireOnboarding({
         }
 
         // Check 3: Email verification gating (after onboarding + organization checks)
-        if (emailVerificationMode === "force_redirect" && !user?.emailVerified) {
+        if (
+          emailVerificationMode === "force_redirect" &&
+          !user?.emailVerified
+        ) {
           const verificationBypassRoutes = [
             emailVerificationRedirectPath,
             ...emailVerificationBypassRoutes,
           ];
-          const canAccessUnverifiedRoute = verificationBypassRoutes.some((route) =>
-            currentPath.startsWith(route),
+          const canAccessUnverifiedRoute = verificationBypassRoutes.some(
+            (route) => currentPath.startsWith(route),
           );
 
           if (!canAccessUnverifiedRoute) {
