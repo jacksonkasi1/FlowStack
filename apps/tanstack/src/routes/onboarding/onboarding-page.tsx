@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FullPageLoading } from "@/components/ui/full-page-loading";
 
 // ** import config
 import { APP_URLS } from "@/config/urls";
@@ -186,11 +187,7 @@ export default function OnboardingPage({ step }: OnboardingProps) {
   };
 
   if (isAuthChecking || isRedirecting || !currentStep) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   const stepConfig = (STEPS as any)[currentStep];

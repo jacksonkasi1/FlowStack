@@ -6,6 +6,7 @@ import { toast } from "sonner";
 // ** import components
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FullPageLoading } from "@/components/ui/full-page-loading";
 import { ProtectedRoute } from "@repo/auth-ui/guards/react-router";
 
 // ** import config
@@ -88,11 +89,7 @@ export default function VerifyEmailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   return (

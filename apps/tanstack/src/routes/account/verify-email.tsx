@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FullPageLoading } from "@/components/ui/full-page-loading";
 import { ProtectedRoute } from "@repo/auth-ui/guards/tanstack-router";
 
 // ** import utils
@@ -102,11 +103,7 @@ function VerifyEmailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   return (

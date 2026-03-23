@@ -148,14 +148,8 @@ interface RequireOnboardingProps {
  * Default loading component
  */
 function DefaultLoadingComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        {/*<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />*/}
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    </div>
-  );
+  // Consumers should supply a `loadingComponent` to match their app shell.
+  return null;
 }
 
 /**

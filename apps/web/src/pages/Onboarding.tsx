@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FullPageLoading } from "@/components/ui/full-page-loading";
 import { toast } from "sonner";
 
 // ** import config
@@ -217,11 +218,7 @@ export default function Onboarding({ step }: OnboardingProps) {
 
   // Show loading while checking auth, redirecting, or determining step
   if (isAuthChecking || isRedirecting || !currentStep) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-      </div>
-    );
+    return <FullPageLoading />;
   }
 
   const stepConfig = STEPS[currentStep as keyof typeof STEPS];

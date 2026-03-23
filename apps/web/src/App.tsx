@@ -20,6 +20,7 @@ import AcceptInvitationPage from "@/pages/organization/AcceptInvite";
 // ** import utils
 import { authClient } from "@/lib/auth-client";
 import { EMAIL_VERIFICATION_CONFIG } from "@/config/email-verification";
+import { FullPageLoading } from "@/components/ui/full-page-loading";
 
 export default function App() {
   const guardProps = {
@@ -27,6 +28,7 @@ export default function App() {
     emailVerificationMode: EMAIL_VERIFICATION_CONFIG.mode,
     emailVerificationRedirectPath: EMAIL_VERIFICATION_CONFIG.redirectPath,
     emailVerificationBypassRoutes: EMAIL_VERIFICATION_CONFIG.bypassRoutes,
+    loadingComponent: <FullPageLoading />,
   } as const;
 
   return (

@@ -13,6 +13,7 @@ import { Toaster } from 'sonner'
 
 // ** import components
 import { RequireOnboarding } from '@repo/auth-ui/guards/tanstack-router'
+import { FullPageLoading } from '@/components/ui/full-page-loading'
 
 // ** import utils
 import { Providers } from '../providers'
@@ -55,6 +56,7 @@ function RootComponent() {
         emailVerificationMode={EMAIL_VERIFICATION_CONFIG.mode}
         emailVerificationRedirectPath={EMAIL_VERIFICATION_CONFIG.redirectPath}
         emailVerificationBypassRoutes={EMAIL_VERIFICATION_CONFIG.bypassRoutes}
+        loadingComponent={<FullPageLoading />}
       >
         <Outlet />
       </RequireOnboarding>
