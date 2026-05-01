@@ -27,18 +27,6 @@ axiosInstance.interceptors.response.use(
     return response
   },
   (error) => {
-    // Handle common error scenarios
-    if (error.response?.status === 401) {
-      // Unauthorized - could redirect to login
-      console.error('Unauthorized request')
-    } else if (error.response?.status === 403) {
-      // Forbidden
-      console.error('Forbidden request')
-    } else if (error.response?.status >= 500) {
-      // Server error
-      console.error('Server error')
-    }
-
     return Promise.reject(error)
   },
 )

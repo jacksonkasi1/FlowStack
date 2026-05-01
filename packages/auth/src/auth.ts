@@ -1,6 +1,6 @@
 // ** import core packages
-import { db } from "@repo/db";
 import {
+  db,
   organization as organizationTable,
   member as memberTable,
   session as sessionTable,
@@ -231,7 +231,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         const ctxSession = ctx.context.session as any;
         const returnedData = (ctx.context as any).returned as any;
 
-        logger.info(`[hooks.after] get-session called. ctxSession exists: ${!!ctxSession}, returned exists: ${!!returnedData}`);
+        logger.debug(`[hooks.after] get-session called. ctxSession exists: ${!!ctxSession}, returned exists: ${!!returnedData}`);
 
         // Try to find session data from either location
         const sessionData = ctxSession?.session || returnedData?.session;
@@ -239,12 +239,12 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
         // Skip if no session data or already has active org
         if (!sessionData || sessionData.activeOrganizationId) {
-          logger.info(`[hooks.after] Skipping: sessionData=${!!sessionData}, activeOrg=${sessionData?.activeOrganizationId}`);
+          logger.debug(`[hooks.after] Skipping: sessionData=${!!sessionData}, activeOrg=${sessionData?.activeOrganizationId}`);
           return;
         }
 
         if (!userData) {
-          logger.info(`[hooks.after] Skipping: no user data`);
+          logger.debug(`[hooks.after] Skipping: no user data`);
           return;
         }
 
@@ -255,7 +255,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
             .from(memberTable)
             .where(eq(memberTable.userId, userData.id));
 
-          logger.info(`[hooks.after] User ${userData.id} has ${memberships.length} org(s)`);
+          logger.debug(`[hooks.after] User ${userData.id} has ${memberships.length} org(s)`);
 
           // If exactly 1 org, set it as active
           if (memberships.length === 1) {
@@ -294,7 +294,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
                 })
                 .where(eq(userTable.id, userData.id));
 
-              logger.info(
+              logger.debug(
                 `Re-enabled onboarding for user ${userData.id} (no organization membership)`,
               );
             }
