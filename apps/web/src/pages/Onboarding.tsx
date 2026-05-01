@@ -130,8 +130,7 @@ export default function Onboarding({ step }: OnboardingProps) {
         }
 
         setCurrentStep(step || serverStep);
-      } catch (error) {
-        console.error("Failed to check auth/onboarding status:", error);
+      } catch {
         setIsRedirecting(true);
         navigate("/auth/sign-in", { replace: true });
       } finally {
@@ -160,7 +159,6 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       navigate(STEPS.inviteMembers.path);
     } catch (error) {
-      console.error("Failed to create organization:", error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -188,7 +186,6 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
     } catch (error) {
-      console.error("Failed to complete step:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to complete step",
       );
@@ -207,7 +204,6 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
     } catch (error) {
-      console.error("Failed to skip step:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to skip step",
       );

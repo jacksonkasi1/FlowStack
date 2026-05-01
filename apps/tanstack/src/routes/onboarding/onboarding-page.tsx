@@ -118,8 +118,7 @@ export default function OnboardingPage({ step }: OnboardingProps) {
         }
 
         setCurrentStep(step || serverStep);
-      } catch (error) {
-        console.error("Failed to check auth/onboarding status:", error);
+      } catch {
         setIsRedirecting(true);
         navigate({ to: "/auth/$authView", params: { authView: "sign-in" }, replace: true });
       } finally {
@@ -145,7 +144,6 @@ export default function OnboardingPage({ step }: OnboardingProps) {
       toast.success("Organization created!");
       navigate({ to: STEPS.inviteMembers.path as any });
     } catch (error) {
-      console.error("Failed to create organization:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create organization");
     } finally {
       setIsLoading(false);
@@ -165,7 +163,6 @@ export default function OnboardingPage({ step }: OnboardingProps) {
       toast.success("Onboarding complete!");
       navigate({ to: AUTH_REDIRECTS.afterLogin as any, replace: true });
     } catch (error) {
-      console.error("Failed to complete step:", error);
       toast.error(error instanceof Error ? error.message : "Failed to complete step");
     } finally {
       setIsLoading(false);
@@ -179,7 +176,6 @@ export default function OnboardingPage({ step }: OnboardingProps) {
       toast.success("Onboarding complete!");
       navigate({ to: AUTH_REDIRECTS.afterLogin as any, replace: true });
     } catch (error) {
-      console.error("Failed to skip step:", error);
       toast.error(error instanceof Error ? error.message : "Failed to skip step");
     } finally {
       setIsLoading(false);
