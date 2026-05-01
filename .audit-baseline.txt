@@ -1,0 +1,222 @@
+qs  >=6.7.0 <=6.14.1
+  workspace:tanstack › shadcn
+  low: qs's arrayLimit bypass in comma parsing allows denial of service - https://github.com/advisories/GHSA-w7fw-mjwx-w883
+
+@hono/node-server  <1.19.10
+  workspace:tanstack › shadcn
+  high: @hono/node-server has authorization bypass for protected static paths via encoded slashes in Serve Static Middleware - https://github.com/advisories/GHSA-wc8c-qw6v-h7f6
+  moderate: @hono/node-server: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-92pp-h63x-v22m
+
+brace-expansion  <1.1.13
+  workspace:tanstack › @tanstack/eslint-config
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › shadcn
+  moderate: brace-expansion: Zero-step sequence causes process hang and memory exhaustion - https://github.com/advisories/GHSA-f886-m6hf-6m8v
+  moderate: brace-expansion: Zero-step sequence causes process hang and memory exhaustion - https://github.com/advisories/GHSA-f886-m6hf-6m8v
+
+follow-redirects  <=1.15.11
+  workspace:tanstack › axios
+  moderate: follow-redirects leaks Custom Authentication Headers to Cross-Domain Redirect Targets - https://github.com/advisories/GHSA-r4q5-vmmm-2653
+
+socket.io-parser  >=4.0.0 <4.2.6
+  workspace:@repo/email-templates › react-email
+  high: socket.io allows an unbounded number of binary attachments - https://github.com/advisories/GHSA-677m-j7p3-52f9
+
+undici  >=7.0.0 <7.24.0
+  workspace:tanstack › nitro
+  workspace:tanstack › @tanstack/react-start
+  high: Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client - https://github.com/advisories/GHSA-f269-vfmq-vjvj
+  moderate: Undici has an HTTP Request/Response Smuggling issue - https://github.com/advisories/GHSA-2mjp-6q6p-2qxm
+  high: Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression - https://github.com/advisories/GHSA-vrm6-8vpv-qv8q
+  high: Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation - https://github.com/advisories/GHSA-v9p9-hfj2-hcw8
+  moderate: Undici has CRLF Injection in undici via `upgrade` option - https://github.com/advisories/GHSA-4992-7rv2-5pvq
+  moderate: Undici has Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering that leads to DoS - https://github.com/advisories/GHSA-phc3-fgpg-7m6h
+
+minimatch  <3.1.3
+  workspace:tanstack › @tanstack/eslint-config
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › shadcn
+  high: minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+  high: minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+  high: minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+  high: minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+  high: minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+  high: minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+
+uuid  <14.0.0
+  workspace:tanstack › @daveyplate/better-auth-ui
+  moderate: uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+
+srvx  <0.11.13
+  workspace:tanstack › nitro
+  workspace:tanstack › @tanstack/react-start
+  workspace:tanstack › better-auth
+  moderate: srvx is vulnerable to middleware bypass via absolute URI in request line  - https://github.com/advisories/GHSA-p36q-q72m-gchr
+
+flatted  <3.4.0
+  workspace:tanstack › @tanstack/eslint-config
+  high: flatted vulnerable to unbounded recursion DoS in parse() revive phase - https://github.com/advisories/GHSA-25h7-pfq9-p65f
+  high: Prototype Pollution via parse() in NodeJS flatted - https://github.com/advisories/GHSA-rf6f-7fwh-wjgh
+
+rollup  >=4.0.0 <4.59.0
+  workspace:tanstack › nitro
+  workspace:tanstack › vite
+  high: Rollup 4 has Arbitrary File Write via Path Traversal - https://github.com/advisories/GHSA-mw96-cpmx-2vgc
+
+esbuild  <=0.24.2
+  workspace:@repo/db › drizzle-kit
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › vite
+  workspace:tanstack › @tanstack/router-plugin
+  workspace:tanstack › @tanstack/react-start
+  moderate: esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+
+seroval  <=1.4.0
+  workspace:tanstack › @tanstack/react-router
+  workspace:tanstack › @tanstack/react-router-devtools
+  workspace:tanstack › @tanstack/router-plugin
+  workspace:tanstack › @tanstack/react-start
+  workspace:tanstack › better-auth
+  workspace:tanstack › @tanstack/react-router-ssr-query
+  workspace:tanstack › @tanstack/react-devtools
+  high: Seroval affected by Denial of Service via Array serialization - https://github.com/advisories/GHSA-66fc-rw6m-c2q6
+  high: seroval Affected by Remote Code Execution via JSON Deserialization - https://github.com/advisories/GHSA-3rxj-6cgf-8cfw
+  high: seroval Affected by Prototype Pollution via JSON Deserialization - https://github.com/advisories/GHSA-hj76-42vx-jwp4
+  high: Seroval affected by Denial of Service via Deeply Nested Objects - https://github.com/advisories/GHSA-3j22-8qj3-26mx
+  high: seroval affected by Denial of Service via RegExp serialization - https://github.com/advisories/GHSA-hx9m-jf43-8ffr
+
+kysely  >=0.26.0 <=0.28.11
+  workspace:tanstack › better-auth
+  workspace:@repo/db › drizzle-orm
+  workspace:tanstack › @daveyplate/better-auth-ui
+  high: SQL Injection via unsanitized JSON path keys when ignoring/silencing compilation errors or using `Kysely<any>`. - https://github.com/advisories/GHSA-wmrf-hv6w-mr66
+  high: Kysely has a MySQL SQL Injection via Insufficient Backslash Escaping in `sql.lit(string)` usage or similar methods that append string literal values into the compiled SQL strings - https://github.com/advisories/GHSA-8cpq-38p9-67gx
+
+postcss  <8.5.10
+  workspace:tanstack › shadcn
+  workspace:tanstack › vite
+  moderate: PostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93
+
+h3  >=2.0.0 <=2.0.1-rc.14
+  workspace:tanstack › nitro
+  workspace:tanstack › @tanstack/react-start
+  workspace:tanstack › better-auth
+  moderate: h3 has a Path Traversal via Percent-Encoded Dot Segments in serveStatic Allows Arbitrary File Read - https://github.com/advisories/GHSA-wr4h-v87w-p3r7
+  moderate: h3: SSE Event Injection via Unsanitized Carriage Return (`\r`) in EventStream Data and Comment Fields (Bypass of CVE Fix) - https://github.com/advisories/GHSA-4hxc-9384-m385
+  high: h3 has a middleware bypass with one gadget - https://github.com/advisories/GHSA-3vj8-jmxq-cgj5
+  high: h3 has a Server-Sent Events Injection via Unsanitized Newlines in Event Stream Fields - https://github.com/advisories/GHSA-22cc-p3c6-wpvm
+  moderate: H3: Unbounded Chunked Cookie Count in Session Cleanup Loop may Lead to Denial of Service - https://github.com/advisories/GHSA-q5pr-72pq-83v3
+  low: h3: Missing Path Segment Boundary Check in `mount()` Causes Middleware Execution on Unrelated Prefix-Matching Routes - https://github.com/advisories/GHSA-2j6q-whv2-gh6w
+
+ajv  <6.14.0
+  workspace:tanstack › shadcn
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › @tanstack/eslint-config
+  moderate: ajv has ReDoS when using `$data` option - https://github.com/advisories/GHSA-2g4f-4pwh-qvx6
+  moderate: ajv has ReDoS when using `$data` option - https://github.com/advisories/GHSA-2g4f-4pwh-qvx6
+
+drizzle-orm  <0.45.2
+  workspace:@repo/db › drizzle-orm
+  workspace:tanstack › better-auth
+  workspace:@repo/db › drizzle-zod
+  workspace:tanstack › nitro
+  high: Drizzle ORM has SQL injection via improperly escaped SQL identifiers - https://github.com/advisories/GHSA-gpj5-g38j-94v9
+
+defu  <=6.1.4
+  workspace:tanstack › better-auth
+  high: defu: Prototype pollution via `__proto__` key in defaults argument - https://github.com/advisories/GHSA-737v-mqg7-c878
+
+vite  >=7.0.0 <=7.3.1
+  workspace:tanstack › vite
+  workspace:web › vite
+  workspace:tanstack › @tailwindcss/vite
+  workspace:tanstack › @tanstack/devtools-vite
+  workspace:tanstack › @tanstack/react-start
+  workspace:tanstack › @tanstack/router-plugin
+  workspace:tanstack › @vitejs/plugin-react
+  workspace:tanstack › nitro
+  workspace:tanstack › vite-tsconfig-paths
+  workspace:tanstack › vitest
+  moderate: Vite Vulnerable to Path Traversal in Optimized Deps `.map` Handling - https://github.com/advisories/GHSA-4w7w-66w2-5vf9
+  high: Vite: `server.fs.deny` bypassed with queries - https://github.com/advisories/GHSA-v2wj-q39q-566r
+  high: Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket - https://github.com/advisories/GHSA-p9ff-h696-f583
+
+axios  >=1.0.0 <=1.13.4
+  workspace:tanstack › axios
+  workspace:web › axios
+  high: Axios is Vulnerable to Denial of Service via __proto__ Key in mergeConfig - https://github.com/advisories/GHSA-43fc-jf86-j433
+  moderate: Axios has a NO_PROXY Hostname Normalization Bypass that Leads to SSRF - https://github.com/advisories/GHSA-3p68-rc4w-qgx5
+  moderate: Axios has Unrestricted Cloud Metadata Exfiltration via Header Injection Chain - https://github.com/advisories/GHSA-fvcv-3m26-pcqx
+
+@isaacs/brace-expansion  <=5.0.0
+  workspace:tanstack › @tanstack/eslint-config
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › shadcn
+  high: @isaacs/brace-expansion has Uncontrolled Resource Consumption - https://github.com/advisories/GHSA-7h2j-956f-4vf2
+
+hono  <4.11.7
+  workspace:server › hono
+  workspace:tanstack › shadcn
+  moderate: Hono vulnerable to XSS through ErrorBoundary component  - https://github.com/advisories/GHSA-9r54-q6cx-xmh5
+  moderate: Hono cache middleware ignores "Cache-Control: private" leading to Web Cache Deception - https://github.com/advisories/GHSA-6wqw-2p9w-4vw4
+  moderate: Hono IPv4 address validation bypass in IP Restriction Middleware allows IP spoofing - https://github.com/advisories/GHSA-r354-f388-2fhh
+  moderate: Hono has an Arbitrary Key Read in Serve static Middleware (Cloudflare Workers Adapter) - https://github.com/advisories/GHSA-w332-q679-j88p
+  low: Hono added timing comparison hardening in basicAuth and bearerAuth - https://github.com/advisories/GHSA-gq3j-xvxp-8hrf
+  moderate: Hono Vulnerable to Cookie Attribute Injection via Unsanitized domain and path in setCookie() - https://github.com/advisories/GHSA-5pq2-9x2x-5p6w
+  moderate: Hono Vulnerable to SSE Control Field Injection via CR/LF in writeSSE() - https://github.com/advisories/GHSA-p6xx-57qc-3wxr
+  high: Hono vulnerable to arbitrary file access via serveStatic vulnerability  - https://github.com/advisories/GHSA-q5qw-h33p-qvwr
+  moderate: Hono vulnerable to Prototype Pollution possible through __proto__ key allowed in parseBody({ dot: true }) - https://github.com/advisories/GHSA-v8w9-8mx6-g223
+  moderate: Hono missing validation of cookie name on write path in setCookie() - https://github.com/advisories/GHSA-26pp-8wgv-hjvm
+  moderate: Hono: Non-breaking space prefix bypass in cookie name handling in getCookie() - https://github.com/advisories/GHSA-r5rp-j6wh-rvv4
+  moderate: Hono: Path traversal in toSSG() allows writing files outside the output directory - https://github.com/advisories/GHSA-xf4j-xp2r-rqqx
+  moderate: Hono: Middleware bypass via repeated slashes in serveStatic - https://github.com/advisories/GHSA-wmmm-f939-6g9c
+  moderate: hono Improperly Handles JSX Attribute Names Allows HTML Injection in hono/jsx SSR - https://github.com/advisories/GHSA-458j-xx4x-4375
+  moderate: Hono has incorrect IP matching in ipRestriction() for IPv4-mapped IPv6 addresses - https://github.com/advisories/GHSA-xpcf-pg52-r92g
+
+@modelcontextprotocol/sdk  >=1.10.0 <=1.25.3
+  workspace:tanstack › shadcn
+  high: @modelcontextprotocol/sdk has cross-client data leak via shared server/transport instance reuse - https://github.com/advisories/GHSA-345p-7cg4-v4c7
+
+fast-xml-parser  >=5.0.9 <=5.3.3
+  workspace:@repo/storage › @aws-sdk/client-s3
+  workspace:@repo/storage › @aws-sdk/s3-request-presigner
+  high: fast-xml-parser has RangeError DoS Numeric Entities Bug - https://github.com/advisories/GHSA-37qj-frw5-hhjh
+  critical: fast-xml-parser has an entity encoding bypass via regex injection in DOCTYPE entity names - https://github.com/advisories/GHSA-m7jm-9gc2-mpf2
+  high: fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit) - https://github.com/advisories/GHSA-jmr7-xgp7-cmfj
+  low: fast-xml-parser has stack overflow in XMLBuilder with preserveOrder - https://github.com/advisories/GHSA-fj3w-jwp8-x2g3
+  high: fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278) - https://github.com/advisories/GHSA-8gc5-j5rx-235r
+  moderate: Entity Expansion Limits Bypassed When Set to Zero Due to JavaScript Falsy Evaluation in fast-xml-parser - https://github.com/advisories/GHSA-jp2q-39xq-3w4g
+  moderate: fast-xml-parser XMLBuilder: XML Comment and CDATA Injection via Unescaped Delimiters - https://github.com/advisories/GHSA-gh4j-gqv2-49f6
+
+path-to-regexp  >=8.0.0 <8.4.0
+  workspace:tanstack › shadcn
+  workspace:tanstack › vitest
+  high: path-to-regexp vulnerable to Denial of Service via sequential optional groups - https://github.com/advisories/GHSA-j3q9-mxjg-w52f
+  moderate: path-to-regexp vulnerable to Regular Expression Denial of Service via multiple wildcards - https://github.com/advisories/GHSA-27v5-c462-wpq7
+
+picomatch  <2.3.2
+  workspace:tanstack › @tanstack/devtools-vite
+  workspace:tanstack › vite
+  workspace:tanstack › vitest
+  workspace:tanstack › shadcn
+  workspace:tanstack › @tanstack/eslint-config
+  workspace:tanstack › @tanstack/router-plugin
+  workspace:@repo/email-templates › react-email
+  workspace:tanstack › @tanstack/react-start
+  workspace:tanstack › nitro
+  moderate: Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching - https://github.com/advisories/GHSA-3v7f-55p6-f55p
+  moderate: Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching - https://github.com/advisories/GHSA-3v7f-55p6-f55p
+  high: Picomatch has a ReDoS vulnerability via extglob quantifiers - https://github.com/advisories/GHSA-c2c7-rcm5-vvqj
+  high: Picomatch has a ReDoS vulnerability via extglob quantifiers - https://github.com/advisories/GHSA-c2c7-rcm5-vvqj
+
+82 vulnerabilities (1 critical, 40 high, 37 moderate, 4 low)
+
+To update all dependencies to the latest compatible versions:
+  bun update
+
+To update all dependencies to the latest versions (including breaking changes):
+  bun update --latest
+

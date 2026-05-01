@@ -18,12 +18,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-email/render": "^2.0.2",
+    "@react-email/render": "^2.0.8",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/email-templates": "workspace:*",
     "@repo/logs": "workspace:*",
-    "better-auth": "^1.4.12"
+    "better-auth": "^1.6.9"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",

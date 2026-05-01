@@ -19,9 +19,9 @@
     "@repo/logs": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/storage": "workspace:*",
-    "@t3-oss/env-core": "^0.13.10",
-    "hono": "^4.11.4",
-    "zod": "^4.3.5"
+    "@t3-oss/env-core": "^0.13.11",
+    "hono": "^4.12.16",
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
