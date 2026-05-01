@@ -1,4 +1,4 @@
-// ** import lib
+// ** import core packages
 import { Hono } from "hono";
 
 // ** import utils

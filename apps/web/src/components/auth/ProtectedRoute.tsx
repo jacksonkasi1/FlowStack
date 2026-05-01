@@ -1,9 +1,9 @@
+// ** import types
+import type { ReactNode } from "react";
+
 // ** import lib
 import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui";
 import { Navigate } from "react-router-dom";
-
-// ** import types
-import type { ReactNode } from "react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
