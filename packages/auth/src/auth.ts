@@ -235,7 +235,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
       admin(),
     ],
-  });
+  // The concrete options type doesn't match Auth<BetterAuthOptions> because
+  // better-auth infers a fully-resolved generic — cast at the boundary.
+  }) as unknown as ReturnType<typeof betterAuth>;
 }
 
 export type { Session as AuthSession, User as AuthUser } from "better-auth";
