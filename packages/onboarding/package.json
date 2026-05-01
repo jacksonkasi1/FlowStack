@@ -19,7 +19,7 @@
     },
     "dependencies": {
         "better-auth": "^1.4.15",
-        "zod": "^4.3.5"
+        "zod": "^4.4.1"
     },
     "devDependencies": {
         "@repo/typescript-config": "*",

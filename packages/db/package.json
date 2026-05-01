@@ -18,11 +18,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2",
-    "drizzle-orm": "^0.45.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.7.1",
-    "nanoid": "^5.1.5",
-    "zod": "^4.3.5"
+    "nanoid": "^5.1.9",
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",

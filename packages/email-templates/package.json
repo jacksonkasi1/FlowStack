@@ -15,11 +15,11 @@
     "dev:email": "email dev -p 3001"
   },
   "dependencies": {
-    "@react-email/components": "^1.0.4",
-    "@react-email/tailwind": "^2.0.3",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "react-email": "^5.2.3"
+    "@react-email/components": "^1.0.12",
+    "@react-email/tailwind": "^2.0.7",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-email": "^5.2.11"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
