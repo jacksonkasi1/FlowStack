@@ -33,6 +33,7 @@ import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
 import checkUserRole from "./utils/user-is-admin";
+import { refreshSessionCookie } from "./utils/refresh-session-cookie";
 
 // ** import types
 import type { Env } from "./types";
@@ -166,9 +167,8 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
     session: {
       cookieCache: {
-        // Prevent stale session fields (e.g. shouldOnboard/activeOrganizationId)
-        // from causing onboarding/dashboard redirect loops immediately after updates.
-        enabled: false,
+        enabled: true,
+        maxAge: 60, // seconds — short enough that stale data expires quickly
       },
     },
 
@@ -222,7 +222,20 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
     hooks: {
       after: createAuthMiddleware(async (ctx) => {
-        // Only run on get-session endpoint
+        // After any onboarding step completes (or is skipped), the plugin has
+        // already updated shouldOnboard / currentOnboardingStep in the DB.
+        // Re-issue the signed session cookie so the cookie cache reflects the
+        // new state immediately — prevents the guard from reading stale values
+        // and looping back to /onboarding.
+        if (
+          ctx.path.startsWith("/onboarding/step/") ||
+          ctx.path.startsWith("/onboarding/skip-step/")
+        ) {
+          await refreshSessionCookie(ctx);
+          return;
+        }
+
+        // Only run the rest on get-session endpoint
         if (ctx.path !== "/get-session") {
           return;
         }
@@ -474,6 +487,11 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
                   .where(eq(sessionTable.id, session.session.id));
 
                 logger.info(`Set org ${orgId} as active for session ${session.session.id}`);
+
+                // Immediately refresh the signed cookie so the cache reflects
+                // activeOrganizationId without waiting for the hooks.after pass
+                // (which runs after adapter.updateOnboardingState completes).
+                await refreshSessionCookie(ctx);
               }
 
               return { organizationId: orgId, organizationName, slug };
