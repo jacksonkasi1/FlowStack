@@ -9,12 +9,12 @@ No production database, mail provider, storage bucket, or OAuth account was used
 Each copy passed dependency installation, a subsequent frozen-lockfile install,
 workspace type checks, the integration suite, production builds and `bun audit`:
 
-| Account model | Frontend | Result |
-| --- | --- | --- |
-| Personal | React Router | Passed |
-| Personal | TanStack Start | Passed |
-| Organization | React Router | Passed |
-| Organization | TanStack Start | Passed |
+| Account model | Frontend       | Result |
+| ------------- | -------------- | ------ |
+| Personal      | React Router   | Passed |
+| Personal      | TanStack Start | Passed |
+| Organization  | React Router   | Passed |
+| Organization  | TanStack Start | Passed |
 
 The shared suite contains 12 tests and 82 assertions covering:
 
@@ -44,10 +44,15 @@ Personal/TanStack copy. Both questions and the resulting manifest were checked.
 
 Both frontends' production output was opened in a browser. Sign-in and signup
 forms rendered without error overlays or reported browser errors. The React
-frontend completed signup, organization creation and skipping invitations, then
+and TanStack frontends completed signup, organization creation and skipping invitations, then
 reached the required email-verification page without an onboarding loop. Direct
 access to its dashboard while signed out redirected to sign-in. The Node API
 production bundle was also started and served unauthenticated session requests.
+
+A standalone TanStack runtime check consumes the complete sign-in HTML response
+with a five-second deadline; it completed in about half a second locally. This
+check runs in CI for both TanStack presets. Duplicate notification containers in
+the TanStack document shell were also removed.
 
 For reproducible local browser testing, start `bun tests/browser-server.ts` and
 serve the frontend on port 3100 (React) or 3200 (TanStack). The fixture binds only

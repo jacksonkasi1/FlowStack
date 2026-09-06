@@ -40,6 +40,11 @@ try {
       await run(destination, `${label}-types`, "bun", ["run", "check-types"]);
       await run(destination, `${label}-tests`, "bun", ["run", "test"]);
       await run(destination, `${label}-build`, "bun", ["run", "build"]);
+      if (frontend === "tanstack") {
+        await run(destination, `${label}-runtime`, "node", [
+          "scripts/verify-tanstack-runtime.mjs",
+        ]);
+      }
       await run(destination, `${label}-audit`, "bun", ["audit"]);
       // Preserve logs; generated projects are disposable and can be very large.
       await rm(destination, { recursive: true, force: true });
