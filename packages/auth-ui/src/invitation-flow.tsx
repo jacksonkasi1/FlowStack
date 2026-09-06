@@ -23,7 +23,9 @@ export function InvitationFlow({
   const [choice, setChoice] = useState<"signup" | "signin" | null>(null);
   const callbackURL = `${typeof window !== "undefined" ? window.location.origin : ""}/accept-invitation?invitationId=${encodeURIComponent(invitationId)}`;
   const button =
-    "rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50";
+    "inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
+  const secondaryButton =
+    "inline-flex min-h-10 items-center justify-center px-3 text-sm font-medium text-muted-foreground underline decoration-muted-foreground/50 underline-offset-4 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50";
   const input =
     "mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm read-only:bg-muted";
   async function refresh() {
@@ -100,7 +102,7 @@ export function InvitationFlow({
     });
   }
   return (
-    <section className="w-full max-w-sm space-y-5">
+    <section className="mx-auto w-full max-w-md space-y-6 text-center">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           {session
@@ -110,7 +112,7 @@ export function InvitationFlow({
               : "Join your team"}
         </h1>
         {context && (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-base text-muted-foreground">
             You’re invited to {context.organizationName}.
           </p>
         )}
@@ -134,7 +136,7 @@ export function InvitationFlow({
       ) : session ? (
         session.user.email.toLowerCase() !== context.email.toLowerCase() ? (
           <>
-            <p className="text-sm">
+            <p className="mx-auto max-w-sm text-sm leading-6">
               This invitation is for {context.email}. Sign out to use that
               account.
             </p>
@@ -153,11 +155,11 @@ export function InvitationFlow({
           </>
         ) : !session.user.emailVerified ? (
           <>
-            <p className="text-sm text-muted-foreground">
+            <p className="mx-auto max-w-sm text-sm leading-6 text-muted-foreground">
               Verify {context.email} using the link in your email, then continue
               here.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
               <button
                 className={button}
                 disabled={busy}
@@ -172,7 +174,7 @@ export function InvitationFlow({
                 I verified my email
               </button>
               <button
-                className="text-sm underline"
+                className={secondaryButton}
                 disabled={busy}
                 onClick={() =>
                   action(async () => {
@@ -208,7 +210,7 @@ export function InvitationFlow({
           </button>
         )
       ) : choice ? (
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="space-y-4 text-left">
           {choice === "signup" && (
             <label className="block text-sm">
               Name
@@ -246,7 +248,7 @@ export function InvitationFlow({
               required
             />
           </label>
-          <button className={button} disabled={busy}>
+          <button className={`${button} w-full`} disabled={busy}>
             {busy
               ? "Please wait…"
               : choice === "signin"
@@ -255,12 +257,12 @@ export function InvitationFlow({
           </button>
         </form>
       ) : (
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
           <button className={button} onClick={() => setChoice("signup")}>
             Create account
           </button>
           <button
-            className="text-sm underline"
+            className={secondaryButton}
             onClick={() => setChoice("signin")}
           >
             Sign in

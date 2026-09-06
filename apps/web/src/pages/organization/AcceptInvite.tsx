@@ -5,7 +5,7 @@ export default function AcceptInvitationPage() {
   const [params] = useSearchParams();
   const id = params.get("invitationId");
   return (
-    <main className="flex min-h-screen justify-center px-6 py-20">
+    <main className="flex min-h-screen items-center justify-center px-6 py-12">
       {id ? (
         <InvitationFlow client={authClient} invitationId={id} />
       ) : (

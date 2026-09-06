@@ -15,7 +15,7 @@ export const Route = createFileRoute('/accept-invitation')({
 function AcceptInvitationPage() {
   const { invitationId } = Route.useSearch()
   return (
-    <main className="flex min-h-screen justify-center px-6 py-20">
+    <main className="flex min-h-screen items-center justify-center px-6 py-12">
       {invitationId ? (
         <InvitationFlow client={authClient} invitationId={invitationId} />
       ) : (
