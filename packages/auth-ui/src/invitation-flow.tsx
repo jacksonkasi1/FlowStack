@@ -25,7 +25,7 @@ export function InvitationFlow({
   const button =
     "inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
   const secondaryButton =
-    "inline-flex min-h-10 items-center justify-center px-3 text-sm font-medium text-muted-foreground underline decoration-muted-foreground/50 underline-offset-4 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex min-h-10 items-center justify-center rounded-md border bg-background px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50";
   const input =
     "mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm read-only:bg-muted";
   async function refresh() {
@@ -102,7 +102,7 @@ export function InvitationFlow({
     });
   }
   return (
-    <section className="mx-auto w-full max-w-md space-y-6 text-center">
+    <section className="mx-auto w-full max-w-sm text-center">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           {session
@@ -112,23 +112,23 @@ export function InvitationFlow({
               : "Join your team"}
         </h1>
         {context && (
-          <p className="mt-2 text-base text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             You’re invited to {context.organizationName}.
           </p>
         )}
       </div>
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="mt-4 text-sm text-destructive">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-sm text-muted-foreground">
+        <p role="status" className="mt-3 text-sm text-muted-foreground">
           {notice}
         </p>
       )}
       {!context ? (
-        <p className="text-sm">
+        <p className="mt-4 text-sm">
           {error
             ? "Ask the organization owner for a new invitation."
             : "Loading invitation…"}
@@ -136,12 +136,12 @@ export function InvitationFlow({
       ) : session ? (
         session.user.email.toLowerCase() !== context.email.toLowerCase() ? (
           <>
-            <p className="mx-auto max-w-sm text-sm leading-6">
+            <p className="mx-auto mt-5 max-w-sm text-sm leading-6">
               This invitation is for {context.email}. Sign out to use that
               account.
             </p>
             <button
-              className={button}
+              className={`${button} mt-4`}
               disabled={busy}
               onClick={() =>
                 action(async () => {
@@ -155,11 +155,11 @@ export function InvitationFlow({
           </>
         ) : !session.user.emailVerified ? (
           <>
-            <p className="mx-auto max-w-sm text-sm leading-6 text-muted-foreground">
+            <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-muted-foreground">
               Verify {context.email} using the link in your email, then continue
               here.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 className={button}
                 disabled={busy}
@@ -171,7 +171,7 @@ export function InvitationFlow({
                   })
                 }
               >
-                I verified my email
+                Check verification
               </button>
               <button
                 className={secondaryButton}
@@ -193,7 +193,7 @@ export function InvitationFlow({
           </>
         ) : (
           <button
-            className={button}
+            className={`${button} mt-5`}
             disabled={busy}
             onClick={() =>
               action(async () => {
@@ -210,7 +210,7 @@ export function InvitationFlow({
           </button>
         )
       ) : choice ? (
-        <form onSubmit={submit} className="space-y-4 text-left">
+        <form onSubmit={submit} className="mt-5 space-y-4 text-left">
           {choice === "signup" && (
             <label className="block text-sm">
               Name
@@ -257,7 +257,7 @@ export function InvitationFlow({
           </button>
         </form>
       ) : (
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+        <div className="mt-5 grid grid-cols-2 gap-2">
           <button className={button} onClick={() => setChoice("signup")}>
             Create account
           </button>
