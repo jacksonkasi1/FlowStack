@@ -18,7 +18,7 @@ workspace type checks, the integration suite, production builds and `bun audit`:
 | Organization  | React Router   | Passed |
 | Organization  | TanStack Start | Passed |
 
-The shared suite contains 12 tests and 82 assertions covering:
+The shared suite contains 14 tests and 97 assertions covering:
 
 - Repeatable setup for all four selections, preservation of existing environment
   files, safe output directories, secret/history exclusion, and invalid arguments.
@@ -30,6 +30,8 @@ The shared suite contains 12 tests and 82 assertions covering:
   setup and repeated creation, and cookie-cache refresh after onboarding.
 - Invitation recipient/verification checks, successful acceptance, refreshed cached
   onboarding state, and rejection of a member attempting to remove the owner.
+- Invitation context lookup, expired links, recipient tampering, configurable
+  onboarding bypass, and multi-organization creation permissions with the flag off/on.
 
 Database-backed tests apply the entire migration history to an embedded PostgreSQL
 engine (PGlite), then use the application's auth configuration and Drizzle adapter.
@@ -102,6 +104,18 @@ Observed results:
 
 The test branch is retained for inspection. It contains synthetic `example.com`
 accounts and organizations; no Git backup branch was removed or changed.
+
+The revised Vite invitation page was also checked against Neon: a new recipient
+received the signup form directly, its email input was read-only, and no sign-in
+choice was displayed. Signup stayed on the invitation verification screen. After
+opening a captured verification link, accepting the invitation reached the dashboard.
+Neon confirmed member access and `should_onboard=false`. An existing account
+received the sign-in form. The old organization-onboarding URL redirected an
+invited user back to their pending invitation.
+With multi-organization creation temporarily enabled in the local server and Vite
+environments, the Organizations menu appeared and the browser created a second
+organization. Neon confirmed both memberships and the new owner role. The local
+configuration was then restored to its default disabled state.
 
 The follow-up recursive dependency check found only two intentional major-version
 holds: TypeScript 6.0.3 for the current ESLint integration, and Node 24 type

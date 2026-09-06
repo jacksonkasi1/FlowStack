@@ -336,15 +336,11 @@ export const onboarding = <
                 ? await opts.autoEnableOnSignUp(ctx)
                 : opts.autoEnableOnSignUp;
 
-            if (!enabled) {
-              return;
-            }
-
             const adapter = getOnboardingAdapter(options, ctx);
-            const firstStep = stepOrder[0] ?? null;
+            const firstStep = enabled ? (stepOrder[0] ?? null) : null;
 
             await adapter.updateOnboardingState(newSession.user.id, {
-              shouldOnboard: true,
+              shouldOnboard: Boolean(enabled),
               currentOnboardingStep: firstStep,
               completedOnboardingSteps: [],
             });

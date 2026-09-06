@@ -40,3 +40,6 @@ export type {
 
 // ** Config utilities
 export { DEFAULT_CONFIG, defaultStepPathTransform } from "./config/defaults";
+
+export { InvitationFlow } from "./invitation-flow";
+export { OrganizationMenu } from "./organization-menu";

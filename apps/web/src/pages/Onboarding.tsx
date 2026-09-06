@@ -1,3 +1,4 @@
+import { INVITATION_CONFIG } from "@repo/config";
 // ** import types
 import type { FormEvent } from "react";
 
@@ -91,11 +92,36 @@ export default function Onboarding({ step }: OnboardingProps) {
           return;
         }
 
+        if (
+          INVITATION_CONFIG.skipOrganizationOnboarding &&
+          !sessionResult.data?.session.activeOrganizationId
+        ) {
+          const pending = await authClient.$fetch<{
+            invitationId: string | null;
+          }>("/invitation/pending");
+          if (pending.error) throw new Error("Unable to check your invitation");
+          if (pending.data?.invitationId) {
+            window.location.replace(
+              "/accept-invitation?invitationId=" +
+                encodeURIComponent(pending.data.invitationId),
+            );
+            return;
+          }
+        }
+
         // Check onboarding status from session
         if (!user.shouldOnboard) {
           // Onboarding complete, go to dashboard
           setIsRedirecting(true);
-          navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+          navigate(
+            sessionStorage.getItem("flowstack.pendingInvitation")
+              ? "/accept-invitation?invitationId=" +
+                  encodeURIComponent(
+                    sessionStorage.getItem("flowstack.pendingInvitation")!,
+                  )
+              : AUTH_REDIRECTS.afterLogin,
+            { replace: true },
+          );
           return;
         }
 
@@ -196,7 +222,15 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       toast.success("Onboarding complete!");
 
-      navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+      navigate(
+        sessionStorage.getItem("flowstack.pendingInvitation")
+          ? "/accept-invitation?invitationId=" +
+              encodeURIComponent(
+                sessionStorage.getItem("flowstack.pendingInvitation")!,
+              )
+          : AUTH_REDIRECTS.afterLogin,
+        { replace: true },
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete step",
@@ -214,7 +248,15 @@ export default function Onboarding({ step }: OnboardingProps) {
 
       toast.success("Onboarding complete!");
 
-      navigate(AUTH_REDIRECTS.afterLogin, { replace: true });
+      navigate(
+        sessionStorage.getItem("flowstack.pendingInvitation")
+          ? "/accept-invitation?invitationId=" +
+              encodeURIComponent(
+                sessionStorage.getItem("flowstack.pendingInvitation")!,
+              )
+          : AUTH_REDIRECTS.afterLogin,
+        { replace: true },
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to skip step",

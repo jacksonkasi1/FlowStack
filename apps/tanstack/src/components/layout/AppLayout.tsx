@@ -1,3 +1,4 @@
+import { OrganizationMenu } from '@repo/auth-ui'
 import { isOrganizationMode } from '@repo/config'
 // ** import types
 import type { ReactNode } from 'react'
@@ -54,6 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             Profile
           </Link>
+          <OrganizationMenu client={authClient} />
           <ModeToggle />
           <UserButton size="icon" />
         </div>

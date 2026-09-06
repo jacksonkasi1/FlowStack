@@ -8,7 +8,7 @@ import {
 } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
   admin,
@@ -32,7 +32,8 @@ import { sendMagicLink } from "./email/send-magic-link";
 import { sendOrganizationInvitation } from "./email/send-invitation";
 import { sendResetPassword } from "./email/send-reset-password";
 import { sendVerificationEmail } from "./email/send-verification-email";
-import checkUserRole from "./utils/user-is-admin";
+import { invitationPolicy } from "./invitation-policy";
+import { INVITATION_CONFIG } from "@repo/config";
 import { refreshSessionCookie } from "./utils/refresh-session-cookie";
 
 // ** import types
@@ -63,6 +64,7 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     throw new Error("FRONTEND_URL environment variable is required");
   }
 
+  const policy = invitationPolicy(db);
   const baseURL = env.BETTER_AUTH_URL;
   const frontendURL = env.FRONTEND_URL;
 
@@ -97,7 +99,10 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     try {
       const urlObj = new URL(originalUrl);
       // Replace the callbackURL param to point to frontend
-      urlObj.searchParams.set("callbackURL", `${frontendURL}${frontendPath}`);
+      urlObj.searchParams.set(
+        "callbackURL",
+        new URL(frontendPath, frontendURL).toString(),
+      );
       return urlObj.toString();
     } catch {
       logger.warn("Failed to parse URL, returning original");
@@ -202,7 +207,18 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
         // Backend URL with frontend callbackURL - server will redirect after verification
         const verificationUrl = buildEmailUrlWithFrontendCallback(
           url,
-          AUTH_REDIRECTS.afterEmailVerification,
+          (() => {
+            const callback = new URL(url).searchParams.get("callbackURL");
+            if (callback) {
+              const target = new URL(callback, frontendURL);
+              if (
+                trustedOrigins.includes(target.origin) &&
+                target.pathname === "/accept-invitation"
+              )
+                return target.toString();
+            }
+            return AUTH_REDIRECTS.afterEmailVerification;
+          })(),
         );
 
         try {
@@ -219,6 +235,10 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     },
 
     hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (isOrganizationMode() && ctx.path === "/sign-up/email")
+          await policy.signupInvitation(ctx.body);
+      }),
       after: createAuthMiddleware(async (ctx) => {
         if (!isOrganizationMode()) return;
         // After any onboarding step completes (or is skipped), the plugin has
@@ -370,6 +390,7 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     },
 
     plugins: [
+      ...(isOrganizationMode() ? [policy.plugin] : []),
       bearer(),
       username(),
       magicLink({
@@ -419,7 +440,7 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
               },
 
               allowUserToCreateOrganization: async (user: { id: string }) => {
-                return await checkUserRole(user.id, env);
+                return await policy.canCreate(user.id);
               },
 
               // Organization hooks for handling invitation acceptance
@@ -478,6 +499,20 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
                     }
 
                     const userId = session.user.id;
+
+                    if (!(await policy.canCreate(userId)))
+                      throw new APIError("FORBIDDEN", {
+                        message:
+                          "Creating additional organizations is disabled.",
+                      });
+                    if (
+                      INVITATION_CONFIG.skipOrganizationOnboarding &&
+                      (await policy.pending(session.user.email))
+                    )
+                      throw new APIError("FORBIDDEN", {
+                        message:
+                          "Accept your pending invitation instead of creating an organization.",
+                      });
 
                     // Create organization
                     const orgId = crypto.randomUUID();
@@ -571,33 +606,12 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
 
               // Skip onboarding for users signing up via invitation link
               // They will join an existing organization, not create a new one
-              autoEnableOnSignUp: (ctx) => {
-                // Check if onboarding is enabled globally
-                if (!isOnboardingEnabled()) {
-                  return false;
-                }
-
-                try {
-                  // Check if signup includes a redirect to invitation acceptance
-                  const url = ctx.request?.url;
-                  if (!url) return true;
-
-                  const urlObj = new URL(url);
-                  const redirectTo =
-                    urlObj.searchParams.get("redirectTo") || "";
-
-                  // If redirecting to accept-invitation, skip onboarding
-                  if (redirectTo.includes("/accept-invitation")) {
-                    logger.info(
-                      "Skipping onboarding for user signing up via invitation",
-                    );
-                    return false;
-                  }
-
-                  return true;
-                } catch {
-                  return true;
-                }
+              autoEnableOnSignUp: async (ctx) => {
+                if (!isOnboardingEnabled()) return false;
+                const invite = await policy.signupInvitation(ctx.body);
+                return !(
+                  INVITATION_CONFIG.skipOrganizationOnboarding && invite
+                );
               },
             }),
           ]

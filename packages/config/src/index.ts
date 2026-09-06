@@ -7,6 +7,7 @@ export * from "./config/user-metadata";
 export * from "./config/organization";
 export * from "./config/auth-mode";
 
-
 // ** import storage utilities
 export * from "./storage";
+
+export * from "./config/invitations";

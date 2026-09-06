@@ -5,6 +5,10 @@ import { readFile, readdir } from "node:fs/promises";
 import { eq } from "drizzle-orm";
 import * as schema from "../packages/db/src/schema";
 import { AUTH_MODE_CONFIG } from "../packages/config/src/config/auth-mode";
+import {
+  INVITATION_CONFIG,
+  MULTI_ORGANIZATION_CONFIG,
+} from "../packages/config/src/config/invitations";
 
 let pg: PGlite;
 let database: ReturnType<typeof drizzle<typeof schema>>;
@@ -40,8 +44,10 @@ beforeAll(async () => {
       });
     },
   );
-}, 30000);
+}, 180000);
 afterAll(async () => {
+  INVITATION_CONFIG.skipOrganizationOnboarding = true;
+  MULTI_ORGANIZATION_CONFIG.enabled = false;
   Object.assign(AUTH_MODE_CONFIG, originalConfig);
   fetchSpy?.mockRestore();
   await pg?.close();
@@ -238,6 +244,25 @@ test("invitation acceptance requires the invited verified user and refreshes onb
   });
   expect(invite.status).toBe(200);
   const invitation = await invite.json();
+  const visitor = client("organization");
+  const context = await visitor.request(
+    `/invitation/context?id=${invitation.id}`,
+  );
+  expect(context.status).toBe(200);
+  expect((await context.json()).email).toBe("invited@example.com");
+  expect((await visitor.request("/invitation/context?id=invalid")).status).toBe(
+    404,
+  );
+  expect(
+    (
+      await visitor.request("/sign-up/email", {
+        email: "wrong-invite@example.com",
+        name: "Wrong",
+        password: "CorrectPassword123!",
+        callbackURL: `${env.FRONTEND_URL}/accept-invitation?invitationId=${invitation.id}`,
+      })
+    ).status,
+  ).toBe(400);
   expect(
     (
       await owner.request("/organization/accept-invitation", {
@@ -250,8 +275,22 @@ test("invitation acceptance requires the invited verified user and refreshes onb
     email: "invited@example.com",
     password: "CorrectPassword123!",
     name: "Invited",
+    callbackURL: `${env.FRONTEND_URL}/accept-invitation?invitationId=${invitation.id}`,
   });
   expect(signup.status).toBe(200);
+  expect(
+    (await (await invited.request("/get-session")).json()).user.shouldOnboard,
+  ).toBe(false);
+  expect(
+    (await (await invited.request("/invitation/pending")).json()).invitationId,
+  ).toBe(invitation.id);
+  expect(
+    (
+      await invited.request("/onboarding/step/create-organization", {
+        organizationName: "Unwanted org",
+      })
+    ).status,
+  ).toBe(403);
   expect(
     (
       await invited.request("/organization/accept-invitation", {
@@ -264,6 +303,9 @@ test("invitation acceptance requires the invited verified user and refreshes onb
     .match(/href="([^"]*\/verify-email\?[^"]+)"/)?.[1]
     ?.replaceAll("&amp;", "&");
   const url = new URL(link!);
+  expect(url.searchParams.get("callbackURL")).toContain(
+    `/accept-invitation?invitationId=${invitation.id}`,
+  );
   await invited.request(url.pathname.replace("/api/auth", "") + url.search);
   expect(
     (
@@ -289,4 +331,86 @@ test("invitation acceptance requires the invited verified user and refreshes onb
       .from(schema.member)
       .where(eq(schema.member.organizationId, invitation.organizationId)),
   ).toHaveLength(2);
+}, 30000);
+
+test("multi organization creation is denied by default and allowed when configured", async () => {
+  const owner = client("organization");
+  await owner.request("/sign-in/email", {
+    email: "owner@example.com",
+    password: "CorrectPassword123!",
+  });
+  MULTI_ORGANIZATION_CONFIG.enabled = false;
+  expect(
+    (
+      await owner.request("/organization/create", {
+        name: "Second",
+        slug: "second-denied",
+      })
+    ).status,
+  ).toBe(403);
+  try {
+    MULTI_ORGANIZATION_CONFIG.enabled = true;
+    const created = await owner.request("/organization/create", {
+      name: "Second",
+      slug: "second-allowed",
+    });
+    expect(created.status).toBe(200);
+    const org = await created.json();
+    expect(
+      (
+        await owner.request("/organization/set-active", {
+          organizationId: org.id,
+        })
+      ).status,
+    ).toBe(200);
+  } finally {
+    MULTI_ORGANIZATION_CONFIG.enabled = false;
+  }
+}, 30000);
+
+test("invitation onboarding can be enabled and expired invitations are rejected", async () => {
+  const owner = client("organization");
+  await owner.request("/sign-in/email", {
+    email: "owner@example.com",
+    password: "CorrectPassword123!",
+  });
+  const invite = await (
+    await owner.request("/organization/invite-member", {
+      email: "configured-invite@example.com",
+      role: "member",
+    })
+  ).json();
+  const invited = client("organization");
+  INVITATION_CONFIG.skipOrganizationOnboarding = false;
+  try {
+    expect(
+      (
+        await invited.request("/sign-up/email", {
+          email: "configured-invite@example.com",
+          name: "Configured",
+          password: "CorrectPassword123!",
+          callbackURL: `${env.FRONTEND_URL}/accept-invitation?invitationId=${invite.id}`,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (await (await invited.request("/get-session")).json()).user.shouldOnboard,
+    ).toBe(true);
+    expect(
+      (
+        await invited.request("/onboarding/step/create-organization", {
+          organizationName: "Configured organization",
+        })
+      ).status,
+    ).toBe(200);
+  } finally {
+    INVITATION_CONFIG.skipOrganizationOnboarding = true;
+  }
+  await database
+    .update(schema.invitation)
+    .set({ expiresAt: new Date(0) })
+    .where(eq(schema.invitation.id, invite.id));
+  expect(
+    (await owner.request(`/invitation/context?id=${invite.id}`)).status,
+  ).toBe(404);
 }, 30000);

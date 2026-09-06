@@ -5,6 +5,7 @@ import {
   isOrganizationMode,
   isOnboardingEnabled,
   requiresOrganization,
+  INVITATION_CONFIG,
 } from "@repo/config";
 import { guardDestination, matchesRoute } from "./decision";
 
@@ -12,7 +13,7 @@ export type EmailVerificationMode = "force_redirect" | "banner" | "none";
 export interface GuardProps {
   children: ReactNode;
   // Better Fetch's generic return type also includes its throw:true overload.
-  authClient?: { getSession: (...args: any[]) => Promise<any> };
+  authClient?: { getSession: (...args: any[]) => Promise<any>; $fetch?: any };
   disabled?: boolean;
   bypassRoutes?: readonly string[];
   onboardingPath?: string;
@@ -67,9 +68,27 @@ export function useGuard(
         query: { disableCookieCache: true },
         fetchOptions: { cache: "no-store" },
       })
-      .then((result) => {
+      .then(async (result) => {
         if (!active) return;
         if (result.error) throw new Error("Session check failed");
+        if (
+          INVITATION_CONFIG.skipOrganizationOnboarding &&
+          isOrganizationMode() &&
+          result.data?.user &&
+          !result.data.session?.activeOrganizationId &&
+          authClient.$fetch
+        ) {
+          const pending = await authClient.$fetch("/invitation/pending");
+          if (!active) return;
+          if (pending.error) throw new Error("Invitation check failed");
+          if (pending.data?.invitationId) {
+            navigate(
+              "/accept-invitation?invitationId=" +
+                encodeURIComponent(pending.data.invitationId),
+            );
+            return;
+          }
+        }
         const destination = guardDestination(result.data, {
           pathname,
           organization: isOrganizationMode(),
