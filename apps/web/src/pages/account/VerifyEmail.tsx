@@ -93,30 +93,36 @@ export default function VerifyEmailPage() {
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto w-full max-w-md px-6 py-20 sm:py-28">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Verify your email
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Open the verification link sent to{" "}
-          <span className="font-medium text-foreground [overflow-wrap:anywhere]">
-            {email || "your inbox"}
-          </span>{" "}
-          to continue.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Button onClick={handleCheckAgain} disabled={isChecking}>
-            {isChecking ? "Checking..." : "Continue"}
-          </Button>
-          <Button
-            variant="link"
-            className="px-0 text-muted-foreground"
-            onClick={handleResend}
-            disabled={isSending || !email}
-          >
-            {isSending ? "Sending..." : "Resend email"}
-          </Button>
-        </div>
+      <main className="flex min-h-screen items-center justify-center px-6 py-12">
+        <section className="mx-auto w-full max-w-sm text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Verify your email
+          </h1>
+          <p className="mx-auto mt-3 text-sm leading-6 text-muted-foreground">
+            Open the verification link sent to{" "}
+            <span className="font-medium text-foreground [overflow-wrap:anywhere]">
+              {email || "your inbox"}
+            </span>{" "}
+            to continue.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button
+              className="w-full"
+              onClick={handleCheckAgain}
+              disabled={isChecking}
+            >
+              {isChecking ? "Checking..." : "Check verification"}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleResend}
+              disabled={isSending || !email}
+            >
+              {isSending ? "Sending..." : "Resend email"}
+            </Button>
+          </div>
+        </section>
       </main>
     </ProtectedRoute>
   );
