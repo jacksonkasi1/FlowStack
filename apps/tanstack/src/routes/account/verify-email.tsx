@@ -6,7 +6,6 @@ import { toast } from "sonner";
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FullPageLoading } from "@/components/ui/full-page-loading";
 import { ProtectedRoute } from "@repo/auth-ui/guards/tanstack-router";
 
@@ -109,36 +108,32 @@ function VerifyEmailPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-16">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">Verify your email</h1>
-            <p className="text-muted-foreground text-lg">
-              Complete email verification before entering the application.
-            </p>
+        <section className="mx-auto w-full max-w-md px-6 py-20 sm:py-28">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Verify your email
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Open the verification link sent to{' '}
+            <span className="font-medium text-foreground [overflow-wrap:anywhere]">
+              {email || 'your inbox'}
+            </span>{' '}
+            to continue.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Button onClick={handleCheckAgain} disabled={isChecking}>
+              {isChecking ? 'Checking...' : 'Continue'}
+            </Button>
+            <Button
+              variant="link"
+              className="px-0 text-muted-foreground"
+              onClick={handleResend}
+              disabled={isSending || !email}
+            >
+              {isSending ? 'Sending...' : 'Resend email'}
+            </Button>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Action required</CardTitle>
-              <CardDescription>
-                We sent a verification link to{" "}
-                <span className="font-medium text-foreground">
-                  {email || "your inbox"}
-                </span>
-                . Open the email and click the verification link, then return here.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              <Button onClick={handleCheckAgain} disabled={isChecking}>
-                {isChecking ? "Checking..." : "I verified, check again"}
-              </Button>
-              <Button variant="outline" onClick={handleResend} disabled={isSending || !email}>
-                {isSending ? "Sending..." : "Resend verification email"}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        </section>
       </AppLayout>
     </ProtectedRoute>
-  );
+  )
 }

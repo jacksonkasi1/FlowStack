@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 // ** import components
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FullPageLoading } from "@/components/ui/full-page-loading";
 import { ProtectedRoute } from "@repo/auth-ui/guards/react-router";
 
@@ -94,37 +93,31 @@ export default function VerifyEmailPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background px-6 py-16">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">Verify your email</h1>
-            <p className="text-muted-foreground text-lg">
-              Complete email verification before entering the application.
-            </p>
-          </div>
-
-          <div className="rounded-lg border bg-card p-8 shadow-sm">
-            <Alert className="mb-6">
-              <AlertTitle>Action required</AlertTitle>
-              <AlertDescription>
-                We sent a verification link to{" "}
-                <span className="font-medium text-foreground">
-                  {email || "your inbox"}
-                </span>
-                . Open the email and click the verification link, then return here.
-              </AlertDescription>
-            </Alert>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleCheckAgain} disabled={isChecking}>
-                {isChecking ? "Checking..." : "I verified, check again"}
-              </Button>
-              <Button variant="outline" onClick={handleResend} disabled={isSending || !email}>
-                {isSending ? "Sending..." : "Resend verification email"}
-              </Button>
-            </div>
-          </div>
+      <main className="mx-auto w-full max-w-md px-6 py-20 sm:py-28">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Verify your email
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Open the verification link sent to{" "}
+          <span className="font-medium text-foreground [overflow-wrap:anywhere]">
+            {email || "your inbox"}
+          </span>{" "}
+          to continue.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Button onClick={handleCheckAgain} disabled={isChecking}>
+            {isChecking ? "Checking..." : "Continue"}
+          </Button>
+          <Button
+            variant="link"
+            className="px-0 text-muted-foreground"
+            onClick={handleResend}
+            disabled={isSending || !email}
+          >
+            {isSending ? "Sending..." : "Resend email"}
+          </Button>
         </div>
-      </div>
+      </main>
     </ProtectedRoute>
   );
 }
