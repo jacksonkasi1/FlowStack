@@ -1,6 +1,50 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { INVITATION_CONFIG } from "@repo/config";
+import { Eye, EyeOff } from "lucide-react";
+
+const button =
+  "inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButton =
+  "inline-flex min-h-10 items-center justify-center rounded-md border bg-background px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50";
+const inputBase =
+  "h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 read-only:cursor-not-allowed read-only:bg-muted";
+const input = `mt-1.5 ${inputBase}`;
+
+function InvitationPasswordInput({ choice }: { choice: "signup" | "signin" }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <label className="block text-sm font-medium">
+      Password
+      <span className="relative mt-1.5 block">
+        <input
+          className={`${inputBase} pr-11`}
+          name="password"
+          type={visible ? "text" : "password"}
+          autoComplete={
+            choice === "signup" ? "new-password" : "current-password"
+          }
+          minLength={8}
+          required
+        />
+        <button
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+          className="absolute inset-y-1 right-1 inline-flex w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          onClick={() => setVisible((current) => !current)}
+          type="button"
+        >
+          {visible ? (
+            <EyeOff aria-hidden="true" className="size-4" />
+          ) : (
+            <Eye aria-hidden="true" className="size-4" />
+          )}
+        </button>
+      </span>
+    </label>
+  );
+}
 
 // Both frontend clients expose the same Better Auth methods.
 export function InvitationFlow({
@@ -22,12 +66,6 @@ export function InvitationFlow({
   const [email, setEmail] = useState("");
   const [choice, setChoice] = useState<"signup" | "signin" | null>(null);
   const callbackURL = `${typeof window !== "undefined" ? window.location.origin : ""}/accept-invitation?invitationId=${encodeURIComponent(invitationId)}`;
-  const button =
-    "inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
-  const secondaryButton =
-    "inline-flex min-h-10 items-center justify-center rounded-md border bg-background px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50";
-  const input =
-    "mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm read-only:bg-muted";
   async function refresh() {
     const result = await client.getSession({
       query: { disableCookieCache: true },
@@ -210,9 +248,9 @@ export function InvitationFlow({
           </button>
         )
       ) : choice ? (
-        <form onSubmit={submit} className="mt-5 space-y-4 text-left">
+        <form onSubmit={submit} className="mx-auto mt-6 space-y-4 text-left">
           {choice === "signup" && (
-            <label className="block text-sm">
+            <label className="block text-sm font-medium">
               Name
               <input
                 className={input}
@@ -222,7 +260,7 @@ export function InvitationFlow({
               />
             </label>
           )}
-          <label className="block text-sm">
+          <label className="block text-sm font-medium">
             Email
             <input
               className={input}
@@ -235,19 +273,7 @@ export function InvitationFlow({
               required
             />
           </label>
-          <label className="block text-sm">
-            Password
-            <input
-              className={input}
-              name="password"
-              type="password"
-              autoComplete={
-                choice === "signup" ? "new-password" : "current-password"
-              }
-              minLength={8}
-              required
-            />
-          </label>
+          <InvitationPasswordInput choice={choice} />
           <button className={`${button} w-full`} disabled={busy}>
             {busy
               ? "Please wait…"

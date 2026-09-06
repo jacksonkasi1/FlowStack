@@ -28,6 +28,7 @@
     "@repo/config": "workspace:*",
     "@daveyplate/better-auth-ui": "^3.4.0",
     "better-auth": "^1.7.3",
+    "lucide-react": "^1.41.0",
     "@repo/onboarding": "workspace:*",
     "react-router-dom": "^7.18.3",
     "@tanstack/react-router": "^1.170.32"

@@ -37,5 +37,8 @@
   ],
   "overrides": {
     "esbuild": "^0.28.2"
+  },
+  "patchedDependencies": {
+    "@daveyplate/better-auth-ui@3.4.0": "patches/@daveyplate%2Fbetter-auth-ui@3.4.0.patch"
   }
 }

@@ -159,6 +159,7 @@
         "@repo/onboarding": "workspace:*",
         "@tanstack/react-router": "^1.170.32",
         "better-auth": "^1.7.3",
+        "lucide-react": "^1.41.0",
         "react-router-dom": "^7.18.3",
       },
       "devDependencies": {
@@ -263,6 +264,9 @@
       "name": "@repo/typescript-config",
       "version": "1.0.0",
     },
+  },
+  "patchedDependencies": {
+    "@daveyplate/better-auth-ui@3.4.0": "patches/@daveyplate%2Fbetter-auth-ui@3.4.0.patch",
   },
   "overrides": {
     "esbuild": "^0.28.2",
