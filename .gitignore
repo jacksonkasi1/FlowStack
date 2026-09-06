@@ -11,6 +11,8 @@ build
 
 # Environment
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 .env.prod
@@ -43,6 +45,8 @@ ehthumbs.db
 
 # Turbo
 .turbo
+.tanstack
+.nitro
 
 # Logs
 *.log

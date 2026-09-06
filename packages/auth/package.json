@@ -18,18 +18,20 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-email/render": "^2.0.2",
-    "@repo/db": "workspace:*",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "@repo/config": "workspace:*",
+    "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/email-templates": "workspace:*",
     "@repo/logs": "workspace:*",
     "@repo/onboarding": "workspace:*",
-    "better-auth": "^1.4.15",
-    "zod": "^4.3.5"
+    "better-auth": "^1.7.3",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
-    "@types/node": "^22"
+    "@types/node": "^24.0.0"
   }
 }

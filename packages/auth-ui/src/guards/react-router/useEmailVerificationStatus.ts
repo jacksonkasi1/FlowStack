@@ -5,7 +5,6 @@ import { organizationClient, adminClient } from "better-auth/client/plugins";
 import { onboardingClient } from "@repo/onboarding/client";
 
 type AuthClientWithSession = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getSession: (...args: any[]) => Promise<any>;
 };
 
@@ -14,7 +13,6 @@ interface UseEmailVerificationStatusOptions {
 }
 
 interface EmailVerificationStatus {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any | null;
   isVerified: boolean;
   isPending: boolean;
@@ -29,7 +27,7 @@ export function useEmailVerificationStatus(
   options?: UseEmailVerificationStatusOptions,
 ): EmailVerificationStatus {
   const [isPending, setIsPending] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const [user, setUser] = useState<any | null>(null);
 
   const refetch = useCallback(async () => {
@@ -38,7 +36,11 @@ export function useEmailVerificationStatus(
       const client =
         options?.authClient ||
         createAuthClient({
-          plugins: [organizationClient(), adminClient() as any, onboardingClient()],
+          plugins: [
+            organizationClient(),
+            adminClient() as any,
+            onboardingClient(),
+          ],
         });
 
       const result = await client.getSession({
@@ -64,4 +66,3 @@ export function useEmailVerificationStatus(
     refetch,
   };
 }
-

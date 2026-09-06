@@ -9,23 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
-import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
-import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
-import { Route as OnboardingInviteMembersRouteImport } from './routes/onboarding/invite-members'
-import { Route as OnboardingCreateOrganizationRouteImport } from './routes/onboarding/create-organization'
-import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
-import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
-import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
-import { Route as AccountSettingsRouteImport } from './routes/account/settings'
+import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
+import { Route as AccountSettingsRouteImport } from './routes/account/settings'
+import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
+import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
+import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
+import { Route as OnboardingCreateOrganizationRouteImport } from './routes/onboarding/create-organization'
+import { Route as OnboardingInviteMembersRouteImport } from './routes/onboarding/invite-members'
+import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
+import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
 
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
@@ -33,29 +33,39 @@ const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
   path: '/accept-invitation',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
+  id: '/account/$accountView',
+  path: '/account/$accountView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountSettingsRoute = AccountSettingsRouteImport.update({
+  id: '/account/settings',
+  path: '/account/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountVerifyEmailRoute = AccountVerifyEmailRouteImport.update({
+  id: '/account/verify-email',
+  path: '/account/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
+  id: '/auth/$authView',
+  path: '/auth/$authView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationIdRoute = InvitationIdRouteImport.update({
+  id: '/invitation/$id',
+  path: '/invitation/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
   id: '/onboarding/',
   path: '/onboarding/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
-  id: '/organization/settings',
-  path: '/organization/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
-  id: '/organization/members',
-  path: '/organization/members',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingInviteMembersRoute = OnboardingInviteMembersRouteImport.update({
-  id: '/onboarding/invite-members',
-  path: '/onboarding/invite-members',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingCreateOrganizationRoute =
@@ -64,29 +74,19 @@ const OnboardingCreateOrganizationRoute =
     path: '/onboarding/create-organization',
     getParentRoute: () => rootRouteImport,
   } as any)
-const InvitationIdRoute = InvitationIdRouteImport.update({
-  id: '/invitation/$id',
-  path: '/invitation/$id',
+const OnboardingInviteMembersRoute = OnboardingInviteMembersRouteImport.update({
+  id: '/onboarding/invite-members',
+  path: '/onboarding/invite-members',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
-  id: '/auth/$authView',
-  path: '/auth/$authView',
+const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
+  id: '/organization/members',
+  path: '/organization/members',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountVerifyEmailRoute = AccountVerifyEmailRouteImport.update({
-  id: '/account/verify-email',
-  path: '/account/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountSettingsRoute = AccountSettingsRouteImport.update({
-  id: '/account/settings',
-  path: '/account/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
-  id: '/account/$accountView',
-  path: '/account/$accountView',
+const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
+  id: '/organization/settings',
+  path: '/organization/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -103,7 +103,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
   '/organization/members': typeof OrganizationMembersRoute
   '/organization/settings': typeof OrganizationSettingsRoute
-  '/onboarding': typeof OnboardingIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -151,7 +151,7 @@ export interface FileRouteTypes {
     | '/onboarding/invite-members'
     | '/organization/members'
     | '/organization/settings'
-    | '/onboarding'
+    | '/onboarding/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -202,11 +202,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accept-invitation': {
@@ -216,67 +216,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AcceptInvitationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding/': {
-      id: '/onboarding/'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organization/settings': {
-      id: '/organization/settings'
-      path: '/organization/settings'
-      fullPath: '/organization/settings'
-      preLoaderRoute: typeof OrganizationSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organization/members': {
-      id: '/organization/members'
-      path: '/organization/members'
-      fullPath: '/organization/members'
-      preLoaderRoute: typeof OrganizationMembersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding/invite-members': {
-      id: '/onboarding/invite-members'
-      path: '/onboarding/invite-members'
-      fullPath: '/onboarding/invite-members'
-      preLoaderRoute: typeof OnboardingInviteMembersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding/create-organization': {
-      id: '/onboarding/create-organization'
-      path: '/onboarding/create-organization'
-      fullPath: '/onboarding/create-organization'
-      preLoaderRoute: typeof OnboardingCreateOrganizationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invitation/$id': {
-      id: '/invitation/$id'
-      path: '/invitation/$id'
-      fullPath: '/invitation/$id'
-      preLoaderRoute: typeof InvitationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/$authView': {
-      id: '/auth/$authView'
-      path: '/auth/$authView'
-      fullPath: '/auth/$authView'
-      preLoaderRoute: typeof AuthAuthViewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account/verify-email': {
-      id: '/account/verify-email'
-      path: '/account/verify-email'
-      fullPath: '/account/verify-email'
-      preLoaderRoute: typeof AccountVerifyEmailRouteImport
+    '/account/$accountView': {
+      id: '/account/$accountView'
+      path: '/account/$accountView'
+      fullPath: '/account/$accountView'
+      preLoaderRoute: typeof AccountAccountViewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/settings': {
@@ -286,11 +237,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account/$accountView': {
-      id: '/account/$accountView'
-      path: '/account/$accountView'
-      fullPath: '/account/$accountView'
-      preLoaderRoute: typeof AccountAccountViewRouteImport
+    '/account/verify-email': {
+      id: '/account/verify-email'
+      path: '/account/verify-email'
+      fullPath: '/account/verify-email'
+      preLoaderRoute: typeof AccountVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/$authView': {
+      id: '/auth/$authView'
+      path: '/auth/$authView'
+      fullPath: '/auth/$authView'
+      preLoaderRoute: typeof AuthAuthViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invitation/$id': {
+      id: '/invitation/$id'
+      path: '/invitation/$id'
+      fullPath: '/invitation/$id'
+      preLoaderRoute: typeof InvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/create-organization': {
+      id: '/onboarding/create-organization'
+      path: '/onboarding/create-organization'
+      fullPath: '/onboarding/create-organization'
+      preLoaderRoute: typeof OnboardingCreateOrganizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/invite-members': {
+      id: '/onboarding/invite-members'
+      path: '/onboarding/invite-members'
+      fullPath: '/onboarding/invite-members'
+      preLoaderRoute: typeof OnboardingInviteMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/members': {
+      id: '/organization/members'
+      path: '/organization/members'
+      fullPath: '/organization/members'
+      preLoaderRoute: typeof OrganizationMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/settings': {
+      id: '/organization/settings'
+      path: '/organization/settings'
+      fullPath: '/organization/settings'
+      preLoaderRoute: typeof OrganizationSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

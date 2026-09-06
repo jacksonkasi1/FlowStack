@@ -13,6 +13,7 @@ import { authClient } from "@/lib/auth-client";
 // ** import config
 import { APP_URLS } from "@/config/urls";
 import { getOrganizationProviderConfig } from "@/config/organization";
+import { isOrganizationMode } from "@repo/config";
 
 // ** import rest-api
 import { deleteAvatar, uploadAvatar } from "@/rest-api/storage";
@@ -44,7 +45,6 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider defaultTheme="light" storageKey="flowstack-ui-theme">
       <AuthUIProvider
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         authClient={authClient as any}
         baseURL={APP_URLS.frontend}
         redirectTo="/dashboard"
@@ -63,6 +63,7 @@ export function Providers({ children }: ProvidersProps) {
         }}
         additionalFields={orgConfig.additionalFields}
         signUp={orgConfig.signUp}
+        organization={isOrganizationMode() ? orgConfig.organization : undefined}
       >
         {children}
         <Toaster />

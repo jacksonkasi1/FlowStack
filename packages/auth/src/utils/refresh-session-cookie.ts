@@ -41,10 +41,13 @@ export async function refreshSessionCookie(
 ): Promise<void> {
   try {
     const currentSession = ctx.context.session as
-      | { session?: { token?: string } }
-      | null
-      | undefined;
-    const sessionToken = currentSession?.session?.token;
+      { session?: { token?: string } } | null | undefined;
+    const sessionToken =
+      currentSession?.session?.token ||
+      (await ctx.getSignedCookie(
+        ctx.context.authCookies.sessionToken.name,
+        ctx.context.secret,
+      ));
 
     if (!sessionToken) {
       // No session on this request - nothing to refresh.

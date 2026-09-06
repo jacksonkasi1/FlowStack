@@ -1,3 +1,4 @@
+import { isOrganizationMode } from '@repo/config'
 // ** import types
 import type { ReactNode } from 'react'
 
@@ -7,13 +8,13 @@ import { Link } from '@tanstack/react-router'
 
 // ** import components
 import { ModeToggle } from '@/components/ui/mode-toggle'
-import { EmailVerificationBanner } from "@repo/auth-ui/guards/tanstack-router";
+import { EmailVerificationBanner } from '@repo/auth-ui/guards/tanstack-router'
 
 // ** import utils
-import { authClient } from "@/lib/auth-client";
+import { authClient } from '@/lib/auth-client'
 
 // ** import config
-import { EMAIL_VERIFICATION_CONFIG } from "@/config/email-verification";
+import { EMAIL_VERIFICATION_CONFIG } from '@/config/email-verification'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -29,20 +30,22 @@ export function AppLayout({ children }: AppLayoutProps) {
               FlowStack
             </h1>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/organization/members"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Team
-            </Link>
-            <Link
-              to="/organization/settings"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Organization
-            </Link>
-          </nav>
+          {isOrganizationMode() && (
+            <nav className="flex items-center gap-4">
+              <Link
+                to="/organization/members"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Team
+              </Link>
+              <Link
+                to="/organization/settings"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Organization
+              </Link>
+            </nav>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link

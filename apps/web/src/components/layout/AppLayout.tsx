@@ -1,3 +1,4 @@
+import { isOrganizationMode } from "@repo/config";
 // ** import types
 import type { ReactNode } from "react";
 
@@ -25,20 +26,22 @@ export function AppLayout({ children }: AppLayoutProps) {
               FlowStack
             </h1>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/organization/members"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Team
-            </Link>
-            <Link
-              to="/organization/settings"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Organization
-            </Link>
-          </nav>
+          {isOrganizationMode() && (
+            <nav className="flex items-center gap-4">
+              <Link
+                to="/organization/members"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Team
+              </Link>
+              <Link
+                to="/organization/settings"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Organization
+              </Link>
+            </nav>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link

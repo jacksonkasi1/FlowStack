@@ -31,9 +31,8 @@ interface EmailVerificationBannerProps {
    * Better Auth client instance
    */
   authClient?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getSession: (...args: any[]) => Promise<any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     sendVerificationEmail?: (...args: any[]) => Promise<any>;
   };
 
@@ -93,7 +92,11 @@ export function EmailVerificationBanner({
       const client =
         authClient ||
         createAuthClient({
-          plugins: [organizationClient(), adminClient() as any, onboardingClient()],
+          plugins: [
+            organizationClient(),
+            adminClient() as any,
+            onboardingClient(),
+          ],
         });
 
       if (!client.sendVerificationEmail) {
@@ -126,10 +129,13 @@ export function EmailVerificationBanner({
           disabled={sending || sent}
           className="underline hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {sent ? "Sent!" : sending ? "Sending..." : "Resend verification email"}
+          {sent
+            ? "Sent!"
+            : sending
+              ? "Sending..."
+              : "Resend verification email"}
         </button>
       </div>
     </div>
   );
 }
-

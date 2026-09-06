@@ -1,3 +1,4 @@
+import { TEMPLATE_MODE } from "./preset";
 /**
  * Auth Mode Configuration
  *
@@ -26,40 +27,40 @@ export type AuthMode = "simple" | "organization";
  * Controls how FlowStack handles user authentication and onboarding.
  */
 export interface AuthModeConfig {
-    /**
-     * Auth mode determines the user signup experience:
-     *
-     * - `"simple"`: User signs up → goes directly to dashboard
-     *   Best for: Personal apps, single-user SaaS, MVPs
-     *
-     * - `"organization"`: User signs up → creates org → invites team → dashboard
-     *   Best for: Team SaaS, B2B apps, multi-tenant systems
-     *
-     * @default "organization"
-     */
-    mode: AuthMode;
+  /**
+   * Auth mode determines the user signup experience:
+   *
+   * - `"simple"`: User signs up → goes directly to dashboard
+   *   Best for: Personal apps, single-user SaaS, MVPs
+   *
+   * - `"organization"`: User signs up → creates org → invites team → dashboard
+   *   Best for: Team SaaS, B2B apps, multi-tenant systems
+   *
+   * @default "organization"
+   */
+  mode: AuthMode;
 
-    /**
-     * If mode is "organization", is org membership REQUIRED to access the app?
-     *
-     * - `true`: User MUST create/join an org to access dashboard
-     * - `false`: Org features available but optional (user can skip)
-     *
-     * Only applies when mode is "organization".
-     *
-     * @default true
-     */
-    requireOrganization: boolean;
+  /**
+   * If mode is "organization", is org membership REQUIRED to access the app?
+   *
+   * - `true`: User MUST create/join an org to access dashboard
+   * - `false`: Org features available but optional (user can skip)
+   *
+   * Only applies when mode is "organization".
+   *
+   * @default true
+   */
+  requireOrganization: boolean;
 
-    /**
-     * Enable the onboarding flow after signup?
-     *
-     * In "simple" mode, this is typically false.
-     * In "organization" mode, this guides users through org setup.
-     *
-     * @default true (in organization mode)
-     */
-    enableOnboarding: boolean;
+  /**
+   * Enable the onboarding flow after signup?
+   *
+   * In "simple" mode, this is typically false.
+   * In "organization" mode, this guides users through org setup.
+   *
+   * @default true (in organization mode)
+   */
+  enableOnboarding: boolean;
 }
 
 /**
@@ -78,9 +79,9 @@ export interface AuthModeConfig {
  * ```
  */
 export const AUTH_MODE_CONFIG: AuthModeConfig = {
-    mode: "organization",
-    requireOrganization: true,
-    enableOnboarding: true,
+  mode: TEMPLATE_MODE === "personal" ? "simple" : "organization",
+  requireOrganization: TEMPLATE_MODE !== "personal",
+  enableOnboarding: TEMPLATE_MODE !== "personal",
 };
 
 // ============================================================================
@@ -95,17 +96,18 @@ export const isSimpleMode = (): boolean => AUTH_MODE_CONFIG.mode === "simple";
 /**
  * Check if auth mode is "organization"
  */
-export const isOrganizationMode = (): boolean => AUTH_MODE_CONFIG.mode === "organization";
+export const isOrganizationMode = (): boolean =>
+  AUTH_MODE_CONFIG.mode === "organization";
 
 /**
  * Check if organization membership is required
  * Returns false in simple mode, respects config in organization mode
  */
 export const requiresOrganization = (): boolean =>
-    isOrganizationMode() && AUTH_MODE_CONFIG.requireOrganization;
+  isOrganizationMode() && AUTH_MODE_CONFIG.requireOrganization;
 
 /**
  * Check if onboarding is enabled
  */
 export const isOnboardingEnabled = (): boolean =>
-    isOrganizationMode() && AUTH_MODE_CONFIG.enableOnboarding;
+  isOrganizationMode() && AUTH_MODE_CONFIG.enableOnboarding;

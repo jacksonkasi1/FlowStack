@@ -7,6 +7,8 @@ export type UserRole = (typeof userRoleEnum)[number];
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name"),
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
@@ -16,7 +18,7 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   // Onboarding plugin fields
-  shouldOnboard: boolean("should_onboard").default(true),
+  shouldOnboard: boolean("should_onboard").default(false),
   currentOnboardingStep: text("current_onboarding_step"), // Current step in onboarding flow
   completedOnboardingSteps: text("completed_onboarding_steps"), // JSON array of completed step IDs
   createdAt: timestamp("created_at").notNull().defaultNow(),

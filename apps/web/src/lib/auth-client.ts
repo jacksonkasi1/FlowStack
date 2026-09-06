@@ -1,3 +1,4 @@
+import { isOrganizationMode, isOnboardingEnabled } from "@repo/config";
 // ** import lib
 import { createAuthClient } from "better-auth/react";
 import { organizationClient, adminClient } from "better-auth/client/plugins";
@@ -9,9 +10,9 @@ import { APP_URLS } from "@/config/urls";
 export const authClient = createAuthClient({
   baseURL: APP_URLS.api,
   plugins: [
-    organizationClient(),
+    ...(isOrganizationMode() ? [organizationClient()] : []),
     adminClient(),
     // Onboarding plugin - redirect handled by RequireOnboarding component, not here
-    onboardingClient(),
+    ...(isOnboardingEnabled() ? [onboardingClient()] : []),
   ],
 });

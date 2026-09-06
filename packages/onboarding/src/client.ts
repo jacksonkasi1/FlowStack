@@ -47,7 +47,7 @@ export const onboardingClient = <
   },
 >(
   options?: OnboardingClientOptions,
-): BetterAuthClientPlugin => {
+) => {
   return {
     id: "onboarding",
 

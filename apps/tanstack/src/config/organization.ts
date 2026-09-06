@@ -1,3 +1,4 @@
+import { isOrganizationMode } from '@repo/config'
 /**
  * Organization Configuration
  *
@@ -11,7 +12,7 @@ import {
   ORGANIZATION_LOGO,
   createImageUploadHandler,
   createImageDeleteHandler,
-  requiresOrganization
+  requiresOrganization,
 } from '@repo/config'
 
 // ** import types
@@ -29,7 +30,7 @@ export const ORGANIZATION_CONFIG = {
    * Calculated from centralized AUTH_MODE_CONFIG.
    */
   requireOrganization: requiresOrganization(),
-} as const;
+} as const
 
 /**
  * Create logo upload handler using shared implementation
@@ -58,13 +59,16 @@ export const getOrganizationProviderConfig = (options?: {
   const additionalFields = getUIUserFields()
 
   // Add name field (always required for sign-up)
-  const allFields: Record<string, {
-    label: string
-    placeholder?: string
-    description?: string
-    required?: boolean
-    type: 'string'
-  }> = {
+  const allFields: Record<
+    string,
+    {
+      label: string
+      placeholder?: string
+      description?: string
+      required?: boolean
+      type: 'string'
+    }
+  > = {
     name: {
       label: 'Name',
       placeholder: 'Enter your name',
@@ -75,7 +79,7 @@ export const getOrganizationProviderConfig = (options?: {
   }
 
   // Skip organization config if disabled
-  if (options?.disableOrganization) {
+  if (!isOrganizationMode() || options?.disableOrganization) {
     return {
       additionalFields: allFields,
       signUp: {
@@ -92,10 +96,10 @@ export const getOrganizationProviderConfig = (options?: {
     organization: {
       logo: options?.logoUpload
         ? {
-          upload: options.logoUpload,
-          size: ORGANIZATION_LOGO.size,
-          extension: ORGANIZATION_LOGO.extensions[0],
-        }
+            upload: options.logoUpload,
+            size: ORGANIZATION_LOGO.size,
+            extension: ORGANIZATION_LOGO.extensions[0],
+          }
         : undefined,
     },
   }

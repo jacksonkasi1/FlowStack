@@ -180,6 +180,18 @@ export default function Onboarding({ step }: OnboardingProps) {
         .filter((email) => email);
 
       // Call the step endpoint directly
+      await Promise.all(
+        emails.map(async (email) => {
+          const result = await authClient.organization.inviteMember({
+            email,
+            role: "member",
+          });
+          if (result.error)
+            throw new Error(
+              result.error.message || "Failed to send invitation",
+            );
+        }),
+      );
       await callOnboardingApi("step/invite-members", { emails });
 
       toast.success("Onboarding complete!");

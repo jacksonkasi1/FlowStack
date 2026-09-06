@@ -1,3 +1,4 @@
+import { uploadQuery, organizationPrefix } from "./validation";
 // ** import lib
 import { Hono } from "hono";
 
@@ -7,12 +8,16 @@ import { r2 } from "@repo/storage";
 // ** import config
 import { env } from "@/config/env";
 
-const route = new Hono();
+const route = new Hono<{ Variables: { storagePrefixes: string[] } }>();
 
-route.get("/upload-url", async (c) => {
-  const fileName = c.req.query("fileName");
-  const contentType = c.req.query("contentType");
-  const organizationId = c.req.query("organizationId");
+route.get("/upload-url", uploadQuery, async (c) => {
+  const { fileName, contentType, organizationId } = c.req.valid("query");
+  const prefixes: string[] = c.get("storagePrefixes") || [];
+  const prefix = organizationId
+    ? organizationPrefix(organizationId)
+    : prefixes[0];
+  if (!prefix || !prefixes.includes(prefix))
+    return c.json({ error: "Forbidden" }, 403);
 
   if (!fileName) {
     return c.json({ error: "fileName is required" }, 400);
@@ -26,7 +31,7 @@ route.get("/upload-url", async (c) => {
   try {
     const result = await r2.getSignedUploadUrl(fileName, {
       contentType: contentType || undefined,
-      organizationId: organizationId || undefined,
+      prefix,
     });
 
     // Construct publicUrl from R2_PUBLIC_URL + filePath

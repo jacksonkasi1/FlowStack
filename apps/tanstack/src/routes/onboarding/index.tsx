@@ -1,10 +1,14 @@
+import { isOrganizationMode } from '@repo/config'
+import { redirect } from '@tanstack/react-router'
 // ** import lib
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
 
 // ** import pages
-import OnboardingPage from "./onboarding-page";
+import OnboardingPage from './-onboarding-page'
 
-export const Route = createFileRoute("/onboarding/")({
+export const Route = createFileRoute('/onboarding/')({
+  beforeLoad: () => {
+    if (!isOrganizationMode()) throw redirect({ to: '/dashboard' })
+  },
   component: () => <OnboardingPage />,
-});
-
+})

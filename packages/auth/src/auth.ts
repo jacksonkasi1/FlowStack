@@ -1,6 +1,6 @@
 // ** import core packages
 import {
-  db,
+  db as defaultDb,
   organization as organizationTable,
   member as memberTable,
   session as sessionTable,
@@ -25,7 +25,7 @@ import { logger } from "@repo/logs";
 import { AUTH_REDIRECTS } from "./config/redirects";
 import { CREATOR_ROLE } from "./config/roles";
 import { ORGANIZATION_CONFIG } from "./config/organization";
-import { isOnboardingEnabled } from "@repo/config";
+import { isOnboardingEnabled, isOrganizationMode } from "@repo/config";
 
 // ** import utils
 import { sendMagicLink } from "./email/send-magic-link";
@@ -55,7 +55,7 @@ function generateOrganizationSlug(name: string): string {
   return `${normalized}-${randomId}`;
 }
 
-export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
+export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
   if (!env.BETTER_AUTH_URL) {
     throw new Error("BETTER_AUTH_URL environment variable is required");
   }
@@ -148,8 +148,6 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       },
     },
 
-
-
     advanced: {
       useSecureCookies: isSecure,
       cookiePrefix: "better-auth",
@@ -222,6 +220,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
     hooks: {
       after: createAuthMiddleware(async (ctx) => {
+        if (!isOrganizationMode()) return;
         // After any onboarding step completes (or is skipped), the plugin has
         // already updated shouldOnboard / currentOnboardingStep in the DB.
         // Re-issue the signed session cookie so the cookie cache reflects the
@@ -229,7 +228,8 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         // and looping back to /onboarding.
         if (
           ctx.path.startsWith("/onboarding/step/") ||
-          ctx.path.startsWith("/onboarding/skip-step/")
+          ctx.path.startsWith("/onboarding/skip-step/") ||
+          ctx.path === "/organization/accept-invitation"
         ) {
           await refreshSessionCookie(ctx);
           return;
@@ -244,7 +244,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
         const ctxSession = ctx.context.session as any;
         const returnedData = (ctx.context as any).returned as any;
 
-        logger.debug(`[hooks.after] get-session called. ctxSession exists: ${!!ctxSession}, returned exists: ${!!returnedData}`);
+        logger.debug(
+          `[hooks.after] get-session called. ctxSession exists: ${!!ctxSession}, returned exists: ${!!returnedData}`,
+        );
 
         // Try to find session data from either location
         const sessionData = ctxSession?.session || returnedData?.session;
@@ -252,7 +254,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
 
         // Skip if no session data or already has active org
         if (!sessionData || sessionData.activeOrganizationId) {
-          logger.debug(`[hooks.after] Skipping: sessionData=${!!sessionData}, activeOrg=${sessionData?.activeOrganizationId}`);
+          logger.debug(
+            `[hooks.after] Skipping: sessionData=${!!sessionData}, activeOrg=${sessionData?.activeOrganizationId}`,
+          );
           return;
         }
 
@@ -268,7 +272,9 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
             .from(memberTable)
             .where(eq(memberTable.userId, userData.id));
 
-          logger.debug(`[hooks.after] User ${userData.id} has ${memberships.length} org(s)`);
+          logger.debug(
+            `[hooks.after] User ${userData.id} has ${memberships.length} org(s)`,
+          );
 
           // If exactly 1 org, set it as active
           if (memberships.length === 1) {
@@ -280,6 +286,12 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
               .set({ activeOrganizationId: orgId })
               .where(eq(sessionTable.id, sessionData.id));
 
+            await refreshSessionCookie(ctx);
+            const fresh = await ctx.context.internalAdapter.findSession(
+              sessionData.token,
+            );
+            if (fresh) return ctx.json(fresh);
+
             logger.info(
               `Auto-activated org ${orgId} for user ${userData.id} (single org fallback)`,
             );
@@ -289,7 +301,10 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           // The onboarding plugin is the sole authority on when onboarding is complete
           // Having an org doesn't mean all onboarding steps are done (e.g., invite members step)
 
-          if (memberships.length === 0 && ORGANIZATION_CONFIG.requireOrganization) {
+          if (
+            memberships.length === 0 &&
+            ORGANIZATION_CONFIG.requireOrganization
+          ) {
             // User has NO membership and requireOrganization is enabled - force onboarding
             const user = await db
               .select({ shouldOnboard: userTable.shouldOnboard })
@@ -324,6 +339,7 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
       session: {
         create: {
           before: async (session) => {
+            if (!isOrganizationMode()) return { data: session };
             try {
               // Get the user's first organization (as owner or member)
               const userMemberships = await db
@@ -373,202 +389,219 @@ export function configureAuth(env: Env): ReturnType<typeof betterAuth> {
           });
         },
       }),
-      organizationPlugin({
-        async sendInvitationEmail(data: {
-          id: string;
-          email: string;
-          organization: { name: string };
-          inviter: { user: { name: string; email: string } };
-        }) {
-          const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}?invitationId=${data.id}`;
+      ...(isOrganizationMode()
+        ? [
+            organizationPlugin({
+              requireEmailVerificationOnInvitation: true,
+              async sendInvitationEmail(data: {
+                id: string;
+                email: string;
+                organization: { name: string };
+                inviter: { user: { name: string; email: string } };
+              }) {
+                const inviteLink = `${frontendURL}${AUTH_REDIRECTS.organizationInvitation}?invitationId=${data.id}`;
 
-          await sendOrganizationInvitation(env, {
-            from: {
-              address: env.EMAIL_FROM_ADDRESS || "noreply@example.com",
-              name: env.EMAIL_FROM_NAME || "FlowStack",
-            },
-            to: {
-              address: data.email,
-              name: "New User",
-            },
-            subject: `You've been invited to join ${data.organization.name}!`,
-            invitedByUsername: data.inviter.user.name,
-            invitedByEmail: data.inviter.user.email,
-            teamName: data.organization.name,
-            inviteLink,
-          });
-        },
+                await sendOrganizationInvitation(env, {
+                  from: {
+                    address: env.EMAIL_FROM_ADDRESS || "noreply@example.com",
+                    name: env.EMAIL_FROM_NAME || "FlowStack",
+                  },
+                  to: {
+                    address: data.email,
+                    name: "New User",
+                  },
+                  subject: `You've been invited to join ${data.organization.name}!`,
+                  invitedByUsername: data.inviter.user.name,
+                  invitedByEmail: data.inviter.user.email,
+                  teamName: data.organization.name,
+                  inviteLink,
+                });
+              },
 
-        allowUserToCreateOrganization: async (user: { id: string }) => {
-          return await checkUserRole(user.id, env);
-        },
+              allowUserToCreateOrganization: async (user: { id: string }) => {
+                return await checkUserRole(user.id, env);
+              },
 
-        // Organization hooks for handling invitation acceptance
-        organizationHooks: {
-          // When user accepts invitation, skip onboarding since they're joining an existing org
-          afterAcceptInvitation: async ({ user }) => {
-            try {
-              // Mark onboarding as complete - user joined via invitation, no need to create org
-              await db
-                .update(userTable)
-                .set({
-                  shouldOnboard: false,
-                  currentOnboardingStep: null,
-                })
-                .where(eq(userTable.id, user.id));
+              // Organization hooks for handling invitation acceptance
+              organizationHooks: {
+                // When user accepts invitation, skip onboarding since they're joining an existing org
+                afterAcceptInvitation: async ({ user }) => {
+                  try {
+                    // Mark onboarding as complete - user joined via invitation, no need to create org
+                    await db
+                      .update(userTable)
+                      .set({
+                        shouldOnboard: false,
+                        currentOnboardingStep: null,
+                      })
+                      .where(eq(userTable.id, user.id));
 
-              logger.info(
-                `Cleared onboarding for user ${user.id} after accepting invitation`,
-              );
-            } catch (error) {
-              logger.error(
-                `Failed to clear onboarding after invitation: ${error instanceof Error ? error.message : String(error)}`,
-              );
-            }
-          },
-        },
-      }),
+                    logger.info(
+                      `Cleared onboarding for user ${user.id} after accepting invitation`,
+                    );
+                  } catch (error) {
+                    logger.error(
+                      `Failed to clear onboarding after invitation: ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                  }
+                },
+              },
+            }),
+          ]
+        : []),
 
       admin(),
 
       // Onboarding plugin with multi-step wizard
-      onboarding({
-        steps: {
-          // Step 1: Create organization (required)
-          createOrganization: createOnboardingStep({
-            input: z.object({
-              organizationName: z
-                .string()
-                .min(2, "Organization name must be at least 2 characters")
-                .max(100, "Organization name must be less than 100 characters"),
-              logo: z.string().optional(),
+      ...(isOnboardingEnabled()
+        ? [
+            onboarding({
+              steps: {
+                // Step 1: Create organization (required)
+                createOrganization: createOnboardingStep({
+                  input: z.object({
+                    organizationName: z
+                      .string()
+                      .min(2, "Organization name must be at least 2 characters")
+                      .max(
+                        100,
+                        "Organization name must be less than 100 characters",
+                      ),
+                    logo: z.string().optional(),
+                  }),
+                  async handler(ctx) {
+                    const { organizationName, logo } = ctx.body;
+                    const session = ctx.context.session;
+
+                    if (!session) {
+                      throw new Error("User must be authenticated");
+                    }
+
+                    const userId = session.user.id;
+
+                    // Create organization
+                    const orgId = crypto.randomUUID();
+                    const slug = generateOrganizationSlug(organizationName);
+
+                    await db.insert(organizationTable).values({
+                      id: orgId,
+                      name: organizationName,
+                      slug,
+                      logo: logo || null,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    });
+
+                    // Add user as owner
+                    await db.insert(memberTable).values({
+                      id: crypto.randomUUID(),
+                      organizationId: orgId,
+                      userId,
+                      role: CREATOR_ROLE,
+                      createdAt: new Date(),
+                    });
+
+                    logger.info(
+                      `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
+                    );
+
+                    // Set the new org as active in the current session
+                    if (session.session?.id) {
+                      await db
+                        .update(sessionTable)
+                        .set({ activeOrganizationId: orgId })
+                        .where(eq(sessionTable.id, session.session.id));
+
+                      logger.info(
+                        `Set org ${orgId} as active for session ${session.session.id}`,
+                      );
+
+                      // Immediately refresh the signed cookie so the cache reflects
+                      // activeOrganizationId without waiting for the hooks.after pass
+                      // (which runs after adapter.updateOnboardingState completes).
+                      await refreshSessionCookie(ctx);
+                    }
+
+                    return { organizationId: orgId, organizationName, slug };
+                  },
+                  required: true,
+                  once: true,
+                  order: 1,
+                }),
+
+                // Step 2: Invite members (optional, can be skipped)
+                inviteMembers: createOnboardingStep({
+                  input: z.object({
+                    emails: z.array(z.string().email()).optional(),
+                  }),
+                  async handler(ctx) {
+                    const { emails } = ctx.body;
+                    const session = ctx.context.session;
+
+                    if (!session || !emails || emails.length === 0) {
+                      return { invited: [] };
+                    }
+
+                    // Get user's organization
+                    const membership = await db
+                      .select()
+                      .from(memberTable)
+                      .where(eq(memberTable.userId, session.user.id))
+                      .limit(1);
+
+                    if (membership.length === 0) {
+                      return { invited: [] };
+                    }
+
+                    // Invitations will be handled by the organization plugin
+                    // This step just marks completion
+                    logger.info(
+                      `User ${session.user.id} completed invite step with ${emails.length} emails`,
+                    );
+
+                    return { invited: emails };
+                  },
+                  required: false, // Can be skipped
+                  once: true,
+                  order: 2,
+                }),
+              },
+              completionStep: "inviteMembers",
+              onboardingPath: "/onboarding",
+
+              // Skip onboarding for users signing up via invitation link
+              // They will join an existing organization, not create a new one
+              autoEnableOnSignUp: (ctx) => {
+                // Check if onboarding is enabled globally
+                if (!isOnboardingEnabled()) {
+                  return false;
+                }
+
+                try {
+                  // Check if signup includes a redirect to invitation acceptance
+                  const url = ctx.request?.url;
+                  if (!url) return true;
+
+                  const urlObj = new URL(url);
+                  const redirectTo =
+                    urlObj.searchParams.get("redirectTo") || "";
+
+                  // If redirecting to accept-invitation, skip onboarding
+                  if (redirectTo.includes("/accept-invitation")) {
+                    logger.info(
+                      "Skipping onboarding for user signing up via invitation",
+                    );
+                    return false;
+                  }
+
+                  return true;
+                } catch {
+                  return true;
+                }
+              },
             }),
-            async handler(ctx) {
-              const { organizationName, logo } = ctx.body;
-              const session = ctx.context.session;
-
-              if (!session) {
-                throw new Error("User must be authenticated");
-              }
-
-              const userId = session.user.id;
-
-              // Create organization
-              const orgId = crypto.randomUUID();
-              const slug = generateOrganizationSlug(organizationName);
-
-              await db.insert(organizationTable).values({
-                id: orgId,
-                name: organizationName,
-                slug,
-                logo: logo || null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
-
-              // Add user as owner
-              await db.insert(memberTable).values({
-                id: crypto.randomUUID(),
-                organizationId: orgId,
-                userId,
-                role: CREATOR_ROLE,
-                createdAt: new Date(),
-              });
-
-              logger.info(
-                `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
-              );
-
-              // Set the new org as active in the current session
-              if (session.session?.id) {
-                await db
-                  .update(sessionTable)
-                  .set({ activeOrganizationId: orgId })
-                  .where(eq(sessionTable.id, session.session.id));
-
-                logger.info(`Set org ${orgId} as active for session ${session.session.id}`);
-
-                // Immediately refresh the signed cookie so the cache reflects
-                // activeOrganizationId without waiting for the hooks.after pass
-                // (which runs after adapter.updateOnboardingState completes).
-                await refreshSessionCookie(ctx);
-              }
-
-              return { organizationId: orgId, organizationName, slug };
-            },
-            required: true,
-            once: true,
-            order: 1,
-          }),
-
-          // Step 2: Invite members (optional, can be skipped)
-          inviteMembers: createOnboardingStep({
-            input: z.object({
-              emails: z.array(z.string().email()).optional(),
-            }),
-            async handler(ctx) {
-              const { emails } = ctx.body;
-              const session = ctx.context.session;
-
-              if (!session || !emails || emails.length === 0) {
-                return { invited: [] };
-              }
-
-              // Get user's organization
-              const membership = await db
-                .select()
-                .from(memberTable)
-                .where(eq(memberTable.userId, session.user.id))
-                .limit(1);
-
-              if (membership.length === 0) {
-                return { invited: [] };
-              }
-
-              // Invitations will be handled by the organization plugin
-              // This step just marks completion
-              logger.info(
-                `User ${session.user.id} completed invite step with ${emails.length} emails`,
-              );
-
-              return { invited: emails };
-            },
-            required: false, // Can be skipped
-            once: true,
-            order: 2,
-          }),
-        },
-        completionStep: "inviteMembers",
-        onboardingPath: "/onboarding",
-
-        // Skip onboarding for users signing up via invitation link
-        // They will join an existing organization, not create a new one
-        autoEnableOnSignUp: (ctx) => {
-          // Check if onboarding is enabled globally
-          if (!isOnboardingEnabled()) {
-            return false;
-          }
-
-          try {
-            // Check if signup includes a redirect to invitation acceptance
-            const url = ctx.request?.url;
-            if (!url) return true;
-
-            const urlObj = new URL(url);
-            const redirectTo = urlObj.searchParams.get("redirectTo") || "";
-
-            // If redirecting to accept-invitation, skip onboarding
-            if (redirectTo.includes("/accept-invitation")) {
-              logger.info("Skipping onboarding for user signing up via invitation");
-              return false;
-            }
-
-            return true;
-          } catch {
-            return true;
-          }
-        },
-      }),
+          ]
+        : []),
     ],
   });
 }
