@@ -1,7 +1,9 @@
 # Template verification — 2026-09-06
 
 The maintained source was checked with Node 24.16.0 and Bun 1.3.14 on macOS.
-No production database, mail provider, storage bucket, or OAuth account was used.
+Initial checks used an embedded database. A follow-up browser run used a real Neon
+branch copied from the existing database, as described below. No production data,
+external mail delivery, storage bucket, or OAuth account was modified.
 
 ## Automated checks
 
@@ -58,6 +60,53 @@ For reproducible local browser testing, start `bun tests/browser-server.ts` and
 serve the frontend on port 3100 (React) or 3200 (TanStack). The fixture binds only
 to loopback, keeps data in memory and stubs all outbound fetch calls. Never deploy
 it. It is separate from the production API entry point.
+
+## Live Neon browser verification
+
+The production Node API bundle and both production frontend builds were run
+against a dedicated Neon branch, `dev-template-browser-2026-09-06`. The source
+database was inspected read-only and left unchanged. Connections and the auth
+secret were saved only in ignored local environment files.
+
+The existing database had schema changes beyond its single recorded migration.
+On the test branch only, the missing `username` and `display_username` columns,
+username uniqueness, and the updated onboarding default were applied. This was
+an explicitly inspected schema adjustment, not a successful replay of the old
+migration journal. Existing installations with the same drift must reconcile
+their migration history before running the normal migration command.
+
+The real application email transport sent to a local HTTP mail capture through
+`ZEPTO_URL`; no messages went to an external mail provider. Generated verification
+and invitation links were opened in isolated browser sessions. Better Auth uses
+signed email-verification tokens, so these links were captured from rendered
+emails rather than extracted from the database or replaced by direct updates to
+the user's verification flag.
+
+Observed results:
+
+- Two React signup sessions created separate organizations. Sending an invitation
+  and skipping invitations both completed onboarding.
+- Verification links marked both owners verified in Neon and reached the dashboard.
+- Each owner listed only their organization. Attempts to read the other tenant's
+  members or organization, activate it, list its files, or request a download URL
+  returned 403. The original active organization stayed unchanged.
+- Missing required storage query parameters returned 400 through Hono/Zod 4.
+- A third account verified its email and accepted the generated invitation in the
+  browser. Neon confirmed its member role and completed onboarding state.
+- A member's attempt to promote itself returned 403. Removing the only owner was
+  rejected with Better Auth's 400 ownership-invariant error.
+- The owner removed the synthetic member through the members page. A subsequent
+  request from the removed member's existing session immediately returned 403.
+- TanStack login and the members page worked against the same live API/database.
+  No browser runtime errors were reported in the four browser sessions.
+
+The test branch is retained for inspection. It contains synthetic `example.com`
+accounts and organizations; no Git backup branch was removed or changed.
+
+The follow-up recursive dependency check found only two intentional major-version
+holds: TypeScript 6.0.3 for the current ESLint integration, and Node 24 type
+definitions to match the supported Node 24 runtime. All other direct dependencies
+matched the registry's latest releases. `bun audit` reported no known vulnerabilities.
 
 ## Remaining live-environment checks
 
