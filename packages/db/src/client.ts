@@ -1,5 +1,6 @@
 // ** import core packages
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 
 // ** import types
 import type { Env } from "./types";
@@ -16,8 +17,11 @@ export function createClient(env?: Env) {
     );
   }
 
+  // Use neon HTTP client - faster for single queries, handles cold starts better
+  const sql = neon(databaseUrl);
+
   const db = drizzle({
-    connection: databaseUrl,
+    client: sql,
     schema,
     logger: process.env.NODE_ENV === "development",
   });

@@ -1,0 +1,105 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index 4a3f015fc32847cfcd6a6eb38aad1d096e5e4011..fb8473e0964f5b453732102e104f79ef67751f2c 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -5858,8 +5858,10 @@ function PasswordInput({
+           size: "icon",
+           type: "button",
+           variant: "ghost",
++          "aria-label": isVisible ? "Hide password" : "Show password",
++          "aria-pressed": isVisible,
+           onClick: () => setIsVisible(!isVisible),
+-          children: isVisible ? /* @__PURE__ */ _jsxruntime.jsx.call(void 0, _lucidereact.EyeIcon, {}) : /* @__PURE__ */ _jsxruntime.jsx.call(void 0, _lucidereact.EyeOffIcon, {})
++          children: isVisible ? /* @__PURE__ */ _jsxruntime.jsx.call(void 0, _lucidereact.EyeOffIcon, { "aria-hidden": true }) : /* @__PURE__ */ _jsxruntime.jsx.call(void 0, _lucidereact.EyeIcon, { "aria-hidden": true })
+         }
+       ),
+       /* @__PURE__ */ _jsxruntime.jsx.call(void 0, "style", { children: `
+@@ -8471,13 +8473,14 @@ function SignInForm({
+               ] }),
+               /* @__PURE__ */ _jsxruntime.jsx.call(void 0, FormControl, { children: /* @__PURE__ */ _jsxruntime.jsx.call(void 0, 
+                 PasswordInput,
+-                {
+-                  autoComplete: "current-password",
+-                  className: classNames == null ? void 0 : classNames.input,
+-                  placeholder: localization.PASSWORD_PLACEHOLDER,
+-                  disabled: isSubmitting,
+-                  ...field
+-                }
++                    {
++                      autoComplete: "current-password",
++                      className: classNames == null ? void 0 : classNames.input,
++                      placeholder: localization.PASSWORD_PLACEHOLDER,
++                      disabled: isSubmitting,
++                      enableToggle: true,
++                      ...field
++                    }
+               ) }),
+               /* @__PURE__ */ _jsxruntime.jsx.call(void 0, FormMessage, { className: classNames == null ? void 0 : classNames.error })
+             ] })
+diff --git a/dist/index.js b/dist/index.js
+index 135cbffb51236e54eb3d17b2e8a9a26ff151b91c..8ad0d9b34513b8d0639677d172670f887d90b870 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -5858,8 +5858,10 @@ function PasswordInput({
+           size: "icon",
+           type: "button",
+           variant: "ghost",
++          "aria-label": isVisible ? "Hide password" : "Show password",
++          "aria-pressed": isVisible,
+           onClick: () => setIsVisible(!isVisible),
+-          children: isVisible ? /* @__PURE__ */ jsx53(EyeIcon, {}) : /* @__PURE__ */ jsx53(EyeOffIcon, {})
++          children: isVisible ? /* @__PURE__ */ jsx53(EyeOffIcon, { "aria-hidden": true }) : /* @__PURE__ */ jsx53(EyeIcon, { "aria-hidden": true })
+         }
+       ),
+       /* @__PURE__ */ jsx53("style", { children: `
+@@ -8471,13 +8473,14 @@ function SignInForm({
+               ] }),
+               /* @__PURE__ */ jsx75(FormControl, { children: /* @__PURE__ */ jsx75(
+                 PasswordInput,
+-                {
+-                  autoComplete: "current-password",
+-                  className: classNames == null ? void 0 : classNames.input,
+-                  placeholder: localization.PASSWORD_PLACEHOLDER,
+-                  disabled: isSubmitting,
+-                  ...field
+-                }
++                    {
++                      autoComplete: "current-password",
++                      className: classNames == null ? void 0 : classNames.input,
++                      placeholder: localization.PASSWORD_PLACEHOLDER,
++                      disabled: isSubmitting,
++                      enableToggle: true,
++                      ...field
++                    }
+               ) }),
+               /* @__PURE__ */ jsx75(FormMessage, { className: classNames == null ? void 0 : classNames.error })
+             ] })
+diff --git a/src/components/auth/forms/sign-in-form.tsx b/src/components/auth/forms/sign-in-form.tsx
+index 50b6151458eb3536a20be12b41e925c803c23238..7414aa42e6f3767220d745f844a9975b05e85ed1 100644
+--- a/src/components/auth/forms/sign-in-form.tsx
++++ b/src/components/auth/forms/sign-in-form.tsx
+@@ -258,6 +258,7 @@ export function SignInForm({
+                                         localization.PASSWORD_PLACEHOLDER
+                                     }
+                                     disabled={isSubmitting}
++                                    enableToggle
+                                     {...field}
+                                 />
+                             </FormControl>
+diff --git a/src/components/password-input.tsx b/src/components/password-input.tsx
+index 96153ba967d1f06773bc7d191a6a3d7451bcc305..f4b192f85770a3975fa0a35ea3c916b2b4531738 100644
+--- a/src/components/password-input.tsx
++++ b/src/components/password-input.tsx
+@@ -36,9 +36,11 @@ export function PasswordInput({
+                         size="icon"
+                         type="button"
+                         variant="ghost"
++                        aria-label={isVisible ? "Hide password" : "Show password"}
++                        aria-pressed={isVisible}
+                         onClick={() => setIsVisible(!isVisible)}
+                     >
+-                        {isVisible ? <EyeIcon /> : <EyeOffIcon />}
++                        {isVisible ? <EyeOffIcon aria-hidden /> : <EyeIcon aria-hidden />}
+                     </Button>
+ 
+                     <style>{`

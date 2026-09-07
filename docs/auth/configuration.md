@@ -1,6 +1,19 @@
 # Configuration Reference
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 10 min | **Prerequisites:** [Quick Start](../getting-started/quickstart.md)
+
 Centralized configuration files for authentication setup.
+
+---
+
+## What You'll Learn
+
+- ✅ Understand all configuration files
+- ✅ Change redirect paths
+- ✅ Customize URLs for different environments
+- ✅ Configure organization requirements
+
+---
 
 ## Configuration Files
 
@@ -63,6 +76,34 @@ const redirectTo = AUTH_REDIRECTS.afterLogin;
 import { AUTH_REDIRECTS } from "./config/redirects";
 const url = buildEmailUrlWithFrontendCallback(url, AUTH_REDIRECTS.afterLogin);
 ```
+
+---
+
+### Organization Configuration (`config/organization.ts`)
+
+**Location:** `packages/auth/src/config/organization.ts` (backend), `apps/web/src/config/organization.ts` (frontend)
+
+```ts
+export const ORGANIZATION_CONFIG = {
+  /**
+   * If true, users MUST belong to an organization to use the product.
+   * If false, users can access the product without an organization.
+   * @default true
+   */
+  requireOrganization: true,
+} as const;
+```
+
+**Usage:**
+```ts
+import { ORGANIZATION_CONFIG } from "./config/organization";
+
+if (ORGANIZATION_CONFIG.requireOrganization && !hasOrgMembership) {
+  // Force user to create organization
+}
+```
+
+> **Note:** This config must match between frontend and backend for proper enforcement.
 
 ---
 

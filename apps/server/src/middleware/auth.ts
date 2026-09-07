@@ -1,3 +1,7 @@
+import { db, member } from "@repo/db";
+import { and, eq } from "drizzle-orm";
+import { isOrganizationMode } from "@repo/config";
+import { userPrefix, organizationPrefix } from "../routes/storage/validation";
 // ** import types
 import type { Context, Next } from "hono";
 
@@ -21,11 +25,31 @@ export async function authMiddleware(
   const auth = getAuthInstance();
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
+    query: { disableCookieCache: true },
   });
 
   c.set("session", session?.session || null);
   c.set("user", session?.user || null);
 
+  if (session?.user) {
+    const prefixes = [userPrefix(session.user.id)];
+    const orgId = (session.session as { activeOrganizationId?: string })
+      .activeOrganizationId;
+    if (isOrganizationMode() && orgId) {
+      const membership = await db
+        .select({ id: member.id })
+        .from(member)
+        .where(
+          and(
+            eq(member.userId, session.user.id),
+            eq(member.organizationId, orgId),
+          ),
+        )
+        .limit(1);
+      if (membership.length) prefixes.push(organizationPrefix(orgId));
+    }
+    c.set("storagePrefixes", prefixes);
+  }
   return next();
 }
 

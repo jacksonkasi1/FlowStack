@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "devDependencies": {
     "@repo/typescript-config": "*",
-    "@types/node": "^22"
+    "@types/node": "^24.0.0"
   },
   "exports": {
     ".": {

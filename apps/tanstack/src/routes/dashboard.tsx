@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 // ** import components
 import { AppLayout } from '@/components/layout/AppLayout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { ProtectedRoute } from '@repo/auth-ui/guards/tanstack-router'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,

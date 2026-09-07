@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex -- Reject control characters in storage keys. */
 export const DANGEROUS_PATTERNS = /\.\.|^\/|[\x00-\x1f]/;
 
 export function isValidPath(path: string): boolean {
@@ -8,7 +9,7 @@ export function isValidPath(path: string): boolean {
 export function isValidFileName(fileName: string): boolean {
   if (!fileName) return false;
   // File names shouldn't contain path separators or dangerous chars
-  if (/\.\.|[\/\\]|[\x00-\x1f]/.test(fileName)) return false;
+  if (/\.\.|[/\\]|[\x00-\x1f]/.test(fileName)) return false;
   if (fileName.length > 255) return false;
   return true;
 }

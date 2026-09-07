@@ -1,6 +1,18 @@
 # Adding OAuth Providers
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 10 min | **Prerequisites:** [Configuration](./configuration.md)
+
 Quick guide to add new social login providers (GitHub, Discord, Twitter, etc.).
+
+---
+
+## What You'll Learn
+
+- ✅ Add new OAuth providers (GitHub, Discord, etc.)
+- ✅ Configure provider credentials
+- ✅ Enable providers in the UI
+
+---
 
 ## Files to Modify
 
@@ -73,13 +85,12 @@ Update `apps/web/src/providers.tsx`:
 
 | Provider | ID | Docs |
 |----------|-----|------|
-| Google | `google` | [Docs](https://www.better-auth.com/docs/authentication/social#google) |
-| GitHub | `github` | [Docs](https://www.better-auth.com/docs/authentication/social#github) |
-| Discord | `discord` | [Docs](https://www.better-auth.com/docs/authentication/social#discord) |
-| Twitter | `twitter` | [Docs](https://www.better-auth.com/docs/authentication/social#twitter) |
-| Apple | `apple` | [Docs](https://www.better-auth.com/docs/authentication/social#apple) |
+| Google | `google` | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
+| GitHub | `github` | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
+| Discord | `discord` | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
+| Twitter | `twitter` | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
+| Apple | `apple` | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
 
 ## References
 
-- [Better Auth Social Providers](https://www.better-auth.com/docs/authentication/social)
-- [OAuth Configuration](https://www.better-auth.com/docs/concepts/oauth)
+- [Better Auth OAuth Guide](https://www.better-auth.com/docs/concepts/oauth)

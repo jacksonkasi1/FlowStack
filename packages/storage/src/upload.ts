@@ -9,14 +9,20 @@ import { createR2Client } from "./client";
 // ** import types
 import type { Env, FileObject, UploadOptions } from "./types";
 
-function generateFilePath(fileName: string, organizationId?: string): string {
+function generateFilePath(
+  fileName: string,
+  organizationId?: string,
+  authorizedPrefix?: string,
+): string {
   const timestamp = Date.now();
   const uniqueId = nanoid(8);
   const sanitizedName = fileName
     .replace(/[^a-zA-Z0-9.-]/g, "_")
     .replace(/^\.+/, "") // Remove leading dots
     .replace(/\.{2,}/g, "."); // Collapse consecutive dots
-  const prefix = organizationId ? `uploads/${organizationId}` : "uploads";
+  const prefix =
+    authorizedPrefix?.replace(/\/$/, "") ||
+    (organizationId ? `uploads/${organizationId}` : "uploads");
   return `${prefix}/${timestamp}-${uniqueId}-${sanitizedName}`;
 }
 
@@ -26,7 +32,11 @@ export async function r2GetSignedUploadUrl(
   options?: UploadOptions,
 ): Promise<{ signedUrl: string; filePath: string }> {
   const client = createR2Client(env);
-  const filePath = generateFilePath(fileName, options?.organizationId);
+  const filePath = generateFilePath(
+    fileName,
+    options?.organizationId,
+    options?.prefix,
+  );
 
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_NAME,
@@ -48,7 +58,11 @@ export async function r2UploadBuffer(
   options?: UploadOptions,
 ): Promise<FileObject> {
   const client = createR2Client(env);
-  const filePath = generateFilePath(fileName, options?.organizationId);
+  const filePath = generateFilePath(
+    fileName,
+    options?.organizationId,
+    options?.prefix,
+  );
 
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_NAME,

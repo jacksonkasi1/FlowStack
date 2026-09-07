@@ -11,10 +11,10 @@ import { createFileRoute } from '@tanstack/react-router'
 
 // ** import components
 import { AppLayout } from '@/components/layout/AppLayout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { ProtectedRoute } from '@repo/auth-ui/guards/tanstack-router'
 
-// ** import shared config
-import { minimalCardStyles } from '@repo/shared/config/settings'
+// ** import config
+import { minimalCardStyles } from '@repo/config'
 
 export const Route = createFileRoute('/account/settings')({
   component: Settings,

@@ -1,197 +1,90 @@
 # FlowStack
 
-**FlowStack** is a production-grade SaaS foundation focused on **clean architecture, clear boundaries, and long-term maintainability**.
+A shared SaaS starter with two account models and two frontend choices.
+Maintain the foundation once, then configure it when starting a project.
 
-It is not a framework.
-It is not a boilerplate with magic.
+## Quick start
 
-FlowStack is a **base repository** designed to help you build scalable products without losing control of your codebase.
+Install Node.js 24 LTS and Bun 1.3.14, then:
 
----
-
-## Why FlowStack?
-
-Most starters focus on **tech stack choices**.
-
-FlowStack focuses on **flow**:
-
-- how identity flows
-- how permissions flow
-- how responsibility flows
-- how code grows without becoming messy
-
-The goal is simple:
-
-> **Make the architecture obvious, boring, and easy to evolve.**
-
----
-
-## Core Principles
-
-### 1. One Responsibility per File
-
-- One action per file
-- One API per file
-- One schema per file
-
-No large "god files".
-
----
-
-### 2. One Responsibility per Folder
-
-Folders represent **domains**, not features.
-
-Examples:
-
-- `auth` → identity (who are you?)
-- `access` → permissions (what can you do?)
-- `impersonation` → temporary identity
-- `platform` → operator / super-admin logic
-
-If a folder exists, the feature exists.
-No runtime feature flags.
-
----
-
-### 3. No Runtime Branching for Product Shape
-
-There are **no** `if (config.xxx)` checks inside business logic.
-
-All variability is resolved at **generation time**:
-
-- modules are included or excluded
-- unused folders are removed
-- runtime code stays clean and predictable
-
----
-
-### 4. Apps Compose, Packages Own Logic
-
-- `apps/` contain routing and wiring
-- `packages/` contain real logic
-
-Apps never own business rules.
-
----
-
-### 5. Boring Code > Clever Code
-
-FlowStack prefers:
-
-- explicit files
-- explicit imports
-- explicit boundaries
-
-Over abstraction is avoided on purpose.
-
----
-
-## Core Stack (Defaults, Not Lock-in)
-
-FlowStack is **stack-aware**, but not stack-locked.
-
-See **[docs/stack.md](./docs/stack.md)** for the default technologies and design philosophy.
-
-These are tools FlowStack is built and tested with. You can replace parts of the stack if you know what you're doing.
-
----
-
-## Authentication
-
-FlowStack uses [Better Auth](https://www.better-auth.com/) for identity management with support for:
-
-- Email/password authentication
-- Magic link authentication
-- OAuth providers (Google, GitHub, etc.)
-- Session management
-- Account settings and security
-
-For detailed setup, configuration, and troubleshooting guides, see **[docs/auth/README.md](./docs/auth/README.md)**.
-
----
-
-## High-Level Structure
-
-```
-apps/
-  web/            # Customer frontend
-  server/         # Customer API
-  super-admin/    # Operator panel (optional)
-
-packages/
-  auth/           # Identity
-  access/         # Authorization (RBAC)
-  impersonation/  # Temporary identity
-  platform/       # Operator-level control
-  db/             # Database schema & migrations
-  env/            # Typed environment
-  email/          # Email providers & templates
-  storage/        # File storage
-  workflows/      # Background jobs
+```sh
+git clone --branch dev https://github.com/jacksonkasi1/FlowStack.git my-app
+cd my-app
+bun run setup
 ```
 
-Each package is **independently understandable**.
+Setup asks only:
 
----
+1. **Personal or Organization** — individual accounts, or team workspaces with
+   onboarding, invitations and membership.
+2. **React Router or TanStack Start** — both use React; the backend is Hono on Node.js.
 
-## Configuration
+The auth, database, email and storage packages are included automatically. Setup
+installs dependencies and creates missing environment files from examples. Fill
+in your credentials, run migrations, then start your chosen frontend and API:
 
-All feature decisions live in one place:
-
-```ts
-flow.config.ts;
+```sh
+bun run --cwd packages/db db:migrate
+bun run dev
 ```
 
-This file answers **what exists**, not **how it works**.
+See [the setup guide](docs/getting-started/template-setup.md) for environment
+configuration, optional cleanup and deployment details.
 
-Example:
+## Separate starter copies
 
-- auth mode
-- super-admin enabled or not
-- impersonation enabled or not
-- deployment targets
+```sh
+bun run setup --mode personal --frontend react --output ../my-app
+bun run setup --mode organization --frontend tanstack --output ../team-app
+```
 
-Runtime code assumes the decision is already made.
+Generated copies exclude Git history, environment files, dependencies and build
+output. The destination must be empty. Omit `--output` to configure the current
+clone, or add `--no-install` to prepare files only.
 
----
+Setup retains source for both frontends and selects one workspace. You may remove
+the unselected frontend manually afterward. Personal mode disables organization
+and onboarding server plugins and UI. Both presets retain a shared database schema
+and migration history. Configuration lives in
+`packages/config/src/config/preset.ts`, with auth policy in `auth-mode.ts`.
 
-## What This Repo Is (and Isn't)
+## Structure
 
-✅ A clean, extensible foundation
-✅ A reference architecture
-✅ A long-term base for real products
+- `apps/web`: React + React Router frontend.
+- `apps/tanstack`: TanStack Start frontend.
+- `apps/server`: Hono API with a Node.js entry point.
+- `packages/auth`, `auth-ui`, `onboarding`: authentication, guards and onboarding.
+- `packages/config`, `db`, `email`, `email-templates`, `storage`, `logs`: shared foundation.
+- `scripts/setup.mjs`: interactive and scripted setup.
+- `tests`: setup, validation, guard and database-backed auth tests.
 
-❌ Not a "plug and play" SaaS
-❌ Not opinionated about UI design
-❌ Not a low-code framework
+## Verification and maintenance
 
-You are expected to **build on top of it**.
+```sh
+bun run lint
+bun run check-types
+bun run test
+bun run build
+bun audit
+bun run verify:presets
+```
 
----
+The auth integration suite uses embedded PostgreSQL and a stubbed email transport;
+it does not contact your database or send real email. CI checks both account models
+with both frontends. See [upgrade notes](docs/advanced/unified-template-upgrade.md)
+for dependency compatibility, migrations and the new storage ownership rules.
 
-## Current Status
+Development is on `dev`; releases are reviewed through PRs to `main`. Historical
+backups are preserved. Existing customized projects do not update automatically:
+use their `.flowstack.json` source commit and release notes to apply fixes.
 
-FlowStack is an **active base repository**.
+## Documentation
 
-Features will be added incrementally:
-
-- more auth flows
-- more workflow primitives
-- more deployment helpers
-
-Breaking changes may happen early while the foundation is being refined.
-
----
-
-## Philosophy
-
-> Scale is not about features.
-> Scale is about clarity.
-
-FlowStack exists to keep that clarity intact as products grow.
-
----
+- [Setup and presets](docs/getting-started/template-setup.md)
+- [Authentication](docs/auth/README.md)
+- [Architecture](docs/concepts/architecture.md)
+- [Upgrade notes](docs/advanced/unified-template-upgrade.md)
+- [Documentation index](docs/README.md)
 
 ## License
 

@@ -1,5 +1,5 @@
 // ** import core packages
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = ["super_admin", "admin", "user"] as const;
 export type UserRole = (typeof userRoleEnum)[number];
@@ -7,13 +7,20 @@ export type UserRole = (typeof userRoleEnum)[number];
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name"),
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   role: text("role").$type<UserRole>().notNull().default("user"),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  // Onboarding plugin fields
+  shouldOnboard: boolean("should_onboard").default(false),
+  currentOnboardingStep: text("current_onboarding_step"), // Current step in onboarding flow
+  completedOnboardingSteps: text("completed_onboarding_steps"), // JSON array of completed step IDs
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -112,6 +119,7 @@ export const invitation = pgTable("invitation", {
   inviterId: text("inviter_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export type Invitation = typeof invitation.$inferSelect;

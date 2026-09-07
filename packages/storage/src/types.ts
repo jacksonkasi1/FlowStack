@@ -28,6 +28,8 @@ export function createEnvFromProcessEnv(): Env {
 }
 
 export interface UploadOptions {
+  /** Server-authorized key prefix; never pass unchecked client input. */
+  prefix?: string;
   contentType?: string;
   organizationId?: string;
   expiresIn?: number;

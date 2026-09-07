@@ -1,6 +1,18 @@
 # Email Templates
 
+> **Level:** 🟡 Intermediate | **Time:** ⏱️ 10 min | **Prerequisites:** [Configuration](./configuration.md)
+
 Customize verification, password reset, and magic link emails.
+
+---
+
+## What You'll Learn
+
+- ✅ Customize email templates
+- ✅ Configure email verification flow
+- ✅ Set up password reset emails
+
+---
 
 ## Email Functions
 
@@ -86,5 +98,4 @@ EMAIL_FROM_NAME=FlowStack
 
 ## References
 
-- [Better Auth Email Verification](https://www.better-auth.com/docs/concepts/email-verification)
-- [Password Reset](https://www.better-auth.com/docs/authentication/email-password#password-reset)
+- [Better Auth Documentation](https://www.better-auth.com/docs)

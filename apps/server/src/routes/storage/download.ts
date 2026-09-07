@@ -1,13 +1,16 @@
+import { fileQuery, ownsPath } from "./validation";
 // ** import core packages
 import { Hono } from "hono";
 
 // ** import utils
 import { r2 } from "@repo/storage";
 
-const route = new Hono();
+const route = new Hono<{ Variables: { storagePrefixes: string[] } }>();
 
-route.get("/download-url", async (c) => {
-  const filePath = c.req.query("filePath");
+route.get("/download-url", fileQuery, async (c) => {
+  const { filePath } = c.req.valid("query");
+  if (!ownsPath(filePath, c.get("storagePrefixes") || []))
+    return c.json({ error: "Forbidden" }, 403);
 
   if (!filePath) {
     return c.json({ error: "filePath is required" }, 400);

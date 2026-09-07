@@ -1,11 +1,9 @@
-// ** import lib
-import { Navigate } from "react-router-dom";
-
 // ** import components
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@repo/auth-ui/guards/react-router";
 
 export default function Dashboard() {
+  // RequireOnboarding is applied at the route level in App.tsx.
   return (
     <ProtectedRoute>
       <AppLayout>

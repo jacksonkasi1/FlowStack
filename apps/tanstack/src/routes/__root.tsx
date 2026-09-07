@@ -9,10 +9,15 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { Toaster } from 'sonner'
+
+// ** import components
+import { RequireOnboarding } from '@repo/auth-ui/guards/tanstack-router'
+import { FullPageLoading } from '@/components/ui/full-page-loading'
 
 // ** import utils
 import { Providers } from '../providers'
+import { authClient } from '../lib/auth-client'
+import { EMAIL_VERIFICATION_CONFIG } from '../config/email-verification'
 import appCss from '../styles.css?url'
 import type { ReactNode } from 'react'
 
@@ -45,7 +50,15 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <Providers>
-      <Outlet />
+      <RequireOnboarding
+        authClient={authClient as any}
+        emailVerificationMode={EMAIL_VERIFICATION_CONFIG.mode}
+        emailVerificationRedirectPath={EMAIL_VERIFICATION_CONFIG.redirectPath}
+        emailVerificationBypassRoutes={EMAIL_VERIFICATION_CONFIG.bypassRoutes}
+        loadingComponent={<FullPageLoading />}
+      >
+        <Outlet />
+      </RequireOnboarding>
     </Providers>
   )
 }
@@ -72,7 +85,6 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <Toaster />
         <TanStackDevtools
           config={{
             position: 'bottom-right',

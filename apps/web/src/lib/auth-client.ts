@@ -1,10 +1,18 @@
+import { isOrganizationMode, isOnboardingEnabled } from "@repo/config";
 // ** import lib
 import { createAuthClient } from "better-auth/react";
 import { organizationClient, adminClient } from "better-auth/client/plugins";
+import { onboardingClient } from "@repo/onboarding/client";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// ** import config
+import { APP_URLS } from "@/config/urls";
 
 export const authClient = createAuthClient({
-  baseURL,
-  plugins: [organizationClient(), adminClient()],
+  baseURL: APP_URLS.api,
+  plugins: [
+    ...(isOrganizationMode() ? [organizationClient()] : []),
+    adminClient(),
+    // Onboarding plugin - redirect handled by RequireOnboarding component, not here
+    ...(isOnboardingEnabled() ? [onboardingClient()] : []),
+  ],
 });

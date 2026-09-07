@@ -1,3 +1,4 @@
+import { serve } from "@hono/node-server";
 // ** import core packages
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -55,9 +56,8 @@ app.onError((err, c) => {
 
 const PORT = parseInt(env.PORT || "8080", 10);
 
-export default {
-  port: PORT,
-  fetch: app.fetch,
-};
+serve({ port: PORT, fetch: app.fetch });
+
+export default app;
 
 logger.info(`Server starting on http://localhost:${PORT}`);
