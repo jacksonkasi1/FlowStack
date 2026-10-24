@@ -284,3 +284,44 @@ test("secret-manager mode references secrets without reading values", async () =
     await writeFile(configPath, original);
   }
 }, 60000);
+
+test("a release that failed verification is never chosen as a rollback target", async () => {
+  unhealthy.add("svc-00002");
+  expect(
+    (await deploy(["sandbox"], { FLOWSTACK_RELEASE: "bad0001" })).status,
+  ).toBe(1);
+  unhealthy.clear();
+  expect(
+    (await deploy(["sandbox"], { FLOWSTACK_RELEASE: "good002" })).status,
+  ).toBe(0);
+  expect(await serving()).toBe("svc-00003");
+  const result = await deploy(["sandbox", "rollback"]);
+  expect(result.status).toBe(0);
+  expect(await serving()).toBe("svc-00001");
+}, 60000);
+
+test("deploys write a machine-readable audit record", async () => {
+  const report = join(fixture, "report.json");
+  const result = await deploy(["sandbox"], {
+    DEPLOY_REPORT_FILE: report,
+    GITHUB_ACTOR: "release-bot",
+    GITHUB_SERVER_URL: "https://github.com",
+    GITHUB_REPOSITORY: "acme/app",
+    GITHUB_RUN_ID: "42",
+  });
+  expect(result.status).toBe(0);
+  const record = JSON.parse(await readFile(report, "utf8"));
+  expect(record).toMatchObject({
+    action: "deploy",
+    outcome: "deployed",
+    environment: "sandbox",
+    release: "abc1234",
+    newRevision: "svc-00002",
+    previousRevision: "svc-00001",
+    servingRevision: "svc-00002",
+    actor: "release-bot",
+    runUrl: "https://github.com/acme/app/actions/runs/42",
+  });
+  expect(typeof record.timestamp).toBe("string");
+  expect(JSON.stringify(record)).not.toContain("deploy-test-secret-value");
+}, 60000);

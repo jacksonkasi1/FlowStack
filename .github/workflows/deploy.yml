@@ -62,12 +62,12 @@ jobs:
           bun run test
 
       - name: Authenticate to Google Cloud (Workload Identity Federation)
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
 
       - name: Apply database migrations
         if: inputs.action == 'deploy' && inputs.run_migrations
@@ -97,6 +97,7 @@ jobs:
           TARGET: ${{ inputs.environment }}
           REVISION: ${{ inputs.rollback_revision }}
           AUTO_ROLLBACK: ${{ inputs.auto_rollback }}
+          DEPLOY_REPORT_FILE: ${{ runner.temp }}/deploy-report.json
         run: |
           SCRIPT=apps/server/.deploy/scripts/deploy.sh
           case "$ACTION" in
@@ -107,3 +108,14 @@ jobs:
             status)
               "$SCRIPT" "$TARGET" status ;;
           esac
+
+      # Audit record (outcome, release, revisions, actor, run URL); kept even
+      # when the deploy fails. Contains no secret values.
+      - name: Upload deployment record
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-report-${{ inputs.environment }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/deploy-report.json
+          if-no-files-found: ignore
+          retention-days: 400

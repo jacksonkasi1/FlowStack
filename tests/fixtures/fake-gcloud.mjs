@@ -89,6 +89,11 @@ else if (cmd.startsWith("run services describe")) {
         .map((t) => ({ ...t, percent: 0 })),
     ];
   }
+  const added = flag("update-tags");
+  if (added) {
+    const [tag, rev] = added.split("=");
+    state.traffic.push({ revisionName: rev, percent: 0, tag });
+  }
   const removed = flag("remove-tags");
   if (removed) state.traffic = state.traffic.filter((t) => t.tag !== removed);
   save();

@@ -19,6 +19,7 @@ import {
 import { chooseSource } from "../scripts/dev.mjs";
 import { assertMigrationAllowed, assertSeedAllowed } from "../scripts/db.mjs";
 import {
+  failedRevisions,
   rollbackTarget,
   sanitizeLabel,
   servingRevision,
@@ -302,6 +303,19 @@ describe("Cloud Run helpers", () => {
     ];
     expect(rollbackTarget(revisions, "svc-005")).toBe("svc-002");
     expect(rollbackTarget(revisions, "svc-001")).toBeNull();
+    // Revisions marked failed by deploy.sh are skipped.
+    expect(rollbackTarget(revisions, "svc-005", ["svc-002"])).toBe("svc-001");
+    expect(
+      failedRevisions({
+        status: {
+          traffic: [
+            { revisionName: "svc-005", percent: 100 },
+            { revisionName: "svc-002", percent: 0, tag: "failed-abc" },
+            { revisionName: "svc-006", percent: 0, tag: "r-def" },
+          ],
+        },
+      }),
+    ).toEqual(["svc-002"]);
     expect(rollbackTarget([], "svc-001")).toBeNull();
   });
   test("serving revision and candidate tag URL are read from service JSON", () => {

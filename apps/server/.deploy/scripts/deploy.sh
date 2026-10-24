@@ -240,9 +240,41 @@ route_all_traffic() {
     --to-revisions "$1=100" --quiet
 }
 
+# Marks a revision that failed verification so rollbacks never select it.
+# It keeps 0% traffic; nothing is deleted, so its logs remain available.
+mark_failed() {
+  local revision="$1"
+  [ -z "$revision" ] && return 0
+  run "$GCLOUD" run services update-traffic "$SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" \
+    --update-tags "failed-$RELEASE_LABEL=$revision" --quiet || true
+}
+
 report() {
-  # Machine-readable summary for CI (GitHub step summary) and audit logs.
+  # Summary for humans, the GitHub step summary and (DEPLOY_REPORT_FILE) a
+  # JSON audit record. Contains no secret values.
   local outcome="$1"
+  if [ -n "${DEPLOY_REPORT_FILE:-}" ]; then
+    local run_url=""
+    if [ -n "${GITHUB_RUN_ID:-}" ]; then
+      run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/$GITHUB_RUN_ID"
+    fi
+    REPORT_ACTION="$ACTION" REPORT_OUTCOME="$outcome" REPORT_ENV="$ENV" REPORT_SERVICE="$SERVICE_NAME" \
+    REPORT_PROJECT="$PROJECT_ID" REPORT_REGION="$REGION" REPORT_RELEASE="${RELEASE:-}" REPORT_IMAGE="${IMAGE:-}" \
+    REPORT_NEW="${NEW_REVISION:-}" REPORT_PREVIOUS="${PREVIOUS_REVISION:-}" REPORT_SERVING="${SERVING_AFTER:-}" \
+    REPORT_ACTOR="${GITHUB_ACTOR:-${USER:-unknown}}" REPORT_DRY_RUN="$DRY_RUN" REPORT_RUN_URL="$run_url" \
+    DEPLOY_REPORT_FILE="$DEPLOY_REPORT_FILE" "$NODE" -e '
+      const e = process.env;
+      require("node:fs").writeFileSync(e.DEPLOY_REPORT_FILE, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        action: e.REPORT_ACTION, outcome: e.REPORT_OUTCOME, environment: e.REPORT_ENV,
+        service: e.REPORT_SERVICE, project: e.REPORT_PROJECT, region: e.REPORT_REGION,
+        release: e.REPORT_RELEASE || null, image: e.REPORT_IMAGE || null,
+        newRevision: e.REPORT_NEW || null, previousRevision: e.REPORT_PREVIOUS || null,
+        servingRevision: e.REPORT_SERVING || null, actor: e.REPORT_ACTOR,
+        runUrl: e.REPORT_RUN_URL || null, dryRun: e.REPORT_DRY_RUN === "true",
+      }, null, 2) + "\n");
+    ' 2>/dev/null || echo "⚠️  Could not write $DEPLOY_REPORT_FILE"
+  fi
   echo ""
   echo "============================================"
   echo "Deployment report"
@@ -298,8 +330,9 @@ if [ "$ACTION" = "rollback" ]; then
   PREVIOUS_REVISION=$(echo "$SERVICE_JSON" | "$NODE" "$ROOT_DIR/scripts/cloud-run.mjs" serving || true)
   TARGET="$ROLLBACK_REVISION"
   if [ -z "$TARGET" ]; then
+    FAILED=$(echo "$SERVICE_JSON" | "$NODE" "$ROOT_DIR/scripts/cloud-run.mjs" failed || true)
     TARGET=$("$GCLOUD" run revisions list --service "$SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format=json \
-      | "$NODE" "$ROOT_DIR/scripts/cloud-run.mjs" rollback-target "$PREVIOUS_REVISION" || true)
+      | "$NODE" "$ROOT_DIR/scripts/cloud-run.mjs" rollback-target "$PREVIOUS_REVISION" "$FAILED" || true)
   fi
   if [ -z "$TARGET" ]; then
     echo "❌ No earlier Ready revision deployed by this script was found. Pass a revision name explicitly."
@@ -563,6 +596,8 @@ NEW_REVISION=$("$GCLOUD" run services describe "$SERVICE_NAME" --project "$PROJE
 echo ""
 echo "🩺 Verifying candidate $NEW_REVISION before it receives traffic..."
 if [ -z "$CANDIDATE_URL" ] || ! health_check "$CANDIDATE_URL"; then
+  run "$GCLOUD" run services update-traffic "$SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --remove-tags "$CANDIDATE_TAG" --quiet || true
+  mark_failed "$NEW_REVISION"
   SERVING_AFTER="$PREVIOUS_REVISION"
   report "failed-verification"
   echo "❌ Candidate failed its health check. Traffic stays on $PREVIOUS_REVISION; nothing to roll back."
@@ -578,6 +613,7 @@ SERVICE_URL=$(describe_service | "$NODE" -e 'let s="";process.stdin.on("data",d=
 if [ "$AUTO_ROLLBACK" = true ] && ! health_check "$SERVICE_URL"; then
   echo "❌ Service unhealthy after traffic switch. Auto-rollback to $PREVIOUS_REVISION."
   route_all_traffic "$PREVIOUS_REVISION"
+  mark_failed "$NEW_REVISION"
   SERVING_AFTER="$PREVIOUS_REVISION"
   if health_check "$SERVICE_URL"; then
     report "rolled-back"

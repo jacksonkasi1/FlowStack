@@ -4,7 +4,8 @@
 //
 //   gcloud run services describe ... --format=json | node scripts/cloud-run.mjs serving
 //   gcloud run services describe ... --format=json | node scripts/cloud-run.mjs tag-url <tag>
-//   gcloud run revisions list ... --format=json | node scripts/cloud-run.mjs rollback-target <current>
+//   gcloud run services describe ... --format=json | node scripts/cloud-run.mjs failed
+//   gcloud run revisions list ... --format=json | node scripts/cloud-run.mjs rollback-target <current> [failed,...]
 import { isMain } from "./lib/is-main.mjs";
 
 const isReady = (revision) =>
@@ -29,18 +30,27 @@ export function tagUrl(service, tag) {
   );
 }
 
+/** Revisions marked as failed (traffic tag `failed-*`) by deploy.sh. */
+export function failedRevisions(service) {
+  return (service?.status?.traffic || [])
+    .filter((t) => t.tag?.startsWith("failed-"))
+    .map((t) => t.revisionName);
+}
+
 /**
  * Picks the revision to roll back to: the newest Ready revision created by
  * the FlowStack deploy script (it carries the flowstack-release label) that is
- * older than the currently serving revision. Returns null when there is none.
+ * older than the currently serving revision and never failed verification.
+ * Returns null when there is none.
  */
-export function rollbackTarget(revisions, current) {
+export function rollbackTarget(revisions, current, failed = []) {
+  const excluded = new Set([current, ...failed]);
   const byName = new Map(revisions.map((r) => [r.metadata?.name, r]));
   const currentRevision = byName.get(current);
   const before = currentRevision ? created(currentRevision) : Infinity;
   return (
     revisions
-      .filter((r) => r.metadata?.name !== current)
+      .filter((r) => !excluded.has(r.metadata?.name))
       .filter((r) => r.metadata?.labels?.["flowstack-release"])
       .filter(isReady)
       .filter((r) => created(r) < before)
@@ -64,7 +74,7 @@ async function readStdin() {
   return text.trim() ? JSON.parse(text) : null;
 }
 
-async function main([command, arg]) {
+async function main([command, arg, extra]) {
   if (command === "sanitize") {
     process.stdout.write(sanitizeLabel(arg));
     return;
@@ -73,7 +83,13 @@ async function main([command, arg]) {
   const handlers = {
     serving: () => servingRevision(input),
     "tag-url": () => tagUrl(input, arg),
-    "rollback-target": () => rollbackTarget(input || [], arg),
+    "rollback-target": () =>
+      rollbackTarget(
+        input || [],
+        arg,
+        (extra || "").split(",").filter(Boolean),
+      ),
+    failed: () => failedRevisions(input).join(","),
   };
   if (!handlers[command]) throw new Error(`Unknown command: ${command}`);
   const output = handlers[command]();

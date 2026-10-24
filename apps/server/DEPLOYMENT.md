@@ -50,7 +50,13 @@ preflight ─▶ build image :<release> ─▶ deploy revision (no traffic, tag 
    `--auto-rollback` (default in the workflow) the service URL is checked again
    and traffic returns to the previous revision if it is unhealthy.
 5. **Report**: a summary (outcome, release, new/previous/serving revision,
-   actor) is printed and written to the GitHub job summary.
+   actor) is printed, written to the GitHub job summary and, with
+   `DEPLOY_REPORT_FILE`, saved as a JSON audit record (the workflow uploads it
+   as an artifact kept for 400 days, including the run URL).
+6. **Failed revisions are marked**: a revision that fails verification (or is
+   rolled back automatically) gets a `failed-<release>` traffic tag at 0%
+   traffic, so later rollbacks never select it. Nothing is deleted; its logs
+   remain available.
 
 The first deploy of a service cannot use `--no-traffic`; it deploys directly and
 is then health-checked.
