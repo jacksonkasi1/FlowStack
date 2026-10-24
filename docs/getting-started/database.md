@@ -10,12 +10,12 @@ models share one schema and one migration history.
 `*:secrets` commands), `packages/db/.env`, then `apps/server/.env`, so one local
 file is enough.
 
-The API's runtime client (`packages/db/src/client.ts`) uses the **Neon serverless
-HTTP driver**, so the running API needs a [Neon](https://neon.tech) database (a free
-branch per developer works well). Migration tooling and `db:*` commands connect
-over the standard PostgreSQL protocol and work with any PostgreSQL. To run the API
-against a local PostgreSQL, switch the client to `drizzle-orm/postgres-js`; doctor
-warns when `DATABASE_URL` is not a Neon host.
+The API's client (`packages/db/src/client.ts`) picks its driver from the host:
+the **Neon serverless HTTP driver** for `*.neon.tech`, and **postgres.js** over
+TCP for any other PostgreSQL (local, Docker, Cloud SQL). Override with
+`DATABASE_DRIVER=neon|postgres`; size the postgres.js pool with
+`DATABASE_POOL_MAX` (default 10). Migration tooling and `db:*` commands work with
+any PostgreSQL.
 
 ## Commands
 

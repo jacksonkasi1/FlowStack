@@ -33,6 +33,8 @@ do not arrive automatically. `.flowstack.json` records where a project came from
 - New scripts: `doctor`, `dev:local`, `dev:secrets`, `db:status`, `db:migrate`,
   `db:migrate:secrets`, `db:seed`, `secrets:check`, `secrets:scan`, `sentry:verify`.
   `bun run dev` now goes through `scripts/dev.mjs`.
+- The API now works with any PostgreSQL: non-Neon hosts use postgres.js
+  (`DATABASE_DRIVER` overrides). Neon hosts are unchanged.
 - `packages/db/.env` is optional: `DATABASE_URL` falls back to `apps/server/.env`.
 - `apps/server` builds with `NODE_ENV=production`. Earlier builds inlined
   `"development"`, which enabled SQL query logging in production; redeploy.

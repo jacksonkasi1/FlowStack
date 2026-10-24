@@ -165,12 +165,11 @@ test("with a DSN, errors reach Sentry without cookies, auth headers or query val
 test("the production bundle has development-only behaviour compiled out", async () => {
   const bundle = await Bun.file(join(outdir, "index.js")).text();
   // Regression: an unset NODE_ENV at build time used to enable SQL query logging.
-  expect(bundle).toMatch(
-    /drizzle\(\{\s*client: sql,\s*schema[^,]*,\s*logger: false/,
+  const client = bundle.slice(
+    bundle.indexOf("DATABASE_URL is required but was not found"),
   );
-  expect(bundle).not.toMatch(
-    /drizzle\(\{\s*client: sql,\s*schema[^,]*,\s*logger: true/,
-  );
+  expect(client).toMatch(/const logger\d* = false;/);
+  expect(client.slice(0, 600)).not.toMatch(/logger\d* = true/);
 });
 
 test("production builds expose no debug route", async () => {
