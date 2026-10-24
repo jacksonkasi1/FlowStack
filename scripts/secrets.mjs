@@ -8,7 +8,7 @@
 // `run` injects secrets into one child process. `check` confirms that every
 // required secret name exists in Infisical. `validate` checks the current
 // process environment. Values are never printed.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -31,6 +31,35 @@ const USAGE = `Usage:
   node scripts/secrets.mjs check <environment>
   node scripts/secrets.mjs validate [--scope server|web]`;
 
+const EXEC_CLEAN = fileURLToPath(
+  new URL("./lib/exec-clean.mjs", import.meta.url),
+);
+
+/**
+ * Exchanges Universal Auth client credentials (read from the environment, never
+ * passed as arguments) for a short-lived access token. Returns null when no
+ * client credentials are set.
+ */
+export function universalAuthToken(env = process.env) {
+  if (env.INFISICAL_TOKEN) return null;
+  if (
+    !env.INFISICAL_UNIVERSAL_AUTH_CLIENT_ID ||
+    !env.INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET
+  )
+    return null;
+  const result = spawnSync(
+    infisicalBinary(env),
+    ["login", "--method=universal-auth", "--plain", "--silent"],
+    { encoding: "utf8", env, timeout: 30000 },
+  );
+  const token = result.stdout?.trim();
+  if (result.error || result.status !== 0 || !token)
+    throw new Error(
+      "Infisical Universal Auth login failed. Check the machine identity's client ID, client secret and project access.",
+    );
+  return token;
+}
+
 /** Spawns a command with secrets injected. Resolves with the exit code. */
 export async function runWithSecrets(
   appEnv,
@@ -45,15 +74,22 @@ export async function runWithSecrets(
     throw new Error(
       "Infisical CLI not found. Install it (https://infisical.com/docs/cli/overview), or use local .env files explicitly with `bun run dev:local`.",
     );
-  const child = spawn(infisicalBinary(env), infisicalRunArgs(target, command), {
-    cwd: root,
-    stdio: "inherit",
-    env: {
-      ...env,
-      FLOWSTACK_ENV: appEnv,
-      FLOWSTACK_SECRETS_SOURCE: "infisical",
-    },
-  });
+  const token = universalAuthToken(env);
+  const cliEnv = {
+    ...env,
+    FLOWSTACK_ENV: appEnv,
+    FLOWSTACK_SECRETS_SOURCE: "infisical",
+  };
+  if (token) {
+    cliEnv.INFISICAL_TOKEN = token;
+    delete cliEnv.INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET;
+  }
+  // exec-clean removes Infisical credentials before the application starts.
+  const child = spawn(
+    infisicalBinary(env),
+    infisicalRunArgs(target, [process.execPath, EXEC_CLEAN, ...command]),
+    { cwd: root, stdio: "inherit", env: cliEnv },
+  );
   const forward = (signal) => child.kill(signal);
   process.on("SIGINT", forward);
   process.on("SIGTERM", forward);

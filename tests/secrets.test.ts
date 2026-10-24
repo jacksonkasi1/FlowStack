@@ -23,7 +23,12 @@ beforeAll(async () => {
     stub,
     `#!/bin/bash
 if [ "$1" = "--version" ]; then echo "infisical version 0.0.0-stub"; exit 0; fi
-echo "$*" >> "${log}"
+echo "$* token=\${INFISICAL_TOKEN:-none}" >> "${log}"
+if [ "$1" = "login" ]; then
+  # Universal Auth: credentials are read from the environment, as the CLI does.
+  if [ "$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" = "good-client-secret" ]; then echo "machine-access-token"; exit 0; fi
+  echo "error: invalid client credentials" >&2; exit 1
+fi
 if [ -n "$STUB_FAIL" ]; then echo "error: You must be logged in to run this command" >&2; exit 1; fi
 while [ "$1" != "--" ]; do shift; done; shift
 export BETTER_AUTH_SECRET="${SECRET_VALUE}" BETTER_AUTH_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 DATABASE_URL=postgresql://dev:pw@localhost:5432/dev
@@ -125,4 +130,56 @@ test("secrets:check validates names inside the injected environment without prin
     expect(output).not.toContain("R2_BUCKET_NAME");
     expect(result.status).toBe(0);
   }
+});
+
+const PRINT_CREDENTIALS = [
+  "node",
+  "-e",
+  "console.log(JSON.stringify({token: process.env.INFISICAL_TOKEN ?? null, clientSecret: process.env.INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET ?? null, secret: Boolean(process.env.BETTER_AUTH_SECRET)}))",
+];
+
+test("Infisical credentials reach the CLI but never the application process", async () => {
+  const result = run(["run", "development", "--", ...PRINT_CREDENTIALS], {
+    INFISICAL_TOKEN: "ci-access-token",
+  });
+  expect(result.status).toBe(0);
+  expect(JSON.parse(result.stdout.trim().split("\n").at(-1)!)).toEqual({
+    token: null,
+    clientSecret: null,
+    secret: true,
+  });
+  expect((await calls()).at(-1)).toContain("token=ci-access-token");
+});
+
+test("machine identities log in with Universal Auth without exposing the client secret", async () => {
+  const env = {
+    INFISICAL_UNIVERSAL_AUTH_CLIENT_ID: "client-id",
+    INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET: "good-client-secret",
+  };
+  const result = run(["run", "development", "--", ...PRINT_CREDENTIALS], env);
+  expect(result.status).toBe(0);
+  expect(JSON.parse(result.stdout.trim().split("\n").at(-1)!)).toEqual({
+    token: null,
+    clientSecret: null,
+    secret: true,
+  });
+  const log = (await calls()).slice(-2);
+  expect(log[0]).toStartWith("login --method=universal-auth --plain --silent");
+  expect(log[1]).toContain("token=machine-access-token");
+  expect(log.join("\n")).not.toContain("good-client-secret");
+  expect(result.stdout + result.stderr).not.toContain("machine-access-token");
+});
+
+test("a rejected machine identity stops before any command runs", async () => {
+  const result = run(
+    ["run", "development", "--", "node", "-e", "console.log('ran')"],
+    {
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_ID: "client-id",
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET: "wrong",
+    },
+  );
+  expect(result.status).toBe(1);
+  expect(result.stdout).not.toContain("ran");
+  expect(result.stderr).toContain("Universal Auth login failed");
+  expect((await calls()).at(-1)).toStartWith("login");
 });

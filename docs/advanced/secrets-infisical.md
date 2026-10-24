@@ -98,11 +98,17 @@ Machine identities (one per environment and purpose):
 | `github-deploy-<env>` | OIDC auth, bound to this repository (`repo:OWNER/REPO:environment:<env>` subject) | Read `<env>` |
 | `secret-sync-<env>`   | Managed by the Secret Sync                                                        | Read `<env>` |
 
-Prefer OIDC machine identities: there is no client secret to leak or rotate. If a
-platform only supports Universal Auth, store the client ID and secret in that
-platform's secret store, never in the repository, and log in with
-`infisical login --method=universal-auth --plain --silent` to obtain a
-short-lived token passed as `INFISICAL_TOKEN`.
+Prefer OIDC machine identities: there is no client secret to leak or rotate.
+Where a platform only supports Universal Auth, set
+`INFISICAL_UNIVERSAL_AUTH_CLIENT_ID` and `INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET`
+in that platform's secret store; `scripts/secrets.mjs` exchanges them for a
+short-lived access token (the secret is read from the environment, never
+passed as a command-line argument). An existing `INFISICAL_TOKEN` is used as is.
+
+Infisical credentials (`INFISICAL_TOKEN`, Universal Auth client credentials) are
+removed from the environment before the application starts
+(`scripts/lib/exec-clean.mjs`), so the app, its logs and its error reports only
+ever see the injected secrets.
 
 ## Deployed environments
 

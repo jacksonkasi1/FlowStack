@@ -37,6 +37,7 @@ import {
   parseDatabaseUrl,
 } from "./lib/db.mjs";
 import { isPortFree } from "./setup.mjs";
+import { universalAuthToken } from "./secrets.mjs";
 import { isMain } from "./lib/is-main.mjs";
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -238,16 +239,25 @@ export async function runChecks({
       infisicalReady = true;
       add("Infisical Access", STATUS.PASS, "development secrets injected");
     } else if (version && target) {
-      // Child prints only the names it received.
-      const probe = spawnSync(
-        infisicalBinary(env),
-        infisicalRunArgs(target, [
-          process.execPath,
-          "-e",
-          "process.stdout.write(JSON.stringify(Object.keys(process.env)))",
-        ]),
-        { encoding: "utf8", timeout: timeoutMs * 3, env, cwd: root },
-      );
+      // The child exits immediately; no secret value is read or printed.
+      let probeEnv = env;
+      let probe;
+      try {
+        const token = universalAuthToken(env);
+        if (token) probeEnv = { ...env, INFISICAL_TOKEN: token };
+        probe = spawnSync(
+          infisicalBinary(env),
+          infisicalRunArgs(target, [process.execPath, "-e", "0"]),
+          {
+            encoding: "utf8",
+            timeout: timeoutMs * 3,
+            env: probeEnv,
+            cwd: root,
+          },
+        );
+      } catch {
+        probe = { status: 1 };
+      }
       if (probe.status === 0) {
         infisicalReady = true;
         add("Infisical Access", STATUS.PASS, "development secrets readable");
