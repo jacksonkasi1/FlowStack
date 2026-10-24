@@ -63,7 +63,7 @@ test("reports every check and never prints secret values", async () => {
   const byName = Object.fromEntries(checks.map((c) => [c.name, c.status]));
   expect(byName["Project Config"]).toBe("PASS");
   expect(byName["Server Env"]).toBe("PASS");
-  expect(byName["Database"]).toBe("WARN"); // connected, but not a Neon host
+  expect(byName["Database"]).toBe("PASS");
   expect(byName["Migrations"]).toBe("FAIL"); // fresh database: 7 pending
   expect(byName["Infisical CLI"]).toBe("SKIPPED");
   expect(byName["Sentry"]).toBe("SKIPPED");

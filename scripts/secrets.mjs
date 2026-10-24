@@ -60,11 +60,14 @@ export function universalAuthToken(env = process.env) {
   return token;
 }
 
-/** Spawns a command with secrets injected. Resolves with the exit code. */
+/**
+ * Spawns a command with secrets injected. Resolves with the exit code, or with
+ * { code, stdout } when `capture` is set (stderr still goes to the terminal).
+ */
 export async function runWithSecrets(
   appEnv,
   command,
-  { env = process.env } = {},
+  { env = process.env, capture = false } = {},
 ) {
   if (!command.length) throw new Error("No command given after --");
   assertEnvironmentAllowed(appEnv, env);
@@ -88,16 +91,23 @@ export async function runWithSecrets(
   const child = spawn(
     infisicalBinary(env),
     infisicalRunArgs(target, [process.execPath, EXEC_CLEAN, ...command]),
-    { cwd: root, stdio: "inherit", env: cliEnv },
+    {
+      cwd: root,
+      stdio: capture ? ["inherit", "pipe", "inherit"] : "inherit",
+      env: cliEnv,
+    },
   );
+  let stdout = "";
+  child.stdout?.on("data", (d) => (stdout += d));
   const forward = (signal) => child.kill(signal);
   process.on("SIGINT", forward);
   process.on("SIGTERM", forward);
   return new Promise((resolveExit) =>
-    child.on("exit", (code, signal) => {
+    child.on("close", (code, signal) => {
       process.off("SIGINT", forward);
       process.off("SIGTERM", forward);
-      resolveExit(code ?? (signal ? 1 : 0));
+      const exit = code ?? (signal ? 1 : 0);
+      resolveExit(capture ? { code: exit, stdout } : exit);
     }),
   );
 }

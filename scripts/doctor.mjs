@@ -37,6 +37,7 @@ import {
   parseDatabaseUrl,
 } from "./lib/db.mjs";
 import { isPortFree } from "./setup.mjs";
+import { toolchainChecks } from "./lib/toolchain.mjs";
 import { universalAuthToken } from "./secrets.mjs";
 import { isMain } from "./lib/is-main.mjs";
 
@@ -47,7 +48,6 @@ export const STATUS = {
   FAIL: "FAIL",
   SKIP: "SKIPPED",
 };
-const MIN_NODE = 24;
 
 const result = (name, status, detail = "", fix = "") => ({
   name,
@@ -55,14 +55,6 @@ const result = (name, status, detail = "", fix = "") => ({
   detail,
   fix,
 });
-
-function compareVersions(a, b) {
-  const pa = a.split(".").map(Number);
-  const pb = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++)
-    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
-  return 0;
-}
 
 function summarize(issues) {
   return issues.map((r) => `${r.name} ${r.message}`).join("; ");
@@ -114,41 +106,11 @@ export async function runChecks({
   const checks = [];
   const add = (...args) => checks.push(result(...args));
 
-  // Toolchain
-  const nodeMajor = Number(process.versions.node.split(".")[0]);
-  add(
-    "Node.js",
-    nodeMajor >= MIN_NODE ? STATUS.PASS : STATUS.FAIL,
-    process.versions.node,
-    nodeMajor >= MIN_NODE ? "" : `Install Node.js ${MIN_NODE} LTS or newer.`,
-  );
   const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-  const pinnedBun = pkg.packageManager?.split("@")[1];
-  const bun = spawnSync("bun", ["--version"], {
-    encoding: "utf8",
-    timeout: timeoutMs,
-  });
-  if (bun.error || bun.status !== 0)
-    add(
-      "Bun",
-      STATUS.FAIL,
-      "not found",
-      `Install Bun ${pinnedBun} (https://bun.sh).`,
-    );
-  else {
-    const version = bun.stdout.trim();
-    const cmp = pinnedBun ? compareVersions(version, pinnedBun) : 0;
-    add(
-      "Bun",
-      cmp < 0 ? STATUS.FAIL : cmp > 0 ? STATUS.WARN : STATUS.PASS,
-      cmp === 0 ? version : `${version} (project pins ${pinnedBun})`,
-      cmp < 0
-        ? `Upgrade Bun to ${pinnedBun}.`
-        : cmp > 0
-          ? `Newer than the pinned ${pinnedBun}; if installs differ in CI, use ${pinnedBun}.`
-          : "",
-    );
-  }
+
+  // Toolchain
+  for (const c of toolchainChecks(root, { timeoutMs }))
+    add(c.name, c.status, c.detail, c.fix);
   const installed =
     ["turbo", "eslint"].every((bin) =>
       existsSync(join(root, "node_modules", ".bin", bin)),
@@ -394,11 +356,8 @@ export async function runChecks({
         await sql`select 1`;
         add(
           "Database",
-          parsed.neon ? STATUS.PASS : STATUS.WARN,
-          `connected (${parsed.host})`,
-          parsed.neon
-            ? ""
-            : "The API's runtime client uses the Neon HTTP driver. Non-Neon PostgreSQL works for migrations but needs packages/db/src/client.ts changed for runtime; see docs/getting-started/database.md.",
+          STATUS.PASS,
+          `connected (${parsed.host}, ${parsed.neon ? "Neon HTTP" : "postgres.js"} driver)`,
         );
         try {
           const status = await migrationStatus(sql, root);

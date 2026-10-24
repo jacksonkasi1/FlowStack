@@ -102,6 +102,28 @@ function printStatus(status) {
 }
 
 async function status(args) {
+  if (args.includes("--json")) {
+    // Machine-readable for setup/onboarding. Names and counts only.
+    let report;
+    try {
+      report = await withDatabase(async (sql, info) => {
+        const result = await migrationStatus(sql, root);
+        return {
+          connected: true,
+          host: info.host,
+          neon: info.neon,
+          applied: result.applied.length,
+          pending: result.pending.map((m) => m.tag),
+          skippedByDrizzle: result.skippedByDrizzle.map((m) => m.tag),
+        };
+      });
+    } catch (error) {
+      report = { connected: false, error: error.message };
+    }
+    console.log(JSON.stringify(report));
+    if (!report.connected) process.exitCode = 1;
+    return;
+  }
   return withDatabase(async (sql, info) => {
     const result = await migrationStatus(sql, root);
     console.log(`Database: connected (${info.host}, from ${info.source})`);

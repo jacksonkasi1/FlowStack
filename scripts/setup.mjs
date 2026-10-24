@@ -27,6 +27,8 @@ import {
   writeProjectConfig,
 } from "./lib/project-config.mjs";
 import { isMain } from "./lib/is-main.mjs";
+import { toolchainChecks } from "./lib/toolchain.mjs";
+import { existsSync } from "node:fs";
 
 export const sourceRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -44,7 +46,10 @@ const USAGE = `bun run setup [options]
   --web-port <port>              Frontend port (default ${DEFAULT_PORTS.web})
   --infisical-project-id <id>    Infisical project ID (not a secret)
   --output <dir>                 Generate a separate copy in an empty directory
-  --no-install                   Skip bun install
+  --no-install                   Skip bun install (and the environment checks)
+  --migrate                      Apply pending development migrations without asking
+  --yes                          Accept defaults for confirmations (implies --migrate)
+  --skip-checks                  Skip secrets, database and doctor checks after install
   --help
 
 Interactive when --mode or --frontend is missing and a terminal is attached.`;
@@ -85,6 +90,9 @@ export function parseArgs(args) {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--no-install") options.install = false;
+    else if (arg === "--migrate") options.migrate = true;
+    else if (arg === "--yes") options.yes = true;
+    else if (arg === "--skip-checks") options.skipChecks = true;
     else if (arg === "--help") options.help = true;
     else if (valued.includes(arg)) {
       const value = args[++i];
@@ -491,17 +499,48 @@ async function interactive(options, previous) {
   }
 }
 
+async function reusePrevious(previous) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const summary = `${previous.projectName || "project"}: ${previous.mode} / ${previous.frontend}`;
+    const answer = (
+      await rl.question(
+        `Existing setup found (${summary}). Reuse these choices? [Y/n]: `,
+      )
+    )
+      .trim()
+      .toLowerCase();
+    return !answer || answer === "y" || answer === "yes";
+  } finally {
+    rl.close();
+  }
+}
+
 export async function main(args = process.argv.slice(2)) {
   const options = parseArgs(args);
   if (options.help) {
     console.log(USAGE);
     return;
   }
+  for (const check of toolchainChecks(sourceRoot)) {
+    if (check.status === "FAIL")
+      throw new Error(`${check.name} ${check.detail}: ${check.fix}`);
+    if (check.status === "WARN")
+      console.warn(`! ${check.name} ${check.detail}. ${check.fix}`);
+  }
   const previous = options.output ? null : await readProjectConfig(sourceRoot);
   if (!options.mode || !options.frontend) {
     if (!process.stdin.isTTY)
       throw new Error("Non-interactive setup requires --mode and --frontend");
-    await interactive(options, previous);
+    // Rerunning setup resumes: reuse earlier choices instead of asking again.
+    if (
+      previous?.mode &&
+      previous?.frontend &&
+      (await reusePrevious(previous))
+    ) {
+      options.mode ||= previous.mode;
+      options.frontend ||= previous.frontend;
+    } else await interactive(options, previous);
   }
   const result = options.output
     ? await generate(sourceRoot, options.output, options)
@@ -534,6 +573,9 @@ export async function main(args = process.argv.slice(2)) {
   }
 
   const enabled = INTEGRATIONS.filter((item) => config.integrations[item]);
+  const canCheck =
+    !options.skipChecks &&
+    existsSync(join(root, "node_modules", ".bin", "turbo"));
   const secretsStep = config.integrations.infisical
     ? "Add development secrets to Infisical (see docs/advanced/secrets-infisical.md), then `infisical login`."
     : "Fill in apps/server/.env (replace every placeholder).";
@@ -549,8 +591,29 @@ FlowStack ${TEMPLATE_VERSION} setup complete
   Integrations  ${enabled.length ? enabled.join(", ") : "none"}
   Source commit ${config.sourceCommit}
   Env files     ${created.length ? `created ${created.join(", ")}` : "none created (existing files kept)"}
-${warnings.map((w) => `\n  ! ${w}`).join("")}
-Next steps:
+${warnings.map((w) => `\n  ! ${w}`).join("")}`);
+  if (canCheck) {
+    // Runs in its own process: it needs installed dependencies, which this
+    // script must not import (setup runs before anything is installed).
+    const flags = [
+      ...(options.migrate || options.yes ? ["--migrate"] : []),
+      ...(process.stdin.isTTY ? [] : ["--non-interactive"]),
+    ];
+    const onboarding = spawnSync(
+      process.execPath,
+      [join(root, "scripts/onboard.mjs"), ...flags],
+      {
+        cwd: root,
+        stdio: "inherit",
+      },
+    );
+    if (onboarding.status !== 0)
+      console.warn(
+        "\nEnvironment checks could not finish. Rerun `bun run setup` (it resumes) or `bun run doctor`.",
+      );
+    return;
+  }
+  console.log(`Next steps:
   1. ${secretsStep}
   2. bun run doctor       check the environment
   3. bun run db:migrate   ${config.integrations.infisical ? "(or db:migrate:secrets) " : ""}apply database migrations
