@@ -1,6 +1,13 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { displayName, readProjectConfig } from "./lib/project-config.mjs";
+
+// Setup replaces the default title with the project's display name.
+const config = await readProjectConfig(resolve(import.meta.dirname, ".."));
+const title = config?.projectName
+  ? displayName(config.projectName)
+  : "FlowStack";
 
 const child = spawn(
   process.execPath,
@@ -35,7 +42,7 @@ try {
     signal: AbortSignal.timeout(5000),
   });
   const html = await response.text();
-  if (!response.ok || !html.includes("FlowStack"))
+  if (!response.ok || !html.includes(`<title>${title}</title>`))
     throw new Error("Missing application HTML");
   console.log(
     `PASS TanStack HTML response completed in ${Date.now() - started}ms (${html.length} characters)`,

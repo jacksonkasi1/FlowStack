@@ -1,14 +1,22 @@
-name: Verify templates
+name: Verify
 on:
   pull_request:
   push:
-    branches: [dev]
+    branches: [dev, main]
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+  CI: "true"
+  HUSKY: "0"
 jobs:
+  # Lint, types, unit/integration/runtime tests, dependency audit.
   shared:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -17,18 +25,56 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
+      # Hook and scanning tests need gitleaks; installation failure fails the job.
+      - run: .github/scripts/install-tools.sh gitleaks
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run check-types
       - run: bun run test
+      - run: bash apps/server/.deploy/scripts/test_env_parsing.sh
+      - run: shellcheck -S warning apps/server/.deploy/scripts/*.sh .github/scripts/*.sh
       - run: bun audit
+
+  # Secret scanning over the full history and working tree. Enforced: a scanner
+  # that fails to install or run fails this job.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: .github/scripts/install-tools.sh gitleaks
+      - run: node scripts/secrets-scan.mjs
+        env:
+          FLOWSTACK_REQUIRE_SECRET_SCAN: "1"
+
+  workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+  # Every account model with every frontend, plus a minimal-integrations build.
   presets:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         mode: [personal, organization]
         frontend: [react, tanstack]
+        integrations: [""]
+        include:
+          - mode: personal
+            frontend: react
+            integrations: "--without email,storage,google"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -37,11 +83,27 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
-      - run: bun run setup --mode ${{ matrix.mode }} --frontend ${{ matrix.frontend }}
+      - run: bun run setup --mode ${{ matrix.mode }} --frontend ${{ matrix.frontend }} ${{ matrix.integrations }}
       - run: bun install --frozen-lockfile
       - run: bun run check-types
       - run: bun run test
-      - run: bun run build
+      # Sentinel values: the build must never embed confidential values.
+      - name: Build with sentinel secrets
+        run: bun run build
+        env:
+          BETTER_AUTH_SECRET: sentinel-better-auth-secret-0000000000000000
+          DATABASE_URL: postgresql://sentinel:sentinel-db-password-000@db.invalid:5432/sentinel
+          R2_SECRET_ACCESS_KEY: sentinel-r2-secret-access-key-000
+          ZEPTOMAIL_API_KEY: sentinel-zeptomail-api-key-000
+          GOOGLE_CLIENT_SECRET: sentinel-google-client-secret-000
+      - name: Check frontend bundle for confidential values
+        run: node scripts/check-bundle-secrets.mjs apps/${{ matrix.frontend == 'react' && 'web/dist' || 'tanstack/.output/public' }}
+        env:
+          BETTER_AUTH_SECRET: sentinel-better-auth-secret-0000000000000000
+          DATABASE_URL: postgresql://sentinel:sentinel-db-password-000@db.invalid:5432/sentinel
+          R2_SECRET_ACCESS_KEY: sentinel-r2-secret-access-key-000
+          ZEPTOMAIL_API_KEY: sentinel-zeptomail-api-key-000
+          GOOGLE_CLIENT_SECRET: sentinel-google-client-secret-000
       - if: matrix.frontend == 'tanstack'
         run: node scripts/verify-tanstack-runtime.mjs
       - run: bun audit
