@@ -1,0 +1,109 @@
+name: Deploy API
+# Manual only: nothing deploys as a side effect of ordinary development.
+# Each job runs in a GitHub Environment named after the target. Configure
+# required reviewers on the "production" environment (Settings > Environments)
+# so production deploys need approval. See apps/server/DEPLOYMENT.md.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [sandbox, beta, prod]
+        required: true
+      action:
+        description: deploy, rollback (to the previous verified revision) or status
+        type: choice
+        options: [deploy, rollback, status]
+        default: deploy
+      rollback_revision:
+        description: Optional revision name for rollback
+        type: string
+        required: false
+      run_migrations:
+        description: Apply pending database migrations before deploying (never reverted on rollback)
+        type: boolean
+        default: false
+      auto_rollback:
+        description: Restore the previous revision if the service is unhealthy after the traffic switch
+        type: boolean
+        default: true
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation and Infisical OIDC; no stored keys
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      CI: "true"
+      HUSKY: "0"
+      FLOWSTACK_RELEASE: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      - name: Verify release before deploying
+        if: inputs.action == 'deploy'
+        run: |
+          bun run lint
+          bun run check-types
+          bun run test
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Apply database migrations
+        if: inputs.action == 'deploy' && inputs.run_migrations
+        env:
+          INFISICAL_PROJECT_ID: ${{ vars.INFISICAL_PROJECT_ID }}
+          INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_IDENTITY_ID }}
+          INFISICAL_DOMAIN: ${{ vars.INFISICAL_DOMAIN }}
+          TARGET: ${{ inputs.environment }}
+        run: |
+          .github/scripts/install-tools.sh infisical
+          # Keyless: exchange the GitHub OIDC token for a short-lived Infisical token.
+          JWT=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=infisical" | jq -r .value)
+          echo "::add-mask::$JWT"
+          INFISICAL_TOKEN=$(infisical login --method=oidc-auth --machine-identity-id="$INFISICAL_IDENTITY_ID" --jwt="$JWT" --plain --silent)
+          echo "::add-mask::$INFISICAL_TOKEN"
+          export INFISICAL_TOKEN
+          APP_ENV=$([ "$TARGET" = prod ] && echo production || echo "$TARGET")
+          FLAG=$([ "$APP_ENV" = production ] && echo --allow-production || echo "--confirm-env=$APP_ENV")
+          node scripts/secrets.mjs run "$APP_ENV" -- node scripts/db.mjs migrate "$FLAG"
+
+      - name: Cloud Run ${{ inputs.action }}
+        env:
+          PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          ACTION: ${{ inputs.action }}
+          TARGET: ${{ inputs.environment }}
+          REVISION: ${{ inputs.rollback_revision }}
+          AUTO_ROLLBACK: ${{ inputs.auto_rollback }}
+        run: |
+          SCRIPT=apps/server/.deploy/scripts/deploy.sh
+          case "$ACTION" in
+            deploy)
+              if [ "$AUTO_ROLLBACK" = true ]; then "$SCRIPT" "$TARGET" --auto-rollback; else "$SCRIPT" "$TARGET"; fi ;;
+            rollback)
+              if [ -n "$REVISION" ]; then "$SCRIPT" "$TARGET" rollback "$REVISION"; else "$SCRIPT" "$TARGET" rollback; fi ;;
+            status)
+              "$SCRIPT" "$TARGET" status ;;
+          esac
