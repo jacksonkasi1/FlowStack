@@ -1,8 +1,7 @@
 # Choose your FlowStack starter
 
 Use Node.js 24 LTS and Bun 1.3.14. Bun installs dependencies and builds the API;
-the API itself runs on Node.js. No registry or Vercel deployment is needed to use
-this repository as a template.
+the API itself runs on Node.js.
 
 ```sh
 git clone --branch dev https://github.com/jacksonkasi1/FlowStack.git my-app
@@ -10,42 +9,110 @@ cd my-app
 bun run setup
 ```
 
-Setup asks exactly two questions: **Personal or Organization**, then **React +
-React Router or TanStack Start**. The Hono/Node API, database, email and storage
-packages are included automatically. Dependencies are installed after selection.
+Interactive setup asks for:
 
-For scripts or CI:
+1. **Project name**: lowercase letters, digits and hyphens. Used for the package
+   name, page titles, email sender name and Cloud Run service names.
+2. **Personal or Organization** account model.
+3. **React + React Router or TanStack Start** frontend.
+4. **Optional integrations**: email (ZeptoMail), file storage (Cloudflare R2),
+   Google sign-in, Sentry, Infisical. Authentication and the database are always
+   included. A disabled integration hides its UI and drops its required variables
+   (e.g. without storage, avatar upload is hidden and R2 credentials are not required).
+5. **Infisical project ID**, if Infisical was selected.
+6. **Ports**, only when the default API (8080) or frontend (3000) port is in use.
+
+It then installs dependencies and prints a summary with next steps.
+
+## Non-interactive
+
+Setup prompts only when `--mode` or `--frontend` is missing and a terminal is
+attached. Everything else falls back to the previous run's choices, then defaults.
 
 ```sh
 bun run setup --mode personal --frontend react
-bun run setup --mode organization --frontend tanstack
+bun run setup --mode organization --frontend tanstack --name acme \
+  --with sentry,infisical --without google --infisical-project-id <id> \
+  --api-port 8081 --web-port 3001 --no-install
 ```
 
-To keep a maintenance checkout and produce a separate project:
+| Option                          | Meaning                                                              |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `--mode personal\|organization` | Account model                                                        |
+| `--frontend react\|tanstack`    | Frontend                                                             |
+| `--name <name>`                 | Project name                                                         |
+| `--with` / `--without <list>`   | Enable / disable `email,storage,google,sentry,infisical`             |
+| `--api-port`, `--web-port`      | Local ports (1024–65535, different)                                  |
+| `--infisical-project-id <id>`   | Infisical project (an identifier, not a secret)                      |
+| `--output <dir>`                | Generate a separate copy in an empty directory outside this checkout |
+| `--no-install`                  | Skip `bun install`                                                   |
+
+## What setup changes
+
+- `package.json`: name, workspaces (`apps/server`, the chosen frontend,
+  `packages/*`) and `dev` scripts.
+- `packages/config/src/config/preset.ts`: account model and `TEMPLATE_FEATURES`.
+- Frontend port, page titles and Cloud Run service names, **only where the
+  FlowStack defaults are still present**, so your edits survive a rerun.
+- `.env` files: created from `.env.example` only when missing, with the chosen
+  ports filled in. Existing `.env` files are never modified. With Infisical,
+  no `apps/server/.env` is created; secrets are injected at runtime.
+- `.flowstack.json`: what was chosen and where it came from:
+
+```json
+{
+  "version": 2,
+  "template": "FlowStack",
+  "templateVersion": "2.0.0",
+  "sourceCommit": "<commit this project was generated from>",
+  "projectName": "acme",
+  "mode": "organization",
+  "frontend": "tanstack",
+  "backend": "node",
+  "integrations": {
+    "email": true,
+    "storage": true,
+    "google": false,
+    "sentry": true,
+    "infisical": true
+  },
+  "ports": { "api": 8080, "web": 3000 },
+  "infisical": {
+    "projectId": "<id>",
+    "secretPath": "/",
+    "environments": {
+      "development": "dev",
+      "sandbox": "sandbox",
+      "beta": "beta",
+      "production": "prod"
+    }
+  }
+}
+```
+
+It never contains secrets. Files written by older FlowStack versions
+(`"version": 1`) are read and upgraded in place, keeping their previous behaviour
+(Google sign-in shown, storage and email required). Unknown keys you add are kept.
+
+Setup is safe to rerun, for example to switch frontend or enable an integration.
+Both frontend source directories are kept; after choosing, you may delete the
+unused one (restore it before selecting it again). Do not delete migration files.
+
+## Separate copies
 
 ```sh
 bun run setup --mode personal --frontend react --output ../my-app
 ```
 
-The destination must be empty and outside the source checkout. Generated copies
-exclude Git history, installed dependencies, build output and environment files.
-Setup copies `.env.example` only when the destination `.env` does not exist.
-`--no-install` prepares files without installing packages. Existing `.env` files
-are never overwritten. `.flowstack.json` records the originating commit and choices.
+Generated copies exclude Git history, dependencies, build output, local `.env`
+files, `.infisical.json` and key files, but keep `.env*.example` files. The
+destination must be empty and outside the source checkout.
 
-## Start the application
+## Next steps
 
-1. Configure `apps/server/.env`: database URL, auth secret, frontend origin,
-   email provider and R2 credentials. Replace all placeholder values.
-2. Set the same database URL in `packages/db/.env`.
-3. Configure the selected frontend's `.env` from its example. Its API URL should
-   point to `http://localhost:8080` for local development.
-4. Run `bun run --cwd packages/db db:migrate` on your development database.
-5. Run `bun run dev`. Only the chosen frontend and the Node API start.
-
-The default frontend port is 3000; the API port is 8080. Email preview is separate:
-`bun run dev:email`. Run `bun run check-types`, `bun run test`, `bun run lint`,
-`bun run build`, and `bun audit` before shipping changes.
+`bun run doctor` → `bun run db:migrate` → `bun run dev`. See
+[Quick Start](./quickstart.md), [Database](./database.md) and
+[Secrets](../advanced/secrets-infisical.md).
 
 ## Personal and organization modes
 
@@ -60,23 +127,10 @@ Both modes retain the same database schema and migration history. Switching the
 configuration does not drop tables or migrate existing application data. Switching
 an existing production app's ownership model requires a separate data migration.
 
-Setup deliberately retains source files for both frontends so you can rerun it
-to change your selection. Only the selected frontend is a workspace. If you want
-a smaller clone, you may manually delete `apps/tanstack` after choosing `react`,
-or `apps/web` after choosing `tanstack`. Restore that directory before selecting
-it again. Shared router adapters and organization modules can remain: disabled
-server plugins do not expose endpoints. Do not delete database migration files.
+## Maintaining the template
 
-## Maintenance and releases
-
-Maintain shared changes on `dev`, validate both modes and both frontends, and
-review the PR before merging into `main`. Backups are permanent historical refs;
-never use them for ongoing development. Tag tested releases and include migration
-and security-update instructions. Existing customized clones do **not** update
-automatically; use `.flowstack.json` to identify their source and apply relevant
-release changes. `bun run verify:presets` installs, tests, type-checks, builds and
-audits four isolated starter copies without changing the maintenance checkout.
-
-GitHub cloning is the supported distribution path for this release. A published
-`bunx create-flowstack` package can wrap the same setup later; no unverified npm
-package name or hosted registry is required now.
+Shared changes go to `dev`, are validated for both modes and both frontends, and
+reach `main` through a reviewed PR. `bun run verify:presets` installs, tests,
+type-checks, builds and audits four isolated starter copies without changing the
+maintenance checkout. Releases are tagged from `main` ([CI/CD](../advanced/ci-cd.md)).
+Existing projects upgrade by following [upgrading.md](../advanced/upgrading.md).

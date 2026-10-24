@@ -10,81 +10,69 @@ Install Node.js 24 LTS and Bun 1.3.14, then:
 ```sh
 git clone --branch dev https://github.com/jacksonkasi1/FlowStack.git my-app
 cd my-app
-bun run setup
-```
-
-Setup asks only:
-
-1. **Personal or Organization** — individual accounts, or team workspaces with
-   onboarding, invitations and membership.
-2. **React Router or TanStack Start** — both use React; the backend is Hono on Node.js.
-
-The auth, database, email and storage packages are included automatically. Setup
-installs dependencies and creates missing environment files from examples. Fill
-in your credentials, run migrations, then start your chosen frontend and API:
-
-```sh
-bun run --cwd packages/db db:migrate
+bun run setup      # name, Personal/Organization, React Router/TanStack Start, integrations
+bun run doctor     # checks tools, secrets, database, ports; prints fixes
+bun run db:migrate
 bun run dev
 ```
 
-See [the setup guide](docs/getting-started/template-setup.md) for environment
-configuration, optional cleanup and deployment details.
+Secrets come from local `.env` files or, preferably, from
+[Infisical](docs/advanced/secrets-infisical.md) at runtime. See the
+[quick start](docs/getting-started/quickstart.md) and
+[setup options](docs/getting-started/template-setup.md).
 
-## Separate starter copies
+## Commands
 
-```sh
-bun run setup --mode personal --frontend react --output ../my-app
-bun run setup --mode organization --frontend tanstack --output ../team-app
-```
-
-Generated copies exclude Git history, environment files, dependencies and build
-output. The destination must be empty. Omit `--output` to configure the current
-clone, or add `--no-install` to prepare files only.
-
-Setup retains source for both frontends and selects one workspace. You may remove
-the unselected frontend manually afterward. Personal mode disables organization
-and onboarding server plugins and UI. Both presets retain a shared database schema
-and migration history. Configuration lives in
-`packages/config/src/config/preset.ts`, with auth policy in `auth-mode.ts`.
+| Command                                                               | Purpose                                                                            |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `bun run setup`                                                       | Configure this checkout (or `--output <dir>` for a new copy); interactive or flags |
+| `bun run doctor`                                                      | Diagnose the environment (`--json` available)                                      |
+| `bun run dev`                                                         | API + selected frontend (Infisical when enabled, else `.env`)                      |
+| `bun run dev:secrets` / `dev:local`                                   | Force Infisical / local `.env` files                                               |
+| `bun run db:status` / `db:migrate` / `db:migrate:secrets` / `db:seed` | Database workflow ([guide](docs/getting-started/database.md))                      |
+| `bun run secrets:check`                                               | Required secret names present in Infisical development                             |
+| `bun run secrets:scan`                                                | Secret scan of history and working tree                                            |
+| `bun run sentry:verify`                                               | Send one test event to your Sentry project                                         |
+| `bun run lint` / `check-types` / `test` / `build`                     | Quality checks                                                                     |
+| `bun run check:all`                                                   | Lint, types, tests and build                                                       |
+| `bun run verify:presets`                                              | Build and test all four presets in isolated copies                                 |
 
 ## Structure
 
+- `apps/server`: Hono API on Node.js ([deployment](apps/server/DEPLOYMENT.md)).
 - `apps/web`: React + React Router frontend.
 - `apps/tanstack`: TanStack Start frontend.
-- `apps/server`: Hono API with a Node.js entry point.
 - `packages/auth`, `auth-ui`, `onboarding`: authentication, guards and onboarding.
 - `packages/config`, `db`, `email`, `email-templates`, `storage`, `logs`: shared foundation.
-- `scripts/setup.mjs`: interactive and scripted setup.
-- `tests`: setup, validation, guard and database-backed auth tests.
+- `scripts/`: setup, doctor, dev, secrets, database and deployment tooling.
+- `tests/`: setup, auth, database, hooks, server runtime, secrets and deployment tests.
 
-## Verification and maintenance
+Personal mode disables organization and onboarding features; both modes share one
+database schema. Configuration lives in `packages/config/src/config/preset.ts`.
 
-```sh
-bun run lint
-bun run check-types
-bun run test
-bun run build
-bun audit
-bun run verify:presets
-```
+## Quality and security
 
-The auth integration suite uses embedded PostgreSQL and a stubbed email transport;
-it does not contact your database or send real email. CI checks both account models
-with both frontends. See [upgrade notes](docs/advanced/unified-template-upgrade.md)
-for dependency compatibility, migrations and the new storage ownership rules.
+- Pre-commit hook: secret scan of staged changes, ESLint and Prettier on staged files.
+- CI: lint, types, tests, audit, full-history secret scan, workflow lint, and every
+  preset built with sentinel secrets and checked for bundle leaks.
+- Sentry is optional and configured to collect no cookies, bodies, user details or
+  query values ([details](docs/advanced/sentry.md)).
+- Deploys are keyless (Workload Identity Federation), verified before receiving
+  traffic, and can be rolled back.
 
-Development is on `dev`; releases are reviewed through PRs to `main`. Historical
-backups are preserved. Existing customized projects do not update automatically:
-use their `.flowstack.json` source commit and release notes to apply fixes.
+Tests use embedded PostgreSQL, stubbed email and fake CLIs; they contact no real
+service.
+
+## Development
+
+Work on `dev`; releases go through reviewed PRs to `main` and are tagged
+([CI/CD](docs/advanced/ci-cd.md)). Existing projects upgrade by following
+[upgrading.md](docs/advanced/upgrading.md), using `.flowstack.json` to identify
+their starter version. AI coding agents: see [AGENTS.md](AGENTS.md).
 
 ## Documentation
 
-- [Setup and presets](docs/getting-started/template-setup.md)
-- [Authentication](docs/auth/README.md)
-- [Architecture](docs/concepts/architecture.md)
-- [Upgrade notes](docs/advanced/unified-template-upgrade.md)
-- [Documentation index](docs/README.md)
+[Documentation index](docs/README.md)
 
 ## License
 
