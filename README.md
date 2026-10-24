@@ -10,9 +10,8 @@ Install Node.js 24 LTS and Bun 1.3.14, then:
 ```sh
 git clone --branch dev https://github.com/jacksonkasi1/FlowStack.git my-app
 cd my-app
-bun run setup      # name, Personal/Organization, React Router/TanStack Start, integrations
-bun run doctor     # checks tools, secrets, database, ports; prints fixes
-bun run db:migrate
+bun run setup      # questions, install, then secrets/database/migrations/doctor checks
+                   # fill in what it reports, rerun to resume, until "Ready"
 bun run dev
 ```
 
@@ -23,19 +22,21 @@ Secrets come from local `.env` files or, preferably, from
 
 ## Commands
 
-| Command                                                               | Purpose                                                                            |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `bun run setup`                                                       | Configure this checkout (or `--output <dir>` for a new copy); interactive or flags |
-| `bun run doctor`                                                      | Diagnose the environment (`--json` available)                                      |
-| `bun run dev`                                                         | API + selected frontend (Infisical when enabled, else `.env`)                      |
-| `bun run dev:secrets` / `dev:local`                                   | Force Infisical / local `.env` files                                               |
-| `bun run db:status` / `db:migrate` / `db:migrate:secrets` / `db:seed` | Database workflow ([guide](docs/getting-started/database.md))                      |
-| `bun run secrets:check`                                               | Required secret names present in Infisical development                             |
-| `bun run secrets:scan`                                                | Secret scan of history and working tree                                            |
-| `bun run sentry:verify`                                               | Send one test event to your Sentry project                                         |
-| `bun run lint` / `check-types` / `test` / `build`                     | Quality checks                                                                     |
-| `bun run check:all`                                                   | Lint, types, tests and build                                                       |
-| `bun run verify:presets`                                              | Build and test all four presets in isolated copies                                 |
+| Command                                                               | Purpose                                                                                                          |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `bun run setup`                                                       | Configure, install and check this checkout (or `--output <dir>` for a new copy); interactive or flags; resumable |
+| `bun run doctor`                                                      | Diagnose the environment (`--json` available)                                                                    |
+| `bun run dev`                                                         | API + selected frontend (Infisical when enabled, else `.env`)                                                    |
+| `bun run dev:secrets` / `dev:local`                                   | Force Infisical / local `.env` files                                                                             |
+| `bun run db:status` / `db:migrate` / `db:migrate:secrets` / `db:seed` | Database workflow ([guide](docs/getting-started/database.md))                                                    |
+| `bun run secrets:check`                                               | Required secret names present in Infisical development                                                           |
+| `bun run secrets:scan`                                                | Secret scan of history and working tree                                                                          |
+| `bun run sentry:verify`                                               | Send one test event to your Sentry project                                                                       |
+| `bun run lint` / `check-types` / `test` / `build`                     | Quality checks                                                                                                   |
+| `bun run check:all`                                                   | Lint, types, tests and build                                                                                     |
+| `bun run test:e2e`                                                    | Browser journey (Playwright) against an isolated stack                                                           |
+| `bun run verify:presets`                                              | Build and test every preset in isolated copies                                                                   |
+| `bun run flowstack:upgrade:check` / `flowstack:upgrade`               | Check for and apply starter upgrades ([guide](docs/advanced/upgrading.md))                                       |
 
 ## Structure
 
@@ -45,7 +46,8 @@ Secrets come from local `.env` files or, preferably, from
 - `packages/auth`, `auth-ui`, `onboarding`: authentication, guards and onboarding.
 - `packages/config`, `db`, `email`, `email-templates`, `storage`, `logs`: shared foundation.
 - `scripts/`: setup, doctor, dev, secrets, database and deployment tooling.
-- `tests/`: setup, auth, database, hooks, server runtime, secrets and deployment tests.
+- `tests/`: unit, integration and API end-to-end tests (`bun run test`).
+- `e2e/`: Playwright browser journey (`bun run test:e2e`).
 
 Personal mode disables organization and onboarding features; both modes share one
 database schema. Configuration lives in `packages/config/src/config/preset.ts`.

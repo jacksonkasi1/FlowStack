@@ -9,7 +9,7 @@ cd my-app
 bun run setup
 ```
 
-Interactive setup asks for:
+Setup first checks Node.js and Bun, then asks for:
 
 1. **Project name**: lowercase letters, digits and hyphens. Used for the package
    name, page titles, email sender name and Cloud Run service names.
@@ -22,7 +22,20 @@ Interactive setup asks for:
 5. **Infisical project ID**, if Infisical was selected.
 6. **Ports**, only when the default API (8080) or frontend (3000) port is in use.
 
-It then installs dependencies and prints a summary with next steps.
+It then installs dependencies and checks the development environment
+(`scripts/onboard.mjs`):
+
+| Step       | What happens                                                                                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Secrets    | Local mode: every required name in `apps/server/.env` is set and not a placeholder. Infisical mode: offers `infisical login` if needed, then confirms the required names exist in the development environment. |
+| Database   | Connects with the development `DATABASE_URL`.                                                                                                                                                                  |
+| Migrations | Lists pending migrations and applies them **only with consent**: a prompt, or `--migrate` / `--yes`. Never touches non-development databases.                                                                  |
+| Doctor     | Runs the full `bun run doctor` report.                                                                                                                                                                         |
+
+When something is missing (for example `.env` still has placeholders), setup
+says exactly what to do. **Setup is resumable**: fix the item and run
+`bun run setup` again. It offers to reuse your earlier choices, skips finished
+work, and continues. Existing credentials are never overwritten.
 
 ## Non-interactive
 
@@ -45,7 +58,9 @@ bun run setup --mode organization --frontend tanstack --name acme \
 | `--api-port`, `--web-port`      | Local ports (1024–65535, different)                                  |
 | `--infisical-project-id <id>`   | Infisical project (an identifier, not a secret)                      |
 | `--output <dir>`                | Generate a separate copy in an empty directory outside this checkout |
-| `--no-install`                  | Skip `bun install`                                                   |
+| `--no-install`                  | Skip `bun install` (and the environment checks)                      |
+| `--migrate` / `--yes`           | Apply pending development migrations without a prompt                |
+| `--skip-checks`                 | Skip the post-install environment checks (CI)                        |
 
 ## What setup changes
 
@@ -110,9 +125,8 @@ destination must be empty and outside the source checkout.
 
 ## Next steps
 
-`bun run doctor` → `bun run db:migrate` → `bun run dev`. See
-[Quick Start](./quickstart.md), [Database](./database.md) and
-[Secrets](../advanced/secrets-infisical.md).
+When setup reports **Ready**, run `bun run dev`. See [Quick Start](./quickstart.md),
+[Database](./database.md) and [Secrets](../advanced/secrets-infisical.md).
 
 ## Personal and organization modes
 

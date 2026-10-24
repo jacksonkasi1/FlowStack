@@ -17,14 +17,17 @@
   minimal build without email, storage and Google. Each runs setup, type checks,
   tests, a build with sentinel secret values, the bundle leak check, the
   TanStack runtime check and `bun audit`.
+- **e2e**: the Playwright browser journey for all four presets against an
+  isolated stack (`e2e/stack.mjs`: embedded PostgreSQL, production API build,
+  mail catcher, production frontend build).
 
 No job needs cloud credentials or secrets.
 
 ## Branch protection (GitHub settings)
 
 Protect `main` (and optionally `dev`): require a pull request with review,
-require status checks `shared`, `secret-scan`, `workflows` and every `presets`
-matrix entry, and require branches to be up to date. Restrict the `prod`
+require status checks `shared`, `secret-scan`, `workflows`, and every `presets`
+and `e2e` matrix entry, and require branches to be up to date. Restrict the `prod`
 environment's deployment branches to `main` and add required reviewers.
 
 ## Releases

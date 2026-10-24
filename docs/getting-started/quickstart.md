@@ -5,21 +5,24 @@
 ```sh
 git clone --branch dev https://github.com/jacksonkasi1/FlowStack.git my-app
 cd my-app
-bun run setup        # project name, account model, frontend, integrations; installs dependencies
+bun run setup
 ```
 
-Then provide development secrets, either:
+Setup asks a few questions, installs dependencies, then checks secrets, the
+database, migrations and the whole environment. The first run usually stops at
+**Secrets**, because `apps/server/.env` still holds example placeholders (or,
+with Infisical, the development secrets are not there yet). Then:
 
-- **Local files**: fill in `apps/server/.env` (setup created it from the example;
-  every placeholder must be replaced), or
-- **Infisical**: add them to the project's `dev` environment, `infisical login`,
-  then `bun run secrets:check`. See [secrets-infisical.md](../advanced/secrets-infisical.md).
+- **Local files**: fill in `apps/server/.env`, or
+- **Infisical**: add the names to the project's `dev` environment
+  ([guide](../advanced/secrets-infisical.md)); setup offers `infisical login`.
+
+Run `bun run setup` again. It resumes, asks before applying migrations, runs
+doctor, and ends with **Ready**:
 
 ```sh
-bun run doctor       # every check PASS (or SKIPPED for integrations you did not enable)
-bun run db:migrate   # or db:migrate:secrets with Infisical
-bun run db:seed      # optional: development user dev@example.com
 bun run dev          # API on :8080, frontend on :3000 (setup may choose other ports)
+bun run db:seed      # optional: development user dev@example.com
 ```
 
 Open http://localhost:3000 and sign up (or sign in as the seed user).
@@ -28,7 +31,7 @@ Non-interactive setup for scripts and CI:
 
 ```sh
 bun run setup --mode organization --frontend tanstack --name acme --with sentry,infisical \
-  --infisical-project-id <id> --no-install
+  --infisical-project-id <id> --migrate
 ```
 
 All options: `bun run setup --help`. Details: [template-setup.md](./template-setup.md).

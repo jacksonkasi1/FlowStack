@@ -56,7 +56,12 @@ Run before handing work back, and report real results:
 bun run lint && bun run check-types && bun run test && bun run build
 ```
 
-Add or update tests in `tests/` for new behaviour. Tests use embedded PostgreSQL (PGlite), stubbed email and fake CLIs; they never contact real services. Changes to setup, presets or a frontend also need `bun run verify:presets` (slow: four full copies). `bun run doctor` explains environment problems.
+Add or update tests in `tests/` for new behaviour (`tests/e2e-api.test.ts` for
+HTTP-level flows). Tests use embedded PostgreSQL (PGlite), a local mail catcher
+and fake CLIs; they never contact real services. User-facing flow changes also
+need `bun run test:e2e` (Playwright). Changes to setup, presets or a frontend
+need `bun run verify:presets` (slow: one full copy per preset). `bun run doctor`
+explains environment problems.
 
 ## Workflow
 
