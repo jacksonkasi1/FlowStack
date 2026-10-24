@@ -234,7 +234,8 @@ export async function planUpgrade(root, { source, ref } = {}) {
     baseCommit !== "unknown" &&
     git(upstream.repo, ["cat-file", "-e", `${baseCommit}^{commit}`]).ok;
   const current = {
-    version: config.templateVersion || "unknown",
+    version:
+      config.templateVersion || (config.version === 2 ? "unknown" : "1.x"),
     commit: baseCommit || "unknown",
     baseKnown,
   };
