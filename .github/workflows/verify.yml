@@ -107,3 +107,34 @@ jobs:
       - if: matrix.frontend == 'tanstack'
         run: node scripts/verify-tanstack-runtime.mjs
       - run: bun audit
+
+  # Browser journey (sign up, onboarding, sign out, sign in) for every preset,
+  # against an isolated stack started by e2e/stack.mjs.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [personal, organization]
+        frontend: [react, tanstack]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun run setup --mode ${{ matrix.mode }} --frontend ${{ matrix.frontend }} --skip-checks
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-${{ matrix.mode }}-${{ matrix.frontend }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14

@@ -63,3 +63,7 @@ opencode.json
 # FlowStack upgrade backups and conflict proposals (local review only)
 .flowstack-backup
 .flowstack-upgrade
+
+# Playwright
+test-results
+playwright-report

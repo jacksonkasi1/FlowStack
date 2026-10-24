@@ -46,6 +46,8 @@ export const ENV_VARS = [
     required: true,
   },
   { name: "EMAIL_FROM_NAME", scope: "server", feature: "email" },
+  // Optional ZeptoMail API base URL (regional endpoints; tests use a local catcher).
+  { name: "ZEPTO_URL", scope: "server", feature: "email", url: true },
   {
     name: "GOOGLE_CLIENT_ID",
     scope: "server",
