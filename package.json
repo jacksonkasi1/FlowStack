@@ -14,6 +14,8 @@
     "test": "bun test tests",
     "check:all": "bun run lint && bun run check-types && bun run test && bun run build",
     "verify:presets": "node scripts/verify-presets.mjs",
+    "flowstack:upgrade:check": "node scripts/upgrade.mjs check",
+    "flowstack:upgrade": "node scripts/upgrade.mjs",
     "db:status": "node scripts/db.mjs status",
     "db:migrate": "node scripts/db.mjs migrate",
     "db:migrate:secrets": "node scripts/secrets.mjs run development -- node scripts/db.mjs migrate",

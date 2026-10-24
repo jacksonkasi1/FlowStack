@@ -369,6 +369,8 @@ export async function generate(source, destination, options) {
     ".infisical.json",
     "gcp-service-account.json",
     ".flowstack.json",
+    ".flowstack-backup",
+    ".flowstack-upgrade",
   ]);
   await mkdir(target, { recursive: true });
   await cp(source, target, {

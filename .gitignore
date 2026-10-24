@@ -59,3 +59,7 @@ yarn-error.log*
 .sisyphus
 .explorer/better-auth-ui
 opencode.json
+
+# FlowStack upgrade backups and conflict proposals (local review only)
+.flowstack-backup
+.flowstack-upgrade
