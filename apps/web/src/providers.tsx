@@ -13,7 +13,7 @@ import { authClient } from "@/lib/auth-client";
 // ** import config
 import { APP_URLS } from "@/config/urls";
 import { getOrganizationProviderConfig } from "@/config/organization";
-import { isOrganizationMode } from "@repo/config";
+import { isOrganizationMode, TEMPLATE_FEATURES } from "@repo/config";
 
 // ** import rest-api
 import { deleteAvatar, uploadAvatar } from "@/rest-api/storage";
@@ -50,17 +50,18 @@ export function Providers({ children }: ProvidersProps) {
         redirectTo="/dashboard"
         navigate={navigate}
         Link={LinkWrapper}
-        social={{
-          providers: ["google"],
-        }}
-        magicLink={true}
+        social={
+          TEMPLATE_FEATURES.googleAuth ? { providers: ["google"] } : undefined
+        }
+        magicLink={TEMPLATE_FEATURES.email}
         account={{
           fields: ["image", "name"],
         }}
-        avatar={{
-          upload: uploadAvatar,
-          delete: deleteAvatar,
-        }}
+        avatar={
+          TEMPLATE_FEATURES.storage
+            ? { upload: uploadAvatar, delete: deleteAvatar }
+            : undefined
+        }
         additionalFields={orgConfig.additionalFields}
         signUp={orgConfig.signUp}
         organization={isOrganizationMode() ? orgConfig.organization : undefined}

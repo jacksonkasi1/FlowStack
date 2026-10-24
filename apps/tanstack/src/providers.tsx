@@ -15,6 +15,7 @@ import { authClient } from '@/lib/auth-client'
 
 // ** import config
 import { APP_URLS } from '@/config/urls'
+import { TEMPLATE_FEATURES } from '@repo/config'
 import {
   getOrganizationProviderConfig,
   createLogoUploadHandler,
@@ -57,21 +58,28 @@ export function Providers({ children }: ProvidersProps) {
             navigate={(href) => router.navigate({ to: href })}
             replace={(href) => router.navigate({ to: href, replace: true })}
             Link={({ href, ...props }) => <Link to={href} {...props} />}
-            social={{
-              providers: ['google'],
-            }}
-            magicLink={true}
+            social={
+              TEMPLATE_FEATURES.googleAuth
+                ? { providers: ['google'] }
+                : undefined
+            }
+            magicLink={TEMPLATE_FEATURES.email}
             account={{
               fields: ['image', 'name'],
             }}
-            avatar={{
-              upload: uploadAvatar,
-              delete: deleteAvatar,
-            }}
-            {...getOrganizationProviderConfig({
-              logoUpload: logoUploadHandler,
-              logoDelete: logoDeleteHandler,
-            })}
+            avatar={
+              TEMPLATE_FEATURES.storage
+                ? { upload: uploadAvatar, delete: deleteAvatar }
+                : undefined
+            }
+            {...getOrganizationProviderConfig(
+              TEMPLATE_FEATURES.storage
+                ? {
+                    logoUpload: logoUploadHandler,
+                    logoDelete: logoDeleteHandler,
+                  }
+                : undefined,
+            )}
           >
             {children}
             <Toaster />
