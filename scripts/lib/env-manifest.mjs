@@ -46,6 +46,7 @@ export const ENV_VARS = [
   { name: "DATABASE_POOL_MAX", scope: "server" },
   { name: "DOMAIN", scope: "server" },
   { name: "LOG_LEVEL", scope: "server" },
+  { name: "LOG_FORMAT", scope: "server" },
   { name: "AUTH_TRUSTED_PROXIES", scope: "server" },
   { name: "AUTH_IP_HEADERS", scope: "server" },
   {

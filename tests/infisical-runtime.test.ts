@@ -23,6 +23,7 @@ const values = {
   FRONTEND_URL: "https://app.example.com",
   DATABASE_DRIVER: "postgres",
   DATABASE_POOL_MAX: "5",
+  LOG_FORMAT: "text",
 };
 const secrets = () =>
   Object.entries(values).map(([secretKey, secretValue]) => ({
@@ -66,6 +67,7 @@ test("Cloud Run identity fetches production secrets before use without changing 
   expect(env.DATABASE_URL).toBe(values.DATABASE_URL);
   expect(env.DATABASE_DRIVER).toBe("postgres");
   expect(env.DATABASE_POOL_MAX).toBe("5");
+  expect(env.LOG_FORMAT).toBe("text");
   expect(env.NODE_ENV).toBe("production");
   expect(env.PORT).toBe("8080");
   expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
