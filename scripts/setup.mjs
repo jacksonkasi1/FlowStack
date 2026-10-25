@@ -126,12 +126,21 @@ export function parseArgs(args) {
   return options;
 }
 
-/** Resolves when the port can be bound locally. */
-export function isPortFree(port) {
+/** Resolves true when the port can be bound locally; false if not (or no answer in 2 s). */
+export function isPortFree(port, timeoutMs = 2000) {
   return new Promise((resolvePort) => {
     const server = createServer();
-    server.once("error", () => resolvePort(false));
-    server.listen(port, () => server.close(() => resolvePort(true)));
+    const timer = setTimeout(() => {
+      server.close();
+      resolvePort(false);
+    }, timeoutMs);
+    timer.unref?.();
+    const done = (free) => {
+      clearTimeout(timer);
+      resolvePort(free);
+    };
+    server.once("error", () => done(false));
+    server.listen(port, () => server.close(() => done(true)));
   });
 }
 
