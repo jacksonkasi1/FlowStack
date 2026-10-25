@@ -97,7 +97,7 @@ createServer((req, res) => {
 step(
   "API build",
   "bun",
-  ["build", "src/index.ts", "--target=node", `--outdir=${temp}`],
+  ["../../scripts/build-server.mjs", "--outdir", temp],
   { NODE_ENV: "production" },
   join(root, "apps/server"),
 );

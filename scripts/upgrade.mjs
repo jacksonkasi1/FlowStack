@@ -19,8 +19,17 @@
 // backed up to .flowstack-backup/<timestamp>/.
 import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +53,7 @@ const REVIEW_ONLY = [
 const IGNORED = [
   /^\.flowstack\.json$/,
   /^packages\/config\/src\/config\/preset\.ts$/,
-  /(^|\/)\.env(\.[\w-]+)?$/,
+  /(^|\/)\.env(?:$|\.)/,
   /^\.infisical\.(json|yaml)$/,
 ];
 
@@ -174,6 +183,33 @@ function blob(repo, commit, path) {
   return result.ok ? result.out : null;
 }
 
+function fileMode(repo, commit, path) {
+  return git(repo, ["ls-tree", commit, "--", path]).out.trim().split(/\s/)[0];
+}
+
+// Migration SQL and snapshots are immutable. Only append-only journal changes
+// can be applied automatically; rewritten history must be reviewed manually.
+export function preservesMigrationHistory(path, base, target) {
+  if (!path.startsWith("packages/db/drizzle/") || !base) return true;
+  if (path !== "packages/db/drizzle/meta/_journal.json") return false;
+  try {
+    const before = JSON.parse(base.toString());
+    const after = JSON.parse(target.toString());
+    return (
+      Array.isArray(before.entries) &&
+      Array.isArray(after.entries) &&
+      after.entries.length >= before.entries.length &&
+      isDeepStrictEqual(
+        before.entries,
+        after.entries.slice(0, before.entries.length),
+      ) &&
+      isDeepStrictEqual({ ...before, entries: [] }, { ...after, entries: [] })
+    );
+  } catch {
+    return false;
+  }
+}
+
 const same = (a, b) =>
   a !== null &&
   b !== null &&
@@ -264,10 +300,16 @@ export async function planUpgrade(root, { source, ref } = {}) {
   const dependencies = [];
   const migrations = [];
   for (const path of changed.sort()) {
-    const kind = classifyPath(path);
+    let kind = classifyPath(path);
     if (kind === "ignored") continue;
     const base = baseKnown ? blob(upstream.repo, baseCommit, path) : null;
     const target = blob(upstream.repo, upstream.commit, path);
+    const mode = target ? fileMode(upstream.repo, upstream.commit, path) : null;
+    if (
+      !preservesMigrationHistory(path, base, target) ||
+      (target && !["100644", "100755"].includes(mode))
+    )
+      kind = "review";
     const local = await readLocal(root, path);
     if (/(^|\/)package\.json$/.test(path))
       dependencies.push(
@@ -381,6 +423,12 @@ export async function applyUpgrade(plan, { allowDelete = false } = {}) {
       await backupFile(path);
       await mkdir(dirname(join(root, path)), { recursive: true });
       await writeFile(join(root, path), target);
+      await chmod(
+        join(root, path),
+        fileMode(upstream.repo, upstream.commit, path) === "100755"
+          ? 0o755
+          : 0o644,
+      );
       applied.push(path);
     } else if (action === "merge") {
       const merge = await threeWayMerge(
@@ -390,6 +438,12 @@ export async function applyUpgrade(plan, { allowDelete = false } = {}) {
       );
       await backupFile(path);
       await writeFile(join(root, path), merge.content);
+      await chmod(
+        join(root, path),
+        fileMode(upstream.repo, upstream.commit, path) === "100755"
+          ? 0o755
+          : 0o644,
+      );
       applied.push(path);
     } else if (action === "delete" && allowDelete) {
       await backupFile(path);
@@ -450,12 +504,39 @@ export async function markResolved(root) {
   return config;
 }
 
-function option(args, name) {
-  const i = args.indexOf(name);
-  return i >= 0 ? args[i + 1] : undefined;
+export function parseUpgradeArgs(args) {
+  const options = {};
+  const switches = new Set([
+    "--yes",
+    "--dry-run",
+    "--allow-delete",
+    "--allow-dirty",
+    "--mark-resolved",
+    "--json",
+    "--help",
+  ]);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (i === 0 && arg === "check") continue;
+    if (switches.has(arg)) continue;
+    const match = /^(--source|--ref)(?:=(.*))?$/.exec(arg);
+    if (!match) throw new Error(`Unknown upgrade option: ${arg}`);
+    const value = match[2] ?? args[++i];
+    if (!value || value.startsWith("--"))
+      throw new Error(`Missing value for ${match[1]}`);
+    options[match[1].slice(2)] = value;
+  }
+  return options;
 }
 
 async function main(args) {
+  const options = parseUpgradeArgs(args);
+  if (args.includes("--help")) {
+    console.log(
+      "Usage: bun run flowstack:upgrade [check] [--source <url|path>] [--ref <tag|branch|commit>] [--dry-run] [--yes] [--allow-delete] [--allow-dirty] [--mark-resolved] [--json]",
+    );
+    return;
+  }
   const root =
     process.env.FLOWSTACK_PROJECT_ROOT ||
     resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -468,8 +549,8 @@ async function main(args) {
   }
   const check = args[0] === "check";
   const plan = await planUpgrade(root, {
-    source: option(args, "--source"),
-    ref: option(args, "--ref"),
+    source: options.source,
+    ref: options.ref,
   });
   try {
     if (check && args.includes("--json")) {

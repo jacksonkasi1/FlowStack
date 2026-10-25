@@ -338,7 +338,7 @@ test("Infisical deploy needs no env file or Secret Manager and passes only boots
     configPath,
     original.replace(
       "secrets_source: env-file",
-      "secrets_source: infisical\n  runtime_service_account: runtime@example.iam.gserviceaccount.com",
+      `secrets_source: infisical\n${"  # configuration padding\n".repeat(30)}  runtime_service_account: runtime@example.iam.gserviceaccount.com`,
     ),
   );
   await rm(join(fixture, "apps/server/.env.sandbox"));

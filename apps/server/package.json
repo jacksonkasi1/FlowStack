@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
-    "build": "NODE_ENV=production bun build src/index.ts --target=node --outdir=dist",
+    "build": "bun ../../scripts/build-server.mjs",
     "lint": "eslint src",
     "format": "prettier --write .",
     "check": "prettier --write . && eslint --fix",

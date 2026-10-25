@@ -82,7 +82,7 @@ beforeAll(async () => {
   outdir = await mkdtemp(join(tmpdir(), "flowstack-e2e-"));
   const build = spawnSync(
     "bun",
-    ["build", "src/index.ts", "--target=node", `--outdir=${outdir}`],
+    ["../../scripts/build-server.mjs", "--outdir", outdir],
     {
       cwd: join(root, "apps/server"),
       env: { ...process.env, NODE_ENV: "production" },
@@ -209,7 +209,10 @@ async function verifyByEmailLink(
       .match(/https?:\/\/[^"'\s<>]*verify-email\?token=[^"'\s<>]+/)?.[0];
     if (!link) await Bun.sleep(50);
   }
-  expect(link).toBeDefined();
+  expect(
+    link,
+    `No verification link in ${mails.length} caught emails. API errors: ${logs.filter((line) => /error|fail/i.test(line)).join("")}`,
+  ).toBeDefined();
   const url = new URL(link!);
   return client.call(`${url.pathname}${url.search}`);
 }

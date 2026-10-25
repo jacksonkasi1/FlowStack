@@ -1,7 +1,7 @@
 name: Deploy API
 # Manual only: nothing deploys as a side effect of ordinary development.
 # Each job runs in a GitHub Environment named after the target. Configure
-# required reviewers on the "production" environment (Settings > Environments)
+# required reviewers on the "prod" environment (Settings > Environments)
 # so production deploys need approval. See apps/server/DEPLOYMENT.md.
 on:
   workflow_dispatch:

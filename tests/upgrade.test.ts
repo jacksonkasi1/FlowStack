@@ -4,15 +4,22 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
   cp,
+  chmod,
   mkdir,
   mkdtemp,
   readFile,
   readdir,
   rm,
+  stat,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import {
+  classifyPath,
+  parseUpgradeArgs,
+  preservesMigrationHistory,
+} from "../scripts/upgrade.mjs";
 
 const root = join(import.meta.dir, "..");
 let dir: string;
@@ -122,6 +129,9 @@ beforeAll(async () => {
   // Upstream v2.1.0.
   await put(upstream, {
     "scripts/lib/project-config.mjs": version("2.1.0"),
+    ".github/scripts/new-tool.sh": "#!/bin/sh\nexit 0\n",
+    "packages/db/drizzle/0000_init.sql":
+      "create table t (id int, changed text);\n",
     "scripts/tool.mjs": "export const tool = 2;\n",
     "scripts/new.mjs": "export const added = true;\n",
     "docs/guide.md":
@@ -144,6 +154,7 @@ beforeAll(async () => {
       2,
     ),
   });
+  await chmod(join(upstream, ".github/scripts/new-tool.sh"), 0o755);
   await rm(join(upstream, "scripts/old.mjs"));
   git(upstream, "add", "-A");
   git(upstream, "commit", "-q", "-m", "v2.1.0");
@@ -168,6 +179,7 @@ test("check reports a newer release and classifies every change", () => {
     ]),
   );
   expect(byPath).toMatchObject({
+    "packages/db/drizzle/0000_init.sql": "review",
     "scripts/tool.mjs": "update",
     "scripts/new.mjs": "add",
     "scripts/lib/project-config.mjs": "update",
@@ -211,6 +223,12 @@ test("apply updates template files, keeps customisations and backs everything up
   expect(result.status).toBe(0);
   expect(await read("scripts/tool.mjs")).toBe("export const tool = 2;\n");
   expect(await read("scripts/new.mjs")).toBe("export const added = true;\n");
+  expect(
+    (await stat(join(project, ".github/scripts/new-tool.sh"))).mode & 0o111,
+  ).toBe(0o111);
+  expect(await read("packages/db/drizzle/0000_init.sql")).toBe(
+    "create table t (id int);\n",
+  );
   // Clean three-way merge keeps the local edit and the upstream one.
   expect(await read("docs/guide.md")).toContain("Intro customised by acme.");
   expect(await read("docs/guide.md")).toContain("Beta, improved.");
@@ -268,6 +286,48 @@ test("after resolving conflicts, --mark-resolved records the new version", async
   const check = JSON.parse(upgrade(["check", "--json"]).stdout);
   expect(check.upgradeAvailable).toBe(false);
 }, 60000);
+
+test("upgrade options reject typos and missing values before reading a project", () => {
+  expect(
+    parseUpgradeArgs(["check", "--source", upstream, "--ref=v2.1.0"]),
+  ).toEqual({ source: upstream, ref: "v2.1.0" });
+  expect(() => parseUpgradeArgs(["--allow-delet"])).toThrow(
+    "Unknown upgrade option",
+  );
+  expect(() => parseUpgradeArgs(["--ref", "--yes"])).toThrow("Missing value");
+  expect(() => parseUpgradeArgs(["--source="])).toThrow("Missing value");
+  const help = upgrade(["--help"]);
+  expect(help.status).toBe(0);
+  expect(help.stdout).toContain("Usage:");
+  expect(classifyPath("apps/server/.env.prod.local")).toBe("ignored");
+});
+
+test("migration journal updates must append without rewriting or deleting history", () => {
+  const path = "packages/db/drizzle/meta/_journal.json";
+  const before = Buffer.from(journal(["0000_init"]));
+  expect(
+    preservesMigrationHistory(
+      path,
+      before,
+      Buffer.from(journal(["0000_init", "0001_more"])),
+    ),
+  ).toBe(true);
+  expect(
+    preservesMigrationHistory(
+      path,
+      before,
+      Buffer.from(journal(["0000_rewritten"])),
+    ),
+  ).toBe(false);
+  expect(preservesMigrationHistory(path, before, null)).toBe(false);
+  expect(
+    preservesMigrationHistory(
+      "packages/db/drizzle/meta/0000_snapshot.json",
+      before,
+      before,
+    ),
+  ).toBe(false);
+});
 
 test("upstream deletions apply only with --allow-delete", async () => {
   // Start again from v2.0.0 metadata so old.mjs is still an unmodified template file.

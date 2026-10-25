@@ -405,6 +405,27 @@ describe("secret scanning commands", () => {
 });
 
 describe("logging and monitoring privacy", () => {
+  test("arrays redact credentials and circular metadata cannot crash logging", () => {
+    const nested: Record<string, unknown> = {
+      users: [
+        { token: "private", profile: { private_key: "key", name: "Alice" } },
+      ],
+      R2_ACCESS_KEY_ID: "private",
+    };
+    nested.self = nested;
+    const result = redact(nested);
+    expect(result).toEqual({
+      users: [
+        {
+          token: "[redacted]",
+          profile: { private_key: "[redacted]", name: "Alice" },
+        },
+      ],
+      R2_ACCESS_KEY_ID: "[redacted]",
+      self: "[circular]",
+    });
+    expect((nested.users as { token: string }[])[0].token).toBe("private");
+  });
   test("sensitive log fields are redacted recursively", () => {
     expect(
       redact({

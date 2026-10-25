@@ -113,7 +113,11 @@ parse_yaml_value() {
 
   # Try to get value from environment-specific section first
   if [ -n "$section" ]; then
-    value=$(grep -A 20 "^  $section:" "$CONFIG_FILE" | \
+    value=$(awk -v section="$section" '
+            /^  [^[:space:]#]/ { if (active) exit; active = ($1 == section ":"); next }
+            active && /^[^[:space:]#]/ { exit }
+            active { print }
+          ' "$CONFIG_FILE" | \
             grep "^    $key:" | \
             head -1 | \
             sed "s/^    $key: *//" | \
@@ -129,7 +133,11 @@ parse_yaml_value() {
   fi
 
   # Fallback to defaults section
-  value=$(grep -A 20 "^defaults:" "$CONFIG_FILE" | \
+  value=$(awk '
+          /^defaults:/ { active = 1; next }
+          active && /^[^[:space:]#]/ { exit }
+          active { print }
+        ' "$CONFIG_FILE" | \
           grep "^  $key:" | \
           head -1 | \
           sed "s/^  $key: *//" | \

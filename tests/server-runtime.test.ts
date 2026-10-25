@@ -25,7 +25,7 @@ beforeAll(async () => {
   // Same as `bun run build`: Bun inlines process.env.NODE_ENV at build time.
   const build = spawnSync(
     "bun",
-    ["build", "src/index.ts", "--target=node", `--outdir=${outdir}`],
+    ["../../scripts/build-server.mjs", "--outdir", outdir],
     {
       cwd: join(root, "apps/server"),
       encoding: "utf8",

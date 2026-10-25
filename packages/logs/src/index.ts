@@ -9,7 +9,7 @@ const LEVELS: Record<Level, number> = {
 };
 // Field names whose values are never written to logs.
 const SENSITIVE =
-  /pass(word)?|secret|token|authorization|cookie|api[-_]?key|credential|session|database_url/i;
+  /pass(word)?|secret|token|authorization|cookie|api[-_]?key|access[-_]?key|private[-_]?key|credential|session|database_url/i;
 
 const env: Record<string, string | undefined> =
   typeof process !== "undefined" && process.env ? process.env : {};
@@ -27,22 +27,28 @@ function useJson(): boolean {
     : env.NODE_ENV === "production";
 }
 
+function redactValue(value: unknown, ancestors: WeakSet<object>): unknown {
+  if (!value || typeof value !== "object") return value;
+  if (value instanceof Error)
+    return { name: value.name, message: value.message };
+  if (ancestors.has(value)) return "[circular]";
+  ancestors.add(value);
+  try {
+    return Array.isArray(value)
+      ? value.map((item) => redactValue(item, ancestors))
+      : Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [
+            key,
+            SENSITIVE.test(key) ? "[redacted]" : redactValue(item, ancestors),
+          ]),
+        );
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
 export function redact(fields: LogFields): LogFields {
-  return Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [
-      key,
-      SENSITIVE.test(key)
-        ? "[redacted]"
-        : value &&
-            typeof value === "object" &&
-            !Array.isArray(value) &&
-            !(value instanceof Error)
-          ? redact(value as LogFields)
-          : value instanceof Error
-            ? { name: value.name, message: value.message }
-            : value,
-    ]),
-  );
+  return redactValue(fields, new WeakSet()) as LogFields;
 }
 
 function write(level: Level, msg: string, fields?: LogFields) {

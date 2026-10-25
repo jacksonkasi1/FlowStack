@@ -3,13 +3,15 @@ WORKDIR /app
 
 # Copy root workspace config
 COPY package.json bun.lock turbo.json ./
+COPY patches ./patches
+COPY scripts/build-server.mjs ./scripts/build-server.mjs
 
 # Copy packages and app source
 COPY packages ./packages
 COPY apps ./apps
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN HUSKY=0 bun install --frozen-lockfile
 
 # Build the server
 WORKDIR /app/apps/server
