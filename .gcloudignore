@@ -1,5 +1,6 @@
 # Files never uploaded to Cloud Build. Local secrets and keys stay local.
 .git
+gha-creds-*.json
 .github
 .husky
 **/node_modules

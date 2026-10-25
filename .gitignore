@@ -20,6 +20,7 @@ build
 .env.sandbox
 
 # GCP Service Account
+gha-creds-*.json
 gcp-service-account.json
 apps/server/gcp-service-account.json
 

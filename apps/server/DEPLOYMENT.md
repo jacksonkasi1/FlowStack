@@ -134,7 +134,47 @@ No secret values are stored in GitHub: both Google Cloud and Infisical use OIDC.
 
 Set `secrets_source` per environment in `deploy.config.yaml`.
 
-### `secret-manager` (recommended)
+### `infisical` (direct runtime fetch, no local secret files)
+
+Keep application values only in Infisical. No Google Secret Manager or Secret
+Sync is required in this mode.
+
+1. Create an Infisical machine identity using **GCP ID Token Auth**. Allow only
+   the Cloud Run runtime service account's email. Add the identity to your
+   Infisical project with read access to the target environment/path only.
+   See [Infisical GCP authentication](https://infisical.com/docs/documentation/platform/identities/gcp-auth).
+2. Set the target's `secrets_source: infisical` and
+   `runtime_service_account: flowstack-run@PROJECT_ID.iam.gserviceaccount.com`
+   in `apps/server/.deploy/deploy.config.yaml`. The runtime account needs no
+   Secret Manager permissions for this mode.
+3. In each GitHub Environment, set `INFISICAL_PROJECT_ID` and
+   `INFISICAL_RUNTIME_IDENTITY_ID` (the GCP-auth identity, separate from the
+   migration OIDC identity). Optional: `INFISICAL_DOMAIN` (HTTPS origin for
+   your region/self-hosted instance), `INFISICAL_SECRET_PATH` (default `/`), and
+   `INFISICAL_RUNTIME_ENVIRONMENT` (override the configured slug; defaults to
+   `sandbox`, `beta`, or `prod`). These are identifiers, not secret values.
+4. Put required application values in the selected Infisical environment/path
+   using their original names, such as `DATABASE_URL`, without a `prod_` prefix.
+5. Run the deployment workflow. Preflight validates bootstrap configuration
+   without reading secrets. The candidate authenticates from inside Cloud Run,
+   loads secrets, then starts the API; the readiness check gates promotion.
+
+Do not wrap the local deploy script with production secret injection: credentials
+loaded in your shell do not automatically reach Cloud Run. The container uses
+its own Google identity, with no stored Infisical credentials. Outbound access
+to the configured Infisical host is required. Failed authentication, missing
+variables or an unavailable Infisical service stop new instances from starting;
+existing instances retain their loaded values. Redeploy after rotating values.
+
+Server variables come from `scripts/lib/env-manifest.mjs`; declare custom server
+variables there. Imports and secret references are supported. Public frontend
+build variables remain a separate build-time concern. Switching from Secret
+Manager clears old secret bindings. Existing env-file and Secret Manager modes
+remain available. Direct runtime authentication is covered with simulated
+Google metadata and Infisical responses; a real sandbox deployment still needs
+verification with your identities and permissions.
+
+### `secret-manager` (optional sync destination)
 
 Each runtime variable `NAME` is read from the Secret Manager secret
 `<secret_prefix>NAME` (default prefix `<environment>_`, e.g. `prod_DATABASE_URL`).

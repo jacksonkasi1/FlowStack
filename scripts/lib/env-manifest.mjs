@@ -7,12 +7,24 @@ import { readFile } from "node:fs/promises";
 
 /**
  * scope: server (API, never exposed to browsers) | web (public, bundled into the
- *        frontend) | build (CI-only, used while building).
+ *        frontend) | build (CI-only, used while building) | runtime (public
+ *        bootstrap configuration for Cloud Run).
  * feature: only required when that integration is enabled.
  * secret: confidential; must come from Infisical or Secret Manager in deployed
  *         environments.
  */
 export const ENV_VARS = [
+  // Public Cloud Run bootstrap configuration; never fetched as application secrets.
+  ...[
+    "FLOWSTACK_SECRETS_SOURCE",
+    "FLOWSTACK_RUNTIME_FEATURES",
+    "INFISICAL_PROJECT_ID",
+    "INFISICAL_RUNTIME_IDENTITY_ID",
+    "INFISICAL_RUNTIME_ENVIRONMENT",
+    "INFISICAL_SECRET_PATH",
+    "INFISICAL_DOMAIN",
+    "FLOWSTACK_RUNTIME_SERVICE_ACCOUNT",
+  ].map((name) => ({ name, scope: "runtime" })),
   {
     name: "BETTER_AUTH_SECRET",
     scope: "server",
@@ -30,6 +42,8 @@ export const ENV_VARS = [
     url: true,
   },
   { name: "ALLOWED_ORIGINS", scope: "server" },
+  { name: "DATABASE_DRIVER", scope: "server" },
+  { name: "DATABASE_POOL_MAX", scope: "server" },
   { name: "DOMAIN", scope: "server" },
   { name: "LOG_LEVEL", scope: "server" },
   { name: "AUTH_TRUSTED_PROXIES", scope: "server" },

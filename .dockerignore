@@ -1,5 +1,6 @@
 # Excluded from Docker build contexts. Local secrets and keys never enter images.
 .git
+gha-creds-*.json
 .github
 .husky
 **/node_modules

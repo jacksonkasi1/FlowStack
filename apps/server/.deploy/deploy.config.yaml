@@ -2,8 +2,8 @@
 # FlowStack Deployment Configuration
 # ===========================================
 # This file contains deployment-specific settings (infrastructure).
-# It never contains secrets. Secrets come from Google Secret Manager
-# (secrets_source: secret-manager, recommended) or a local .env file (legacy).
+# It never contains secrets. Secrets can come directly from Infisical at
+# startup, Google Secret Manager, or a local .env file (legacy).
 
 # Global defaults - applied to all environments unless overridden
 defaults:
@@ -17,12 +17,18 @@ defaults:
   # Delete the key file once keyless deploys work.
 
   # Where runtime secrets come from:
+  #   infisical       fetch directly inside Cloud Run using GCP ID Token Auth;
+  #                   no local env files or Google Secret Manager required
   #   env-file        read apps/server/<env_file> and pass values as env vars (legacy)
   #   secret-manager  reference Secret Manager secrets named <secret_prefix><NAME>;
   #                   values never pass through the deploying machine
   secrets_source: env-file
   # secret_prefix: prod_                 # Default: "<environment>_"
   # runtime_service_account: flowstack-run@PROJECT.iam.gserviceaccount.com
+  # For infisical, set runtime_service_account above and GitHub Environment
+  # variables INFISICAL_PROJECT_ID and INFISICAL_RUNTIME_IDENTITY_ID.
+  # INFISICAL_RUNTIME_ENVIRONMENT overrides the default dev/sandbox/beta/prod
+  # slug; INFISICAL_SECRET_PATH and INFISICAL_DOMAIN are optional.
 
   # Environment File (can be overridden per environment)
   # If not specified, falls back to .env.<environment-name>

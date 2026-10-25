@@ -112,23 +112,38 @@ ever see the injected secrets.
 
 ## Deployed environments
 
-Cloud Run does not run the Infisical CLI. Use an Infisical **Secret Sync** to Google
-Secret Manager per environment, with key names `<env>_<NAME>` (matching
-`secret_prefix` in `apps/server/.deploy/deploy.config.yaml`), and set
-`secrets_source: secret-manager`. Cloud Run then reads values at runtime. See
-[DEPLOYMENT.md](../../apps/server/DEPLOYMENT.md#secrets).
+Cloud Run can fetch directly from Infisical: set `secrets_source: infisical` and
+configure GCP ID Token Auth for the runtime service account. The container
+entrypoint obtains its Google identity from the metadata service, exchanges it
+for a short-lived Infisical token, loads application secrets into memory, then
+imports the API. No local `.env` file, stored Infisical token, Secret Sync or
+Google Secret Manager is needed. Deployment passes only public identifiers;
+the deploying machine does not fetch production secret values.
 
-The deploy workflow uses Infisical directly only to run migrations, through an
-OIDC machine identity.
+The runtime reads server variables declared in `scripts/lib/env-manifest.mjs`
+from the selected environment/path, including imports and expanded references.
+Folder values override imports. Add custom server variable names to that
+manifest; platform settings such as `PORT`, `NODE_ENV` and `NODE_OPTIONS` cannot
+be overridden by Infisical values. Missing required values or authentication
+failures stop startup; there is no fallback. New instance startup therefore
+depends on Infisical availability (each request has a ten-second timeout).
+
+Alternatively, keep the existing Infisical **Secret Sync** to Google Secret
+Manager and `secrets_source: secret-manager`. See the setup instructions for
+both modes in [DEPLOYMENT.md](../../apps/server/DEPLOYMENT.md#secrets).
+
+The optional migration step uses a separate Infisical OIDC machine identity in
+GitHub Actions. It is distinct from the Cloud Run runtime identity.
 
 ## Rotating a secret
 
 1. Create the new value at the provider (database password, API key, …) while
    the old one still works, where the provider allows two at once.
 2. Update it in Infisical for one environment at a time, starting with `dev`.
-3. Development picks it up on the next `bun run dev`. Deployed environments pick
-   it up after the Secret Sync runs **and** a new revision starts: run the deploy
-   workflow (a redeploy of the same commit is fine).
+3. Development picks it up on the next `bun run dev`. Direct Infisical runtime
+   mode picks it up when a new instance starts; redeploy to replace existing
+   instances consistently. Secret Manager mode needs the Secret Sync to finish
+   before redeploying. A redeploy of the same commit is fine.
 4. Verify (`bun run doctor`, `/health/ready`), then revoke the old value at the provider.
 5. `BETTER_AUTH_SECRET`: rotating it signs everyone out. Schedule it.
 6. Leaked secret: revoke first, then rotate, then purge it from Git history if it

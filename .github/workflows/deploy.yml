@@ -97,6 +97,11 @@ jobs:
           TARGET: ${{ inputs.environment }}
           REVISION: ${{ inputs.rollback_revision }}
           AUTO_ROLLBACK: ${{ inputs.auto_rollback }}
+          INFISICAL_PROJECT_ID: ${{ vars.INFISICAL_PROJECT_ID }}
+          INFISICAL_RUNTIME_IDENTITY_ID: ${{ vars.INFISICAL_RUNTIME_IDENTITY_ID }}
+          INFISICAL_RUNTIME_ENVIRONMENT: ${{ vars.INFISICAL_RUNTIME_ENVIRONMENT }}
+          INFISICAL_SECRET_PATH: ${{ vars.INFISICAL_SECRET_PATH }}
+          INFISICAL_DOMAIN: ${{ vars.INFISICAL_DOMAIN }}
           DEPLOY_REPORT_FILE: ${{ runner.temp }}/deploy-report.json
         run: |
           SCRIPT=apps/server/.deploy/scripts/deploy.sh

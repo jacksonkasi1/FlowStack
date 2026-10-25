@@ -6,6 +6,9 @@
 //   node scripts/deploy-preflight.mjs secret-manager <env> <prefix> <project>
 //       Confirms every required secret exists in Google Secret Manager and
 //       prints the --set-secrets mapping on stdout.
+//   node scripts/deploy-preflight.mjs infisical <env>
+//       Validates public runtime bootstrap configuration and prints the
+//       alternate-delimiter --set-env-vars entries; never fetches secrets.
 //
 // Diagnostics go to stderr. Values are never read from Secret Manager and
 // never printed.
@@ -18,6 +21,8 @@ import {
   DEFAULT_INTEGRATIONS,
 } from "./lib/project-config.mjs";
 import { isMain } from "./lib/is-main.mjs";
+import { resolveInfisicalTarget } from "./lib/infisical.mjs";
+import { runtimeTarget } from "./lib/infisical-runtime.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // Set by deploy.sh itself, never by the operator.
@@ -103,6 +108,45 @@ const PROXY_WARNING =
 async function main([mode, env, arg, project]) {
   const config = await readProjectConfig(root);
   const integrations = config?.integrations || DEFAULT_INTEGRATIONS;
+  if (mode === "infisical") {
+    if (!process.env.FLOWSTACK_RUNTIME_SERVICE_ACCOUNT)
+      throw new Error(
+        "Infisical deployment requires runtime_service_account (trusted by Infisical GCP ID Token Auth).",
+      );
+    const target = resolveInfisicalTarget(
+      env === "prod" ? "production" : env,
+      config,
+    );
+    const metadata = {
+      FLOWSTACK_SECRETS_SOURCE: "infisical",
+      INFISICAL_PROJECT_ID: target.projectId,
+      INFISICAL_RUNTIME_IDENTITY_ID: process.env.INFISICAL_RUNTIME_IDENTITY_ID,
+      INFISICAL_RUNTIME_ENVIRONMENT:
+        process.env.INFISICAL_RUNTIME_ENVIRONMENT || target.environment,
+      INFISICAL_SECRET_PATH: target.secretPath,
+      INFISICAL_DOMAIN:
+        process.env.INFISICAL_DOMAIN || "https://app.infisical.com",
+      FLOWSTACK_RUNTIME_FEATURES: Object.keys(integrations)
+        .filter((k) => integrations[k])
+        .join(":"),
+    };
+    runtimeTarget(metadata);
+    for (const value of Object.values(metadata))
+      if (/[|\r\n]/.test(value))
+        throw new Error(
+          "Infisical deployment configuration cannot contain pipes or newlines",
+        );
+    // gcloud's alternate delimiter preserves commas in paths/URLs.
+    process.stdout.write(
+      Object.entries(metadata)
+        .map(([k, v]) => `${k}=${v}`)
+        .join("|"),
+    );
+    console.error(
+      "Preflight: Infisical runtime configuration validated; access and values are verified on candidate startup.",
+    );
+    return;
+  }
   if (mode === "env-file") {
     const values = await readEnvFile(arg);
     if (!values) throw new Error(`Environment file not found: ${arg}`);
@@ -146,7 +190,7 @@ async function main([mode, env, arg, project]) {
     return;
   }
   console.error(
-    "Usage: deploy-preflight.mjs env-file <env> <path> | secret-manager <env> <prefix> <project>",
+    "Usage: deploy-preflight.mjs env-file <env> <path> | secret-manager <env> <prefix> <project> | infisical <env>",
   );
   process.exitCode = 1;
 }

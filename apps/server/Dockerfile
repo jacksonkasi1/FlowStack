@@ -19,6 +19,8 @@ FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/apps/server/dist ./dist
+COPY scripts/server-entrypoint.mjs ./scripts/server-entrypoint.mjs
+COPY scripts/lib/infisical-runtime.mjs scripts/lib/env-manifest.mjs ./scripts/lib/
 USER node
 EXPOSE 8080
-CMD ["node", "dist/index.js"]
+CMD ["node", "scripts/server-entrypoint.mjs"]

@@ -167,8 +167,8 @@ PRODUCTION=$(parse_yaml_value "$ENV" "production" "false")
 REGION="${GCP_REGION:-$(parse_yaml_value "$ENV" "region" "us-central1")}"
 SA_KEY_FILE=$(parse_yaml_value "$ENV" "service_account_key" "gcp-service-account.json")
 
-if [ "$SECRETS_SOURCE" != "env-file" ] && [ "$SECRETS_SOURCE" != "secret-manager" ]; then
-  echo "❌ secrets_source must be env-file or secret-manager (got: $SECRETS_SOURCE)"
+if [ "$SECRETS_SOURCE" != "env-file" ] && [ "$SECRETS_SOURCE" != "secret-manager" ] && [ "$SECRETS_SOURCE" != "infisical" ]; then
+  echo "❌ secrets_source must be env-file, secret-manager or infisical (got: $SECRETS_SOURCE)"
   exit 1
 fi
 
@@ -380,7 +380,9 @@ echo ""
 echo "🔎 Preflight..."
 SECRET_MAPPING=""
 ENV_FILE=""
-if [ "$SECRETS_SOURCE" = "secret-manager" ]; then
+if [ "$SECRETS_SOURCE" = "infisical" ]; then
+  INFISICAL_RUNTIME_CONFIG=$(FLOWSTACK_RUNTIME_SERVICE_ACCOUNT="$RUNTIME_SA" "$NODE" "$ROOT_DIR/scripts/deploy-preflight.mjs" infisical "$ENV")
+elif [ "$SECRETS_SOURCE" = "secret-manager" ]; then
   SECRET_MAPPING=$("$NODE" "$ROOT_DIR/scripts/deploy-preflight.mjs" secret-manager "$ENV" "$SECRET_PREFIX" "$PROJECT_ID")
 else
   ENV_FILE_NAME=$(parse_yaml_value "$ENV" "env_file" "")
@@ -462,7 +464,14 @@ else
 fi
 [ -n "$RUNTIME_SA" ] && DEPLOY_ARGS+=(--service-account "$RUNTIME_SA")
 
-if [ "$SECRETS_SOURCE" = "secret-manager" ]; then
+if [ "$SECRETS_SOURCE" = "infisical" ]; then
+  # Only public bootstrap configuration reaches Cloud Run. Secrets are fetched
+  # inside the instance using its service identity, before the API is imported.
+  DEPLOY_ARGS+=(
+    --set-env-vars "^|^NODE_ENV=production|ENVIRONMENT=$ENV|FLOWSTACK_RELEASE=$RELEASE|$INFISICAL_RUNTIME_CONFIG"
+    --clear-secrets
+  )
+elif [ "$SECRETS_SOURCE" = "secret-manager" ]; then
   # Values are resolved by Cloud Run at runtime; none pass through this machine.
   DEPLOY_ARGS+=(
     --set-env-vars "NODE_ENV=production,ENVIRONMENT=$ENV,FLOWSTACK_RELEASE=$RELEASE"

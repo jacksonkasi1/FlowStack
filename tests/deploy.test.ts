@@ -330,3 +330,47 @@ test("deploys write a machine-readable audit record", async () => {
   expect(typeof record.timestamp).toBe("string");
   expect(JSON.stringify(record)).not.toContain("deploy-test-secret-value");
 }, 60000);
+
+test("Infisical deploy needs no env file or Secret Manager and passes only bootstrap identifiers", async () => {
+  const configPath = join(fixture, "apps/server/.deploy/deploy.config.yaml");
+  const original = await readFile(configPath, "utf8");
+  await writeFile(
+    configPath,
+    original.replace(
+      "secrets_source: env-file",
+      "secrets_source: infisical\n  runtime_service_account: runtime@example.iam.gserviceaccount.com",
+    ),
+  );
+  await rm(join(fixture, "apps/server/.env.sandbox"));
+  try {
+    const result = await deploy(["sandbox"], {
+      INFISICAL_PROJECT_ID: "fixture-project",
+      INFISICAL_RUNTIME_IDENTITY_ID: "fixture-runtime-identity",
+      INFISICAL_RUNTIME_ENVIRONMENT: "staging",
+      INFISICAL_SECRET_PATH: "/api,shared",
+    });
+    expect(result.status).toBe(0);
+    const log = await calls();
+    const deployCall = log.find((c) => c.startsWith("run deploy"))!;
+    expect(deployCall).toContain("FLOWSTACK_SECRETS_SOURCE=infisical");
+    expect(deployCall).toContain("INFISICAL_RUNTIME_ENVIRONMENT=staging");
+    expect(deployCall).toContain("INFISICAL_SECRET_PATH=/api,shared");
+    expect(deployCall).toContain(
+      "--service-account runtime@example.iam.gserviceaccount.com",
+    );
+    expect(deployCall).toContain("--clear-secrets");
+    expect(deployCall).not.toContain("--env-vars-file");
+    expect(deployCall).not.toContain("DATABASE_URL=");
+    expect(log.some((c) => c.startsWith("secrets "))).toBe(false);
+    expect(await serving()).toBe("svc-00002");
+    const missing = await deploy(["sandbox"], {
+      INFISICAL_PROJECT_ID: "fixture-project",
+      INFISICAL_RUNTIME_IDENTITY_ID: "",
+    });
+    expect(missing.status).toBe(1);
+    expect(missing.output).toContain("INFISICAL_RUNTIME_IDENTITY_ID");
+  } finally {
+    await writeFile(configPath, original);
+    await writeFile(join(fixture, "apps/server/.env.sandbox"), ENV_FILE);
+  }
+}, 60000);
