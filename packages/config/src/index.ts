@@ -13,3 +13,4 @@ export * from "./storage";
 export * from "./config/invitations";
 export { TEMPLATE_FEATURES } from "./config/preset";
 export * from "./config/monitoring";
+export * from "./config/brand";

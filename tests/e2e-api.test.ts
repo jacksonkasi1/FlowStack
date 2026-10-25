@@ -443,12 +443,10 @@ describe.skipIf(!organizationMode)("organizations", () => {
     const invitee = await signUp("invitee-e2e@example.com", {
       callbackURL: `${FRONTEND}/accept-invitation?invitationId=${invitationId}`,
     });
-    if (TEMPLATE_FEATURES.email)
-      await verifyByEmailLink(invitee, "invitee-e2e@example.com");
-    else
-      await pg.query(
-        `update "user" set email_verified = true where email = 'invitee-e2e@example.com'`,
-      );
+    expect(
+      (await json(await invitee.call("/api/auth/get-session"))).user
+        .emailVerified,
+    ).toBe(true);
     const accepted = await invitee.call(
       "/api/auth/organization/accept-invitation",
       { body: { invitationId } },

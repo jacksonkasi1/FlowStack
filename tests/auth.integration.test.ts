@@ -94,10 +94,12 @@ test("personal signup, cached session, login and disabled organization endpoints
     email: "personal@example.com",
     password: "CorrectPassword123!",
     name: "Personal",
+    emailVerified: true,
   });
   expect(signup.status).toBe(200);
   const data = await signup.json();
   expect(data.user.email).toBe("personal@example.com");
+  expect(data.user.emailVerified).toBe(false);
   expect((await (await c.request("/get-session")).json()).user.id).toBe(
     data.user.id,
   );
@@ -141,12 +143,35 @@ test("organization onboarding refreshes cached cookies after create and skip; ca
   const session = await (await c.request("/get-session")).json();
   expect(session.session.activeOrganizationId).toBeTruthy();
   expect(session.user.currentOnboardingStep).toBe("inviteMembers");
+  const status = await (await c.request("/onboarding/status")).json();
+  expect(status.data.organizationName).toBe("Test Team");
+  expect(
+    (
+      await c.request("/onboarding/update-organization", {
+        organizationName: "Updated Team",
+      })
+    ).status,
+  ).toBe(200);
+  expect(
+    (await (await c.request("/onboarding/status")).json()).data
+      .organizationName,
+  ).toBe("Updated Team");
   expect(
     (await c.request("/onboarding/skip-step/invite-members", {})).status,
   ).toBe(200);
   const done = await (await c.request("/get-session")).json();
   expect(done.user.shouldOnboard).toBe(false);
   expect(done.user.currentOnboardingStep).toBeNull();
+  expect(
+    (await (await c.request("/onboarding/status")).json()).currentStep,
+  ).toBeNull();
+  expect(
+    (
+      await c.request("/onboarding/update-organization", {
+        organizationName: "Too late",
+      })
+    ).status,
+  ).toBe(403);
   expect(
     (
       await c.request("/onboarding/step/create-organization", {
@@ -224,7 +249,7 @@ test("email verification and password reset work with the upgraded auth package"
   ).toBe(200);
 }, 30000);
 
-test("invitation acceptance requires the invited verified user and refreshes onboarding state", async () => {
+test("invitation signup verifies only the recipient without another email and refreshes onboarding state", async () => {
   const owner = client("organization");
   await database
     .update(schema.user)
@@ -271,6 +296,7 @@ test("invitation acceptance requires the invited verified user and refreshes onb
     ).status,
   ).toBe(403);
   const invited = client("organization");
+  const mailCount = emails.length;
   const signup = await invited.request("/sign-up/email", {
     email: "invited@example.com",
     password: "CorrectPassword123!",
@@ -278,6 +304,10 @@ test("invitation acceptance requires the invited verified user and refreshes onb
     callbackURL: `${env.FRONTEND_URL}/accept-invitation?invitationId=${invitation.id}`,
   });
   expect(signup.status).toBe(200);
+  expect(emails.length).toBe(mailCount);
+  expect(
+    (await (await invited.request("/get-session")).json()).user.emailVerified,
+  ).toBe(true);
   expect(
     (await (await invited.request("/get-session")).json()).user.shouldOnboard,
   ).toBe(false);
@@ -291,22 +321,6 @@ test("invitation acceptance requires the invited verified user and refreshes onb
       })
     ).status,
   ).toBe(403);
-  expect(
-    (
-      await invited.request("/organization/accept-invitation", {
-        invitationId: invitation.id,
-      })
-    ).status,
-  ).toBe(403);
-  const html = JSON.parse(emails.at(-1)!).htmlbody as string;
-  const link = html
-    .match(/href="([^"]*\/verify-email\?[^"]+)"/)?.[1]
-    ?.replaceAll("&amp;", "&");
-  const url = new URL(link!);
-  expect(url.searchParams.get("callbackURL")).toContain(
-    `/accept-invitation?invitationId=${invitation.id}`,
-  );
-  await invited.request(url.pathname.replace("/api/auth", "") + url.search);
   expect(
     (
       await invited.request("/organization/accept-invitation", {
@@ -331,6 +345,37 @@ test("invitation acceptance requires the invited verified user and refreshes onb
       .from(schema.member)
       .where(eq(schema.member.organizationId, invitation.organizationId)),
   ).toHaveLength(2);
+}, 30000);
+
+test("concurrent organization submissions converge on one workspace", async () => {
+  const c = client("organization");
+  await c.request("/sign-up/email", {
+    email: "concurrent@example.com",
+    password: "CorrectPassword123!",
+    name: "Concurrent",
+  });
+  const results = await Promise.all([
+    c.request("/onboarding/step/create-organization", {
+      organizationName: "One workspace",
+    }),
+    c.request("/onboarding/step/create-organization", {
+      organizationName: "One workspace",
+    }),
+  ]);
+  expect(results.some((result) => result.status === 200)).toBe(true);
+  expect(results.every((result) => [200, 403].includes(result.status))).toBe(
+    true,
+  );
+  const session = await (await c.request("/get-session")).json();
+  expect(
+    await database
+      .select()
+      .from(schema.member)
+      .where(eq(schema.member.userId, session.user.id)),
+  ).toHaveLength(1);
+  expect(
+    (await (await c.request("/onboarding/status")).json()).currentStep,
+  ).toBe("inviteMembers");
 }, 30000);
 
 test("multi organization creation is denied by default and allowed when configured", async () => {

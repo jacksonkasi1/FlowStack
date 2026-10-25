@@ -5,8 +5,19 @@ import { createFileRoute } from '@tanstack/react-router'
 
 // ** import config
 import { AUTH_REDIRECTS } from '@/config/redirects'
+import { AuthShell, authViewClassNames } from '@repo/auth-ui'
 
 export const Route = createFileRoute('/auth/$authView')({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { redirectTo?: string } => ({
+    redirectTo:
+      typeof search.redirectTo === 'string' &&
+      search.redirectTo.startsWith('/') &&
+      !search.redirectTo.startsWith('//')
+        ? search.redirectTo
+        : undefined,
+  }),
   component: RouteComponent,
 })
 
@@ -14,11 +25,24 @@ function RouteComponent() {
   const { authView } = Route.useParams()
 
   // Use relative path - AuthUIProvider's navigate function handles routing
-  const redirectTo = AUTH_REDIRECTS.afterLogin
+  const search = Route.useSearch()
+  const redirectTo = search.redirectTo || AUTH_REDIRECTS.afterLogin
 
   return (
-    <main className="container mx-auto flex min-h-screen grow flex-col items-center justify-center gap-3 self-center p-4 md:p-6">
-      <AuthView pathname={authView} redirectTo={redirectTo} />
-    </main>
+    <AuthShell
+      stage={
+        authView === 'sign-up'
+          ? 'sign-up'
+          : authView.includes('password')
+            ? 'reset'
+            : 'sign-in'
+      }
+    >
+      <AuthView
+        pathname={authView}
+        redirectTo={redirectTo}
+        classNames={authViewClassNames}
+      />
+    </AuthShell>
   )
 }

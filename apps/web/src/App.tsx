@@ -17,6 +17,7 @@ import OrganizationSettingsPage from "@/pages/organization/Settings";
 import OrganizationMembersPage from "@/pages/organization/Members";
 import AcceptInvitationPage from "@/pages/organization/AcceptInvite";
 import SentryCheck from "@/pages/debug/SentryCheck";
+import EmailVerified from "@/pages/account/EmailVerified";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
@@ -38,6 +39,7 @@ export default function App() {
       <Route path="/auth" element={<Navigate to="/auth/sign-in" replace />} />
       <Route path="/auth/:pathname" element={<AuthPage />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/email-verified" element={<EmailVerified />} />
       {import.meta.env.DEV && (
         <Route path="/debug/sentry" element={<SentryCheck />} />
       )}

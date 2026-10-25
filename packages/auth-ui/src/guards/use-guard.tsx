@@ -8,6 +8,7 @@ import {
   INVITATION_CONFIG,
 } from "@repo/config";
 import { guardDestination, matchesRoute } from "./decision";
+import { SESSION_EVENT, refreshSession } from "../session-sync";
 
 export type EmailVerificationMode = "force_redirect" | "banner" | "none";
 export interface GuardProps {
@@ -32,6 +33,7 @@ const bypass = [
   "/reset-password",
   "/accept-invitation",
   "/invitation",
+  "/email-verified",
 ];
 const verifyBypass = ["/account/verify-email"];
 const fallbackClient = createAuthClient();
@@ -56,6 +58,11 @@ export function useGuard(
   const [checkedPath, setCheckedPath] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const changed = () => setAttempt((n) => n + 1);
+    window.addEventListener(SESSION_EVENT, changed);
+    return () => window.removeEventListener(SESSION_EVENT, changed);
+  }, []);
   const excluded =
     disabled || bypassRoutes.some((route) => matchesRoute(pathname, route));
   useEffect(() => {
@@ -63,12 +70,9 @@ export function useGuard(
     if (excluded) return;
     setCheckedPath(null);
     setFailed(false);
-    authClient
-      .getSession({
-        query: { disableCookieCache: true },
-        fetchOptions: { cache: "no-store" },
-      })
-      .then(async (result) => {
+    refreshSession(authClient)
+      .then(async (data) => {
+        const result = { data, error: null };
         if (!active) return;
         if (result.error) throw new Error("Session check failed");
         if (

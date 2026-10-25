@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
+import { SessionSync, StartupSplash, notifySessionChange } from "@repo/auth-ui";
+import { AUTH_LOCALIZATION } from "@repo/config";
 
 // ** import config
 import { APP_URLS } from "@/config/urls";
@@ -46,6 +48,8 @@ export function Providers({ children }: ProvidersProps) {
     <ThemeProvider defaultTheme="light" storageKey="flowstack-ui-theme">
       <AuthUIProvider
         authClient={authClient as any}
+        localization={AUTH_LOCALIZATION}
+        onSessionChange={() => notifySessionChange(authClient)}
         baseURL={APP_URLS.frontend}
         redirectTo="/dashboard"
         navigate={navigate}
@@ -66,6 +70,8 @@ export function Providers({ children }: ProvidersProps) {
         signUp={orgConfig.signUp}
         organization={isOrganizationMode() ? orgConfig.organization : undefined}
       >
+        <SessionSync client={authClient} />
+        <StartupSplash />
         {children}
         <Toaster />
       </AuthUIProvider>

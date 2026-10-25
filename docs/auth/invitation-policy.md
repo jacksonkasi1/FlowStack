@@ -16,9 +16,12 @@ a new account. The invited email is prefilled and read-only, and there is no
 sign-in/signup selection screen. A recipient who already has an account receives
 the sign-in form instead. A different signed-in account must sign out first.
 
-The invitee verifies their email and joins the invited organization on the same
-invitation page, without creating another organization. Verification links return
-to that invitation. Dashboard and onboarding guards recover pending invitations
+For a new account, the server validates the invitation ID, pending status,
+expiry, and recipient email before treating the invitation as email verification.
+No second verification email is sent for that signup. The matching authenticated
+recipient joins automatically and sees a success screen before entering the
+workspace. Existing unverified accounts retain the verification fallback;
+verification links return to the invitation. Dashboard and onboarding guards recover pending invitations
 for signed-in users without an active organization. Invalid, canceled, accepted,
 and expired invitations cannot start this flow.
 
@@ -39,3 +42,10 @@ user can accept invitations into other organizations.
 
 Frontend flags are public configuration, never secrets. The server enforces the
 recipient and creation rules independently of what the browser displays.
+
+`INVITATION_CONFIG.verifyEmailFromInvitation` and `autoAccept` in the shared
+configuration control invitation verification and automatic acceptance. Set the
+former to `false` to require a separate verification email for new invitees, or
+the latter to `false` to retain an explicit Join organization button. Ordinary
+signup still sends a verification email. With organization-onboarding bypass
+disabled, a new invitee completes setup before returning to accept the invitation.

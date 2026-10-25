@@ -5,6 +5,8 @@ const env = {
 
 /** Set the same VITE_* values in the server and frontend .env files. */
 export const INVITATION_CONFIG = {
+  verifyEmailFromInvitation: true,
+  autoAccept: true,
   directSignup: env.VITE_INVITE_DIRECT_SIGNUP !== "false",
   lockEmail: env.VITE_INVITE_LOCK_EMAIL !== "false",
   skipOrganizationOnboarding:

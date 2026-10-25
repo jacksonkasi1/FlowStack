@@ -27,6 +27,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@react-email/components": "^1.0.12",
     "@electric-sql/pglite": "^0.5.11",
     "@electric-sql/pglite-socket": "^0.2.14",
     "@eslint/js": "^10.0.1",
@@ -56,9 +57,11 @@
   ],
   "overrides": {
     "esbuild": "^0.28.2",
+    "next": "16.4.3",
     "solid-js": "^1.9.17"
   },
   "patchedDependencies": {
-    "@daveyplate/better-auth-ui@3.4.0": "patches/@daveyplate%2Fbetter-auth-ui@3.4.0.patch"
+    "@daveyplate/better-auth-ui@3.4.0": "patches/@daveyplate%2Fbetter-auth-ui@3.4.0.patch",
+    "@react-email/ui@6.9.3": "patches/@react-email%2Fui@6.9.3.patch"
   }
 }

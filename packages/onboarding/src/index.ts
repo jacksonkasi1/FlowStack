@@ -113,7 +113,7 @@ export const onboarding = <
             const result = await step.handler(ctx);
 
             // Update completed steps
-            const updatedCompletedSteps = [...completedSteps, id];
+            const updatedCompletedSteps = [...new Set([...completedSteps, id])];
             const nextStep = getNextStep(stepOrder, id);
 
             const update: Record<string, any> = {
@@ -261,22 +261,30 @@ export const onboarding = <
           const adapter = getOnboardingAdapter(options, ctx);
           const userId = session.user.id;
 
-          const [shouldOnboard, currentStep, completedSteps] =
-            await Promise.all([
-              adapter.getShouldOnboard(userId),
-              adapter.getCurrentStep(userId),
-              adapter.getCompletedSteps(userId),
-            ]);
+          const [shouldOnboard, completedSteps] = await Promise.all([
+            adapter.getShouldOnboard(userId),
+            adapter.getCompletedSteps(userId),
+          ]);
 
           // Calculate current step if not set
-          const effectiveCurrentStep =
-            currentStep ?? getFirstIncompleteStep(stepOrder, completedSteps);
+          const effectiveCurrentStep = shouldOnboard
+            ? getFirstIncompleteStep(stepOrder, completedSteps)
+            : null;
+          const data = opts.getStatusData
+            ? await opts.getStatusData({
+                userId,
+                activeOrganizationId:
+                  (session.session.activeOrganizationId as string | null) ??
+                  null,
+              })
+            : {};
 
           return {
             shouldOnboard,
             currentStep: effectiveCurrentStep,
             completedSteps: [...completedSteps],
             stepOrder,
+            data,
           };
         },
       ),

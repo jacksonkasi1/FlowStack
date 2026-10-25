@@ -13,6 +13,7 @@ import { AUTH_REDIRECTS } from "@/config/redirects";
 
 // ** import utils
 import { authClient } from "@/lib/auth-client";
+import { refreshSession } from "@repo/auth-ui";
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
@@ -22,10 +23,8 @@ export default function VerifyEmailPage() {
   const [email, setEmail] = useState<string>("");
 
   const refreshStatus = useCallback(async () => {
-    const result = await authClient.getSession({
-      fetchOptions: { cache: "no-store" },
-    });
-    const user = result.data?.user as any;
+    const result = await refreshSession(authClient);
+    const user = result?.user;
 
     if (!user) {
       navigate("/auth/sign-in", { replace: true });

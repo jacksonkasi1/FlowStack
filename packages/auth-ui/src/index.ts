@@ -43,3 +43,8 @@ export { DEFAULT_CONFIG, defaultStepPathTransform } from "./config/defaults";
 
 export { InvitationFlow } from "./invitation-flow";
 export { OrganizationMenu } from "./organization-menu";
+export * from "./auth-shell";
+export * from "./success-screen";
+export * from "./session-sync";
+export * from "./verification-success";
+export * from "./onboarding-wizard";

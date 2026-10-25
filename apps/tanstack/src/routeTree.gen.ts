@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmailVerifiedRouteImport } from './routes/email-verified'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
@@ -37,6 +38,11 @@ const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailVerifiedRoute = EmailVerifiedRouteImport.update({
+  id: '/email-verified',
+  path: '/email-verified',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   DashboardRoute: typeof DashboardRoute
+  EmailVerifiedRoute: typeof EmailVerifiedRoute
   AccountAccountViewRoute: typeof AccountAccountViewRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
   AccountVerifyEmailRoute: typeof AccountVerifyEmailRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email-verified': {
+      id: '/email-verified'
+      path: '/email-verified'
+      fullPath: '/email-verified'
+      preLoaderRoute: typeof EmailVerifiedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/$accountView': {
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcceptInvitationRoute: AcceptInvitationRoute,
   DashboardRoute: DashboardRoute,
+  EmailVerifiedRoute: EmailVerifiedRoute,
   AccountAccountViewRoute: AccountAccountViewRoute,
   AccountSettingsRoute: AccountSettingsRoute,
   AccountVerifyEmailRoute: AccountVerifyEmailRoute,

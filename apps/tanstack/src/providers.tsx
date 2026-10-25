@@ -12,6 +12,8 @@ import { useState } from 'react'
 
 // ** import utils
 import { authClient } from '@/lib/auth-client'
+import { SessionSync, StartupSplash, notifySessionChange } from '@repo/auth-ui'
+import { AUTH_LOCALIZATION } from '@repo/config'
 
 // ** import config
 import { APP_URLS } from '@/config/urls'
@@ -54,6 +56,8 @@ export function Providers({ children }: ProvidersProps) {
         <AuthQueryProvider>
           <AuthUIProviderTanstack
             authClient={authClient as any}
+            localization={AUTH_LOCALIZATION}
+            onSessionChange={() => notifySessionChange(authClient)}
             baseURL={APP_URLS.frontend}
             navigate={(href) => router.navigate({ to: href })}
             replace={(href) => router.navigate({ to: href, replace: true })}
@@ -81,6 +85,8 @@ export function Providers({ children }: ProvidersProps) {
                 : undefined,
             )}
           >
+            <SessionSync client={authClient} />
+            <StartupSplash />
             {children}
             <Toaster />
           </AuthUIProviderTanstack>

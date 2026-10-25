@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { INVITATION_CONFIG } from "@repo/config";
 import { Eye, EyeOff } from "lucide-react";
+import { AuthShell } from "./auth-shell";
+import { SuccessScreen } from "./success-screen";
+import { notifySessionChange } from "./session-sync";
 
 const button =
   "inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
@@ -65,6 +68,51 @@ export function InvitationFlow({
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [choice, setChoice] = useState<"signup" | "signin" | null>(null);
+  const [joined, setJoined] = useState(false);
+  const accepting = useRef(false);
+  const continueToWorkspace = useCallback(
+    () => window.location.assign("/dashboard"),
+    [],
+  );
+  const acceptInvitation = useCallback(async () => {
+    if (accepting.current) return;
+    accepting.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await client.organization.acceptInvitation({
+        invitationId,
+      });
+      if (result.error)
+        throw new Error(result.error.message || "Unable to join your team.");
+      const organizationId = result.data?.invitation?.organizationId;
+      if (organizationId) {
+        const active = await client.organization.setActive({ organizationId });
+        if (active.error) throw new Error(active.error.message);
+      }
+      await notifySessionChange(client);
+      sessionStorage.removeItem("flowstack.pendingInvitation");
+      setJoined(true);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Unable to join. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }, [client, invitationId]);
+  useEffect(() => {
+    if (
+      INVITATION_CONFIG.autoAccept &&
+      context &&
+      session?.user.emailVerified &&
+      session.user.email.toLowerCase() === context.email.toLowerCase() &&
+      (INVITATION_CONFIG.skipOrganizationOnboarding ||
+        !session.user.shouldOnboard)
+    ) {
+      void acceptInvitation();
+    }
+  }, [context, session, acceptInvitation]);
   const callbackURL = `${typeof window !== "undefined" ? window.location.origin : ""}/accept-invitation?invitationId=${encodeURIComponent(invitationId)}`;
   async function refresh() {
     const result = await client.getSession({
@@ -139,162 +187,170 @@ export function InvitationFlow({
       }
     });
   }
+  if (joined)
+    return (
+      <SuccessScreen
+        title={
+          context ? `Welcome to ${context.organizationName}` : "You're in!"
+        }
+        message="Opening your workspace…"
+        onContinue={continueToWorkspace}
+      />
+    );
   return (
-    <section className="mx-auto w-full max-w-sm text-center">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {session
-            ? "Join your team"
-            : choice === "signin"
-              ? "Sign in to join"
-              : "Join your team"}
-        </h1>
-        {context && (
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            You’re invited to {context.organizationName}.
+    <AuthShell stage="invitation" organizationName={context?.organizationName}>
+      <section className="mx-auto w-full max-w-sm text-center">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {session
+              ? "Join your team"
+              : choice === "signin"
+                ? "Sign in to join"
+                : "Join your team"}
+          </h1>
+          {context && (
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              You’re invited to {context.organizationName}.
+            </p>
+          )}
+        </div>
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {error}
           </p>
         )}
-      </div>
-      {error && (
-        <p role="alert" className="mt-4 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mt-3 text-sm text-muted-foreground">
-          {notice}
-        </p>
-      )}
-      {!context ? (
-        <p className="mt-4 text-sm">
-          {error
-            ? "Ask the organization owner for a new invitation."
-            : "Loading invitation…"}
-        </p>
-      ) : session ? (
-        session.user.email.toLowerCase() !== context.email.toLowerCase() ? (
-          <>
-            <p className="mx-auto mt-5 max-w-sm text-sm leading-6">
-              This invitation is for {context.email}. Sign out to use that
-              account.
-            </p>
+        {notice && (
+          <p role="status" className="mt-3 text-sm text-muted-foreground">
+            {notice}
+          </p>
+        )}
+        {!context ? (
+          <p className="mt-4 text-sm">
+            {error
+              ? "Ask the organization owner for a new invitation."
+              : "Loading invitation…"}
+          </p>
+        ) : session ? (
+          session.user.email.toLowerCase() !== context.email.toLowerCase() ? (
+            <>
+              <p className="mx-auto mt-5 max-w-sm text-sm leading-6">
+                This invitation is for {context.email}. Sign out to use that
+                account.
+              </p>
+              <button
+                className={`${button} mt-4`}
+                disabled={busy}
+                onClick={() =>
+                  action(async () => {
+                    await client.signOut();
+                    setSession(null);
+                  })
+                }
+              >
+                Sign out
+              </button>
+            </>
+          ) : !session.user.emailVerified ? (
+            <>
+              <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-muted-foreground">
+                Verify {context.email} using the link in your email, then
+                continue here.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  className={button}
+                  disabled={busy}
+                  onClick={() =>
+                    action(async () => {
+                      const s = await refresh();
+                      if (!s?.user.emailVerified)
+                        setNotice("Your email is not verified yet.");
+                    })
+                  }
+                >
+                  Check verification
+                </button>
+                <button
+                  className={secondaryButton}
+                  disabled={busy}
+                  onClick={() =>
+                    action(async () => {
+                      const r = await client.sendVerificationEmail({
+                        email: context.email,
+                        callbackURL,
+                      });
+                      if (r.error) throw new Error(r.error.message);
+                      setNotice("Verification email requested.");
+                    })
+                  }
+                >
+                  Resend email
+                </button>
+              </div>
+            </>
+          ) : (
             <button
-              className={`${button} mt-4`}
+              className={`${button} mt-5`}
               disabled={busy}
               onClick={() =>
-                action(async () => {
-                  await client.signOut();
-                  setSession(null);
-                })
+                (() => {
+                  accepting.current = false;
+                  void acceptInvitation();
+                })()
               }
             >
-              Sign out
+              {busy ? "Joining…" : "Join organization"}
             </button>
-          </>
-        ) : !session.user.emailVerified ? (
-          <>
-            <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-muted-foreground">
-              Verify {context.email} using the link in your email, then continue
-              here.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                className={button}
-                disabled={busy}
-                onClick={() =>
-                  action(async () => {
-                    const s = await refresh();
-                    if (!s?.user.emailVerified)
-                      setNotice("Your email is not verified yet.");
-                  })
-                }
-              >
-                Check verification
-              </button>
-              <button
-                className={secondaryButton}
-                disabled={busy}
-                onClick={() =>
-                  action(async () => {
-                    const r = await client.sendVerificationEmail({
-                      email: context.email,
-                      callbackURL,
-                    });
-                    if (r.error) throw new Error(r.error.message);
-                    setNotice("Verification email requested.");
-                  })
-                }
-              >
-                Resend email
-              </button>
-            </div>
-          </>
-        ) : (
-          <button
-            className={`${button} mt-5`}
-            disabled={busy}
-            onClick={() =>
-              action(async () => {
-                const r = await client.organization.acceptInvitation({
-                  invitationId,
-                });
-                if (r.error) throw new Error(r.error.message);
-                sessionStorage.removeItem("flowstack.pendingInvitation");
-                window.location.assign("/dashboard");
-              })
-            }
-          >
-            {busy ? "Joining…" : "Join organization"}
-          </button>
-        )
-      ) : choice ? (
-        <form onSubmit={submit} className="mx-auto mt-6 space-y-4 text-left">
-          {choice === "signup" && (
+          )
+        ) : choice ? (
+          <form onSubmit={submit} className="mx-auto mt-6 space-y-4 text-left">
+            {choice === "signup" && (
+              <label className="block text-sm font-medium">
+                Name
+                <input
+                  className={input}
+                  name="name"
+                  autoComplete="name"
+                  required
+                />
+              </label>
+            )}
             <label className="block text-sm font-medium">
-              Name
+              Email
               <input
                 className={input}
-                name="name"
-                autoComplete="name"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                readOnly={INVITATION_CONFIG.lockEmail}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </label>
-          )}
-          <label className="block text-sm font-medium">
-            Email
-            <input
-              className={input}
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              readOnly={INVITATION_CONFIG.lockEmail}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <InvitationPasswordInput choice={choice} />
-          <button className={`${button} w-full`} disabled={busy}>
-            {busy
-              ? "Please wait…"
-              : choice === "signin"
-                ? "Sign in and continue"
-                : "Create account and continue"}
-          </button>
-        </form>
-      ) : (
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          <button className={button} onClick={() => setChoice("signup")}>
-            Create account
-          </button>
-          <button
-            className={secondaryButton}
-            onClick={() => setChoice("signin")}
-          >
-            Sign in
-          </button>
-        </div>
-      )}
-    </section>
+            <InvitationPasswordInput choice={choice} />
+            <button className={`${button} w-full`} disabled={busy}>
+              {busy
+                ? "Please wait…"
+                : choice === "signin"
+                  ? "Sign in and continue"
+                  : "Create account and continue"}
+            </button>
+          </form>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <button className={button} onClick={() => setChoice("signup")}>
+              Create account
+            </button>
+            <button
+              className={secondaryButton}
+              onClick={() => setChoice("signin")}
+            >
+              Sign in
+            </button>
+          </div>
+        )}
+      </section>
+    </AuthShell>
   );
 }
