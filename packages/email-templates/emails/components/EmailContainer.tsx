@@ -251,7 +251,7 @@ export function EmailText({
 export function EmailAction({
   href,
   children,
-  icon = "mail",
+  icon,
 }: {
   href: string;
   children: ReactNode;
@@ -272,17 +272,19 @@ export function EmailAction({
           textDecoration: "none",
         }}
       >
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-block",
-            marginRight: "10px",
-            fontSize: "18px",
-            verticalAlign: "middle",
-          }}
-        >
-          {icon === "lock" ? "🔒︎" : "✉"}
-        </span>
+        {icon && (
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              marginRight: "10px",
+              fontSize: "18px",
+              verticalAlign: "middle",
+            }}
+          >
+            {icon === "lock" ? "🔒︎" : "✉"}
+          </span>
+        )}
         <span style={{ verticalAlign: "middle" }}>{children}</span>
       </Button>
       <Text
