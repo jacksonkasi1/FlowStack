@@ -26,9 +26,7 @@ export function ResetPasswordEmail({
       <EmailText>
         We received a request to reset your password for your {appName} account.
       </EmailText>
-      <EmailAction href={resetUrl} icon="lock">
-        Reset Password
-      </EmailAction>
+      <EmailAction href={resetUrl}>Reset Password</EmailAction>
       <EmailText>
         If you didn't request a password reset, you can safely ignore this
         email. Your password will stay the same.
