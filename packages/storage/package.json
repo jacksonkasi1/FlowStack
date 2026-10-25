@@ -14,12 +14,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1127.0",
-    "@aws-sdk/s3-request-presigner": "^3.1127.0",
-    "nanoid": "^6.0.1"
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "nanoid": "^6.0.2"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
-    "@types/node": "^24.0.0"
+    "@types/node": "^24.19.2"
   }
 }

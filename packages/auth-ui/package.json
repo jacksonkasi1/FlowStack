@@ -27,11 +27,11 @@
   "dependencies": {
     "@repo/config": "workspace:*",
     "@daveyplate/better-auth-ui": "^3.4.0",
-    "better-auth": "^1.7.3",
+    "better-auth": "^1.7.12",
     "lucide-react": "^1.41.0",
     "@repo/onboarding": "workspace:*",
-    "react-router-dom": "^7.18.3",
-    "@tanstack/react-router": "^1.170.32"
+    "react-router-dom": "^7.18.4",
+    "@tanstack/react-router": "^1.170.46"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
