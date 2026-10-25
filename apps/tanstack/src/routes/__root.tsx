@@ -16,9 +16,12 @@ import { FullPageLoading } from '@/components/ui/full-page-loading'
 
 // ** import utils
 import { Providers } from '../providers'
+import { captureException } from '../lib/monitoring'
 import { authClient } from '../lib/auth-client'
 import { EMAIL_VERIFICATION_CONFIG } from '../config/email-verification'
 import appCss from '../styles.css?url'
+import { useEffect } from 'react'
+import type { ErrorComponentProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 export const Route = createRootRoute({
@@ -45,7 +48,34 @@ export const Route = createRootRoute({
 
   component: RootComponent,
   shellComponent: RootDocument,
+  errorComponent: RootError,
 })
+
+function RootError({ error, reset }: ErrorComponentProps) {
+  // SSR has no effects, so server-side render errors are reported here.
+  if (typeof window === 'undefined') captureException(error)
+  useEffect(() => {
+    captureException(error)
+  }, [error])
+  return (
+    <div
+      role="alert"
+      className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center"
+    >
+      <h1 className="text-xl font-semibold">Something went wrong</h1>
+      <p className="text-muted-foreground text-sm">
+        The error has been recorded. Try again, or reload the page.
+      </p>
+      <button
+        type="button"
+        className="rounded-md border px-4 py-2 text-sm"
+        onClick={reset}
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
 
 function RootComponent() {
   return (

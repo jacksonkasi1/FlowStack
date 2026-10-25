@@ -20,6 +20,7 @@ build
 .env.sandbox
 
 # GCP Service Account
+gha-creds-*.json
 gcp-service-account.json
 apps/server/gcp-service-account.json
 
@@ -59,3 +60,11 @@ yarn-error.log*
 .sisyphus
 .explorer/better-auth-ui
 opencode.json
+
+# FlowStack upgrade backups and conflict proposals (local review only)
+.flowstack-backup
+.flowstack-upgrade
+
+# Playwright
+test-results
+playwright-report

@@ -2,7 +2,11 @@
 import axios from 'axios'
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  // VITE_API_URL is a legacy name kept for existing .env files.
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    'http://localhost:8080',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

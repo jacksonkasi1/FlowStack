@@ -5,12 +5,36 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".output/**", ".next/**", "!.next/cache/**"]
+      "outputs": [
+        "dist/**",
+        ".output/**",
+        ".next/**",
+        "!.next/cache/**",
+        "!**/*.map"
+      ],
+      "env": ["VITE_*", "SENTRY_RELEASE", "SENTRY_ORG", "SENTRY_PROJECT"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"]
     },
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "passThroughEnv": [
+        "FLOWSTACK_*",
+        "BETTER_AUTH_*",
+        "FRONTEND_URL",
+        "DATABASE_*",
+        "AUTH_*",
+        "ALLOWED_ORIGINS",
+        "DOMAIN",
+        "LOG_*",
+        "ZEPTOMAIL_*",
+        "EMAIL_*",
+        "GOOGLE_CLIENT_*",
+        "R2_*",
+        "SENTRY_*",
+        "VITE_*"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"],
@@ -28,9 +52,12 @@
       "cache": false
     }
   },
-  "globalDependencies": [".env", ".env.local", ".env.production"],
-  "globalEnv": [
-    "NODE_ENV",
-    "PORT"
-  ]
+  "globalDependencies": [
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".flowstack.json",
+    "packages/config/src/config/preset.ts"
+  ],
+  "globalEnv": ["NODE_ENV", "PORT"]
 }

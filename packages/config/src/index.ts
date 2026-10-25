@@ -11,3 +11,5 @@ export * from "./config/auth-mode";
 export * from "./storage";
 
 export * from "./config/invitations";
+export { TEMPLATE_FEATURES } from "./config/preset";
+export * from "./config/monitoring";

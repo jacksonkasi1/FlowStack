@@ -16,6 +16,7 @@ import { Route as AccountAccountViewRouteImport } from './routes/account/$accoun
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
 import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
+import { Route as DebugSentryRouteImport } from './routes/debug/sentry'
 import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as OnboardingCreateOrganizationRouteImport } from './routes/onboarding/create-organization'
@@ -58,6 +59,11 @@ const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
   path: '/auth/$authView',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DebugSentryRoute = DebugSentryRouteImport.update({
+  id: '/debug/sentry',
+  path: '/debug/sentry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
   id: '/invitation/$id',
   path: '/invitation/$id',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   AccountSettingsRoute: typeof AccountSettingsRoute
   AccountVerifyEmailRoute: typeof AccountVerifyEmailRoute
   AuthAuthViewRoute: typeof AuthAuthViewRoute
+  DebugSentryRoute: typeof DebugSentryRoute
   InvitationIdRoute: typeof InvitationIdRoute
   OnboardingCreateOrganizationRoute: typeof OnboardingCreateOrganizationRoute
   OnboardingInviteMembersRoute: typeof OnboardingInviteMembersRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthViewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/debug/sentry': {
+      id: '/debug/sentry'
+      path: '/debug/sentry'
+      fullPath: '/debug/sentry'
+      preLoaderRoute: typeof DebugSentryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invitation/$id': {
       id: '/invitation/$id'
       path: '/invitation/$id'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountSettingsRoute: AccountSettingsRoute,
   AccountVerifyEmailRoute: AccountVerifyEmailRoute,
   AuthAuthViewRoute: AuthAuthViewRoute,
+  DebugSentryRoute: DebugSentryRoute,
   InvitationIdRoute: InvitationIdRoute,
   OnboardingCreateOrganizationRoute: OnboardingCreateOrganizationRoute,
   OnboardingInviteMembersRoute: OnboardingInviteMembersRoute,
@@ -316,10 +337,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

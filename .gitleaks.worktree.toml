@@ -1,0 +1,15 @@
+# Working-tree scan only (`bun run secrets:scan`). Skips dependencies, build
+# output and local .env files, which are gitignored and expected to hold real
+# development credentials. Committed history, including any committed .env
+# file, is still scanned with .gitleaks.toml, which has no path exclusions.
+[extend]
+path = ".gitleaks.toml"
+
+[allowlist]
+description = "Gitignored dependencies, build output and local env files"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)(dist|\.output|\.nitro|\.tanstack|\.turbo|coverage)/''',
+  '''(^|/)\.git/''',
+  '''(^|/)\.env(\.[A-Za-z0-9_-]+)?$''',
+]

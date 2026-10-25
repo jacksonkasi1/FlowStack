@@ -2,19 +2,35 @@
   "name": "flowstack",
   "private": true,
   "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:local": "node scripts/dev.mjs --local",
+    "dev:secrets": "node scripts/dev.mjs --secrets",
     "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "eslint --config eslint.config.mjs apps packages scripts tests",
+    "lint": "eslint --config eslint.config.mjs apps packages scripts tests e2e playwright.config.ts",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "setup": "node scripts/setup.mjs",
     "test": "bun test tests",
-    "check:all": "bun run check-types && bun run test && bun run build",
-    "verify:presets": "node scripts/verify-presets.mjs"
+    "test:e2e": "playwright test",
+    "check:all": "bun run lint && bun run check-types && bun run test && bun run build",
+    "verify:presets": "node scripts/verify-presets.mjs",
+    "flowstack:upgrade:check": "node scripts/upgrade.mjs check",
+    "flowstack:upgrade": "node scripts/upgrade.mjs",
+    "db:status": "node scripts/db.mjs status",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:migrate:secrets": "node scripts/secrets.mjs run development -- node scripts/db.mjs migrate",
+    "db:seed": "node scripts/db.mjs seed",
+    "secrets:check": "node scripts/secrets.mjs check development",
+    "secrets:scan": "node scripts/secrets-scan.mjs",
+    "sentry:verify": "bun run --cwd apps/server sentry:verify",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite": "^0.5.11",
+    "@electric-sql/pglite-socket": "^0.2.14",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.13.3",
     "better-auth": "^1.7.3",
     "drizzle-orm": "^0.45.2",
@@ -22,6 +38,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
     "hono": "^4.13.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "postgres": "^3.4.9",
     "prettier": "^3.9.6",
     "turbo": "^2.10.12",
     "typescript": "~6.0.3",
@@ -36,7 +55,8 @@
     "packages/*"
   ],
   "overrides": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "solid-js": "^1.9.17"
   },
   "patchedDependencies": {
     "@daveyplate/better-auth-ui@3.4.0": "patches/@daveyplate%2Fbetter-auth-ui@3.4.0.patch"

@@ -56,6 +56,14 @@ function generateOrganizationSlug(name: string): string {
   return `${normalized}-${randomId}`;
 }
 
+/** Splits a comma-separated env value. */
+function list(value: string | undefined): string[] {
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
   if (!env.BETTER_AUTH_URL) {
     throw new Error("BETTER_AUTH_URL environment variable is required");
@@ -154,6 +162,17 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     },
 
     advanced: {
+      // Client IPs for rate limiting. Behind a proxy/load balancer the
+      // X-Forwarded-For chain has several hops; list the proxies' ranges in
+      // AUTH_TRUSTED_PROXIES so each client gets its own rate-limit bucket.
+      ipAddress: {
+        ...(list(env.AUTH_IP_HEADERS).length
+          ? { ipAddressHeaders: list(env.AUTH_IP_HEADERS) }
+          : {}),
+        ...(list(env.AUTH_TRUSTED_PROXIES).length
+          ? { trustedProxies: list(env.AUTH_TRUSTED_PROXIES) }
+          : {}),
+      },
       useSecureCookies: isSecure,
       cookiePrefix: "better-auth",
       crossSubDomainCookies: {

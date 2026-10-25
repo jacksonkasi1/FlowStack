@@ -8,12 +8,12 @@ Deep customization and production patterns for experienced developers.
 
 For advanced customization, refer to the official Better Auth documentation:
 
-| Topic | Description | Link |
-|-------|-------------|------|
-| **Organization Plugin** | Multi-tenant organization management | [Organization Plugin](https://www.better-auth.com/docs/plugins/organization) |
-| **Custom Database Adapters** | Using custom databases | [Database Adapters](https://www.better-auth.com/docs/concepts/database) |
-| **OAuth & Social Login** | Social authentication providers | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth) |
-| **Core Concepts** | Understanding Better Auth architecture | [Core Concepts](https://www.better-auth.com/docs/concepts/database) |
+| Topic                        | Description                            | Link                                                                         |
+| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------------------- |
+| **Organization Plugin**      | Multi-tenant organization management   | [Organization Plugin](https://www.better-auth.com/docs/plugins/organization) |
+| **Custom Database Adapters** | Using custom databases                 | [Database Adapters](https://www.better-auth.com/docs/concepts/database)      |
+| **OAuth & Social Login**     | Social authentication providers        | [OAuth Guide](https://www.better-auth.com/docs/concepts/oauth)               |
+| **Core Concepts**            | Understanding Better Auth architecture | [Core Concepts](https://www.better-auth.com/docs/concepts/database)          |
 
 ---
 
@@ -28,6 +28,13 @@ Before diving into advanced topics, ensure you understand:
 ---
 
 ## FlowStack-Specific Advanced Topics
+
+- [Secrets with Infisical](./secrets-infisical.md)
+- [Sentry monitoring](./sentry.md)
+- [Git hooks and secret scanning](./git-hooks.md)
+- [CI/CD](./ci-cd.md)
+- [Upgrading an existing project](./upgrading.md)
+- [Cloud Run deployment](../../apps/server/DEPLOYMENT.md)
 
 ### Custom Onboarding Steps
 

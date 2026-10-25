@@ -1,0 +1,21 @@
+# Excluded from Docker build contexts. Local secrets and keys never enter images.
+.git
+gha-creds-*.json
+.github
+.husky
+**/node_modules
+**/dist
+**/.output
+**/.turbo
+**/.nitro
+**/.tanstack
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env*.example
+**/gcp-service-account.json
+**/*.pem
+**/*.key
+.infisical.json
+.infisical.yaml

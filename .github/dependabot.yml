@@ -1,0 +1,27 @@
+# Dependency update PRs target dev and are reviewed like any other change.
+# Minor and patch updates are grouped; major updates arrive as separate PRs
+# so breaking changes are evaluated one at a time. Nothing is auto-merged.
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directory: /apps/server
+    target-branch: dev
+    schedule:
+      interval: monthly
