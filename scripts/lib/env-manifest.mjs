@@ -32,6 +32,8 @@ export const ENV_VARS = [
   { name: "ALLOWED_ORIGINS", scope: "server" },
   { name: "DOMAIN", scope: "server" },
   { name: "LOG_LEVEL", scope: "server" },
+  { name: "AUTH_TRUSTED_PROXIES", scope: "server" },
+  { name: "AUTH_IP_HEADERS", scope: "server" },
   {
     name: "ZEPTOMAIL_API_KEY",
     scope: "server",

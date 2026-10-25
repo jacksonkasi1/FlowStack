@@ -172,6 +172,11 @@ test("a healthy release is verified with no traffic, then promoted", async () =>
   );
 }, 60000);
 
+test("preflight warns when auth rate limiting cannot see client IPs", async () => {
+  const result = await deploy(["sandbox", "--dry-run"]);
+  expect(result.output).toContain("AUTH_TRUSTED_PROXIES is not set");
+}, 60000);
+
 test("a release that fails verification never receives traffic", async () => {
   unhealthy.add("svc-00002");
   const result = await deploy(["sandbox"]);

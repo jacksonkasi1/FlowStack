@@ -228,6 +228,25 @@ To practise safely, deploy a deliberately broken commit to **sandbox** (e.g.
 point `secret_prefix` at a database secret for an unreachable host) and watch it
 fail verification, then run a rollback there.
 
+## Rate limiting behind a load balancer
+
+Better Auth rate-limits sign-in and other auth routes per client IP. Google's
+external Application Load Balancer sends
+`X-Forwarded-For: <client-ip>,<load-balancer-ip>`, and Better Auth only trusts a
+multi-hop chain when it knows which hops are proxies. Without that, every client
+shares **one** bucket, so a few failed sign-ins from anyone would rate-limit all
+users.
+
+Set `AUTH_TRUSTED_PROXIES` (comma-separated IPs or CIDRs) to your load
+balancer's forwarding-rule IP (`gcloud compute forwarding-rules list`). Better
+Auth then walks the chain right to left, skips trusted hops, and uses the first
+untrusted address, so a forged left-most value cannot escape a limit
+(`tests/e2e-api.test.ts`, "rate limiting behind a proxy"). If a different proxy
+sets a dedicated header, `AUTH_IP_HEADERS` lists header names to read instead.
+Deploy preflight warns while `AUTH_TRUSTED_PROXIES` is unset. Before relying on a
+value, confirm what your service receives (log the header in sandbox), because
+proxy chains differ between setups.
+
 ## Database migrations
 
 Deploys never migrate automatically. The workflow input **Apply database

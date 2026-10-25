@@ -32,6 +32,10 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+    // Rate limiting behind proxies (see apps/server/DEPLOYMENT.md).
+    AUTH_TRUSTED_PROXIES: z.string().optional(),
+    AUTH_IP_HEADERS: z.string().optional(),
+
     R2_ACCESS_KEY_ID: r2(z.string().min(1)),
     R2_SECRET_ACCESS_KEY: r2(z.string().min(1)),
     R2_ENDPOINT_URL: r2(z.string().url()),

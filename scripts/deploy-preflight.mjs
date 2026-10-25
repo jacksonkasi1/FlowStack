@@ -97,6 +97,9 @@ function listSecretIds(project, prefix) {
     .filter(Boolean);
 }
 
+const PROXY_WARNING =
+  "Warning: AUTH_TRUSTED_PROXIES is not set. Behind a load balancer every client then shares one auth rate-limit bucket. Set it to your load balancer's forwarding-rule IP (see apps/server/DEPLOYMENT.md#rate-limiting-behind-a-load-balancer).";
+
 async function main([mode, env, arg, project]) {
   const config = await readProjectConfig(root);
   const integrations = config?.integrations || DEFAULT_INTEGRATIONS;
@@ -113,6 +116,7 @@ async function main([mode, env, arg, project]) {
     console.error(
       `Preflight: ${Object.keys(values).length} variables in env file, required names present.`,
     );
+    if (!values.AUTH_TRUSTED_PROXIES) console.error(PROXY_WARNING);
     return;
   }
   if (mode === "secret-manager") {
@@ -136,6 +140,8 @@ async function main([mode, env, arg, project]) {
     console.error(
       `Preflight: ${mapping.split(",").length} secrets mapped from Secret Manager.`,
     );
+    if (!mapping.split(",").some((m) => m.startsWith("AUTH_TRUSTED_PROXIES=")))
+      console.error(PROXY_WARNING);
     process.stdout.write(mapping);
     return;
   }

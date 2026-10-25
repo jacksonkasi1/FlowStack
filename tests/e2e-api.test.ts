@@ -106,6 +106,9 @@ beforeAll(async () => {
       DATABASE_POOL_MAX: "1",
       ZEPTOMAIL_API_KEY: "e2e-not-a-real-key",
       ZEPTO_URL: `http://127.0.0.1:${mailPort}/`,
+      // The load balancer's own IP: Google's external Application Load
+      // Balancer sends "X-Forwarded-For: <client>,<load-balancer-ip>".
+      AUTH_TRUSTED_PROXIES: "35.191.0.7",
       EMAIL_FROM_ADDRESS: "noreply@example.com",
       R2_ACCESS_KEY_ID: "e2e-access-key",
       R2_SECRET_ACCESS_KEY: "e2e-r2-secret-access-key",
@@ -486,5 +489,39 @@ describe("safe failures and logging", () => {
     expect(all).not.toContain("e2e-r2-secret-access-key");
     expect(all).not.toContain("e2e-not-a-real-key");
     expect(all).not.toMatch(/session_token=/);
+  });
+});
+
+describe("rate limiting behind a proxy", () => {
+  // Sign-in allows 3 attempts per 10 s per client. Behind a load balancer the
+  // client IP arrives as "client, proxy"; without trusted proxies every client
+  // would share one bucket and a few failures would lock everyone out.
+  const attempt = (client: string, chain?: string) =>
+    fetch(`${base}/api/auth/sign-in/email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: FRONTEND,
+        "X-Forwarded-For": chain ?? `${client}, 35.191.0.7`,
+      },
+      body: JSON.stringify({
+        email: "lifecycle@example.com",
+        password: "Wrong-Password-1!",
+      }),
+    });
+
+  test("each client behind the proxy has its own bucket", async () => {
+    const statuses = [];
+    for (let i = 0; i < 4; i++)
+      statuses.push((await attempt("198.51.100.1")).status);
+    expect(statuses.slice(0, 3)).toEqual([401, 401, 401]);
+    expect(statuses[3]).toBe(429);
+    // A different client is unaffected.
+    expect((await attempt("198.51.100.2")).status).toBe(401);
+  });
+
+  test("a forged left-most address does not escape the limit", async () => {
+    const forged = await attempt("", "192.0.2.99, 198.51.100.1, 35.191.0.7");
+    expect(forged.status).toBe(429);
   });
 });
