@@ -6,7 +6,8 @@ import {
   session as sessionTable,
   user as userTable,
 } from "@repo/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -54,6 +55,14 @@ function generateOrganizationSlug(name: string): string {
   // Generate a minimal 4-character random suffix
   const randomId = Math.random().toString(36).substring(2, 6);
   return `${normalized}-${randomId}`;
+}
+
+/** Splits a comma-separated env value. */
+function list(value: string | undefined): string[] {
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
@@ -154,6 +163,17 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     },
 
     advanced: {
+      // Client IPs for rate limiting. Behind a proxy/load balancer the
+      // X-Forwarded-For chain has several hops; list the proxies' ranges in
+      // AUTH_TRUSTED_PROXIES so each client gets its own rate-limit bucket.
+      ipAddress: {
+        ...(list(env.AUTH_IP_HEADERS).length
+          ? { ipAddressHeaders: list(env.AUTH_IP_HEADERS) }
+          : {}),
+        ...(list(env.AUTH_TRUSTED_PROXIES).length
+          ? { trustedProxies: list(env.AUTH_TRUSTED_PROXIES) }
+          : {}),
+      },
       useSecureCookies: isSecure,
       cookiePrefix: "better-auth",
       crossSubDomainCookies: {
@@ -204,6 +224,7 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
+        if (user.emailVerified) return;
         // Backend URL with frontend callbackURL - server will redirect after verification
         const verificationUrl = buildEmailUrlWithFrontendCallback(
           url,
@@ -332,7 +353,11 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
               .where(eq(userTable.id, userData.id))
               .limit(1);
 
-            if (user.length > 0 && !user[0].shouldOnboard) {
+            if (
+              user.length > 0 &&
+              !user[0].shouldOnboard &&
+              !(await policy.pending(userData.email))
+            ) {
               // User has no org and onboarding is not set - re-enable it
               await db
                 .update(userTable)
@@ -356,6 +381,25 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
     },
 
     databaseHooks: {
+      user: {
+        create: {
+          before: async (user, context) => {
+            if (
+              !isOrganizationMode() ||
+              !INVITATION_CONFIG.verifyEmailFromInvitation ||
+              context?.path !== "/sign-up/email"
+            )
+              return;
+            const invite = await policy.signupInvitation(context.body);
+            if (
+              invite &&
+              invite.email.toLowerCase() === user.email.toLowerCase()
+            ) {
+              return { data: { ...user, emailVerified: true } };
+            }
+          },
+        },
+      },
       session: {
         create: {
           before: async (session) => {
@@ -514,27 +558,33 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
                           "Accept your pending invitation instead of creating an organization.",
                       });
 
-                    // Create organization
-                    const orgId = crypto.randomUUID();
+                    // Stable IDs make concurrent first-time submissions converge.
+                    const orgId = `workspace_${createHash("sha256").update(userId).digest("hex").slice(0, 32)}`;
                     const slug = generateOrganizationSlug(organizationName);
 
-                    await db.insert(organizationTable).values({
-                      id: orgId,
-                      name: organizationName,
-                      slug,
-                      logo: logo || null,
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                    });
+                    await db
+                      .insert(organizationTable)
+                      .values({
+                        id: orgId,
+                        name: organizationName,
+                        slug,
+                        logo: logo || null,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      })
+                      .onConflictDoNothing({ target: organizationTable.id });
 
                     // Add user as owner
-                    await db.insert(memberTable).values({
-                      id: crypto.randomUUID(),
-                      organizationId: orgId,
-                      userId,
-                      role: CREATOR_ROLE,
-                      createdAt: new Date(),
-                    });
+                    await db
+                      .insert(memberTable)
+                      .values({
+                        id: `owner_${orgId}`,
+                        organizationId: orgId,
+                        userId,
+                        role: CREATOR_ROLE,
+                        createdAt: new Date(),
+                      })
+                      .onConflictDoNothing({ target: memberTable.id });
 
                     logger.info(
                       `Created organization "${organizationName}" (${slug}) for user ${userId} via onboarding`,
@@ -603,6 +653,29 @@ export function configureAuth(env: Env, db: typeof defaultDb = defaultDb) {
               },
               completionStep: "inviteMembers",
               onboardingPath: "/onboarding",
+              getStatusData: async ({ userId, activeOrganizationId }) => {
+                if (!activeOrganizationId) return {};
+                const rows = await db
+                  .select({
+                    name: organizationTable.name,
+                    id: organizationTable.id,
+                  })
+                  .from(memberTable)
+                  .innerJoin(
+                    organizationTable,
+                    eq(memberTable.organizationId, organizationTable.id),
+                  )
+                  .where(
+                    and(
+                      eq(memberTable.userId, userId),
+                      eq(memberTable.organizationId, activeOrganizationId),
+                    ),
+                  );
+                return {
+                  organizationName: rows[0]?.name,
+                  organizationId: rows[0]?.id,
+                };
+              },
 
               // Skip onboarding for users signing up via invitation link
               // They will join an existing organization, not create a new one

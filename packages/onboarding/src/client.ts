@@ -6,6 +6,7 @@
 
 // ** import types
 import type { BetterAuthClientPlugin } from "better-auth";
+import type { RequestContext } from "@better-fetch/fetch";
 import type { onboarding, OnboardingStep } from ".";
 
 // ** import utils
@@ -95,7 +96,7 @@ export const onboardingClient = <
           /**
            * Ensure POST method for step/skip endpoints
            */
-          onRequest(context) {
+          onRequest(context: RequestContext): RequestContext | void {
             const urlPath = toPath(String(context.url));
             const basePathRaw = toPath(context.baseURL ?? "/api/auth");
             const basePath = basePathRaw.endsWith("/")

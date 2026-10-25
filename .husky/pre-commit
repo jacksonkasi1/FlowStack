@@ -1,0 +1,3 @@
+# Blocks commits that contain detected secrets, then lints and formats staged files.
+node scripts/secrets-scan.mjs --staged
+bunx lint-staged

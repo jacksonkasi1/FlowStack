@@ -90,6 +90,51 @@ export function invitationPolicy(db: typeof defaultDb) {
     plugin: {
       id: "flowstack-invitations",
       endpoints: {
+        updateOnboardingOrganization: createAuthEndpoint(
+          "/onboarding/update-organization",
+          {
+            method: "POST",
+            use: [sessionMiddleware],
+            body: z.object({
+              organizationName: z.string().trim().min(2).max(100),
+            }),
+          },
+          async (ctx) => {
+            const session = ctx.context.session;
+            const orgId = session.session.activeOrganizationId;
+            const [account] = await db
+              .select()
+              .from(user)
+              .where(eq(user.id, session.user.id));
+            const [membership] = orgId
+              ? await db
+                  .select()
+                  .from(member)
+                  .where(
+                    and(
+                      eq(member.organizationId, orgId),
+                      eq(member.userId, session.user.id),
+                      eq(member.role, "owner"),
+                    ),
+                  )
+              : [];
+            if (
+              !orgId ||
+              !membership ||
+              !account?.shouldOnboard ||
+              account.currentOnboardingStep !== "inviteMembers"
+            ) {
+              throw new APIError("FORBIDDEN", {
+                message: "Workspace setup cannot be edited here.",
+              });
+            }
+            await db
+              .update(organization)
+              .set({ name: ctx.body.organizationName, updatedAt: new Date() })
+              .where(eq(organization.id, orgId));
+            return ctx.json({ organizationName: ctx.body.organizationName });
+          },
+        ),
         invitationContext: createAuthEndpoint(
           "/invitation/context",
           {

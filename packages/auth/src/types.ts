@@ -11,6 +11,10 @@ export interface Env {
   DOMAIN?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  /** Comma-separated proxy IPs/CIDRs whose X-Forwarded-For hops are skipped. */
+  AUTH_TRUSTED_PROXIES?: string;
+  /** Comma-separated header names to read the client IP from. */
+  AUTH_IP_HEADERS?: string;
 }
 
 export type Bindings = Env;
@@ -45,5 +49,7 @@ export function createEnvFromProcess(): Env {
     DOMAIN: process.env.DOMAIN,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    AUTH_TRUSTED_PROXIES: process.env.AUTH_TRUSTED_PROXIES,
+    AUTH_IP_HEADERS: process.env.AUTH_IP_HEADERS,
   };
 }

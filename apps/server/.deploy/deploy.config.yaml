@@ -1,15 +1,34 @@
 # ===========================================
 # FlowStack Deployment Configuration
 # ===========================================
-# This file contains deployment-specific settings (infrastructure)
-# Application secrets and API keys go in .env files
+# This file contains deployment-specific settings (infrastructure).
+# It never contains secrets. Secrets can come directly from Infisical at
+# startup, Google Secret Manager, or a local .env file (legacy).
 
 # Global defaults - applied to all environments unless overridden
 defaults:
   # GCP Configuration
   region: us-central1 # Default region for Cloud Run
   artifact_registry: flowstack # Artifact Registry repository name
-  service_account_key: gcp-service-account.json # Path to service account JSON
+
+  # Authentication: keyless by default (Workload Identity Federation in CI,
+  # `gcloud auth login` locally). Legacy: if apps/server/gcp-service-account.json
+  # exists (or GCP_SA_KEY_PATH is set) that key is still used, with a warning.
+  # Delete the key file once keyless deploys work.
+
+  # Where runtime secrets come from:
+  #   infisical       fetch directly inside Cloud Run using GCP ID Token Auth;
+  #                   no local env files or Google Secret Manager required
+  #   env-file        read apps/server/<env_file> and pass values as env vars (legacy)
+  #   secret-manager  reference Secret Manager secrets named <secret_prefix><NAME>;
+  #                   values never pass through the deploying machine
+  secrets_source: env-file
+  # secret_prefix: prod_                 # Default: "<environment>_"
+  # runtime_service_account: flowstack-run@PROJECT.iam.gserviceaccount.com
+  # For infisical, set runtime_service_account above and GitHub Environment
+  # variables INFISICAL_PROJECT_ID and INFISICAL_RUNTIME_IDENTITY_ID.
+  # INFISICAL_RUNTIME_ENVIRONMENT overrides the default dev/sandbox/beta/prod
+  # slug; INFISICAL_SECRET_PATH and INFISICAL_DOMAIN are optional.
 
   # Environment File (can be overridden per environment)
   # If not specified, falls back to .env.<environment-name>
@@ -21,15 +40,16 @@ defaults:
 
   # These can be overridden by environment variables:
   # - GCP_REGION
-  # - GCP_SA_KEY_PATH
-  # - PROJECT_ID (auto-detected from service account if not set)
+  # - GCP_SA_KEY_PATH (legacy key file)
+  # - PROJECT_ID (else the active gcloud project)
 
 # Environment-specific configurations
 environments:
   # Production Environment
   prod:
-    env_file: .env.prod # Points to .env.prod file
+    env_file: .env.prod # Used only when secrets_source is env-file
     service_name: flowstack-server-prod
+    production: true # Deploy only from CI (approval-gated); refuses dirty trees
     memory: 2Gi # Memory allocation
     cpu: "2" # CPU allocation
     min_instances: 1 # Minimum instances (always warm)

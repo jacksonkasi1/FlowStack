@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/index.ts",
-    "build": "bun build src/index.ts --target=node --outdir=dist",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "bun ../../scripts/build-server.mjs",
     "lint": "eslint src",
     "format": "prettier --write .",
     "check": "prettier --write . && eslint --fix",
@@ -12,26 +12,29 @@
     "deploy:prod": "./.deploy/scripts/deploy.sh prod",
     "deploy:beta": "./.deploy/scripts/deploy.sh beta",
     "deploy:sandbox": "./.deploy/scripts/deploy.sh sandbox",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "sentry:verify": "tsx --env-file-if-exists=.env src/scripts/verify-sentry.ts"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@hono/zod-validator": "^0.9.1",
     "@repo/auth": "workspace:*",
+    "@repo/config": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/logs": "workspace:*",
-    "@repo/config": "workspace:*",
     "@repo/storage": "workspace:*",
+    "@sentry/hono": "^11.9.0",
+    "@sentry/node": "^11.9.0",
     "@t3-oss/env-core": "^0.13.11",
-    "hono": "^4.13.7",
-    "zod": "^4.5.4",
-    "@hono/node-server": "^2.1.1",
-    "@hono/zod-validator": "^0.9.1",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.14",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^24.0.0",
-    "prettier": "^3.9.6",
+    "@types/node": "^24.19.2",
+    "prettier": "^3.9.10",
     "typescript": "~6.0.3",
-    "tsx": "^4.23.13"
+    "tsx": "^4.23.15"
   }
 }

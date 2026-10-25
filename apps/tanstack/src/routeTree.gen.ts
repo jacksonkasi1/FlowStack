@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmailVerifiedRouteImport } from './routes/email-verified'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountVerifyEmailRouteImport } from './routes/account/verify-email'
 import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
+import { Route as DebugSentryRouteImport } from './routes/debug/sentry'
 import { Route as InvitationIdRouteImport } from './routes/invitation/$id'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as OnboardingCreateOrganizationRouteImport } from './routes/onboarding/create-organization'
@@ -38,6 +40,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmailVerifiedRoute = EmailVerifiedRouteImport.update({
+  id: '/email-verified',
+  path: '/email-verified',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
   id: '/account/$accountView',
   path: '/account/$accountView',
@@ -56,6 +63,11 @@ const AccountVerifyEmailRoute = AccountVerifyEmailRouteImport.update({
 const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
   id: '/auth/$authView',
   path: '/auth/$authView',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugSentryRoute = DebugSentryRouteImport.update({
+  id: '/debug/sentry',
+  path: '/debug/sentry',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
@@ -94,10 +106,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -109,10 +123,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -125,10 +141,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/dashboard': typeof DashboardRoute
+  '/email-verified': typeof EmailVerifiedRoute
   '/account/$accountView': typeof AccountAccountViewRoute
   '/account/settings': typeof AccountSettingsRoute
   '/account/verify-email': typeof AccountVerifyEmailRoute
   '/auth/$authView': typeof AuthAuthViewRoute
+  '/debug/sentry': typeof DebugSentryRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/onboarding/create-organization': typeof OnboardingCreateOrganizationRoute
   '/onboarding/invite-members': typeof OnboardingInviteMembersRoute
@@ -142,10 +160,12 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -157,10 +177,12 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -172,10 +194,12 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/dashboard'
+    | '/email-verified'
     | '/account/$accountView'
     | '/account/settings'
     | '/account/verify-email'
     | '/auth/$authView'
+    | '/debug/sentry'
     | '/invitation/$id'
     | '/onboarding/create-organization'
     | '/onboarding/invite-members'
@@ -188,10 +212,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   DashboardRoute: typeof DashboardRoute
+  EmailVerifiedRoute: typeof EmailVerifiedRoute
   AccountAccountViewRoute: typeof AccountAccountViewRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
   AccountVerifyEmailRoute: typeof AccountVerifyEmailRoute
   AuthAuthViewRoute: typeof AuthAuthViewRoute
+  DebugSentryRoute: typeof DebugSentryRoute
   InvitationIdRoute: typeof InvitationIdRoute
   OnboardingCreateOrganizationRoute: typeof OnboardingCreateOrganizationRoute
   OnboardingInviteMembersRoute: typeof OnboardingInviteMembersRoute
@@ -223,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/email-verified': {
+      id: '/email-verified'
+      path: '/email-verified'
+      fullPath: '/email-verified'
+      preLoaderRoute: typeof EmailVerifiedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/$accountView': {
       id: '/account/$accountView'
       path: '/account/$accountView'
@@ -249,6 +282,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/$authView'
       fullPath: '/auth/$authView'
       preLoaderRoute: typeof AuthAuthViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug/sentry': {
+      id: '/debug/sentry'
+      path: '/debug/sentry'
+      fullPath: '/debug/sentry'
+      preLoaderRoute: typeof DebugSentryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invitation/$id': {
@@ -300,10 +340,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcceptInvitationRoute: AcceptInvitationRoute,
   DashboardRoute: DashboardRoute,
+  EmailVerifiedRoute: EmailVerifiedRoute,
   AccountAccountViewRoute: AccountAccountViewRoute,
   AccountSettingsRoute: AccountSettingsRoute,
   AccountVerifyEmailRoute: AccountVerifyEmailRoute,
   AuthAuthViewRoute: AuthAuthViewRoute,
+  DebugSentryRoute: DebugSentryRoute,
   InvitationIdRoute: InvitationIdRoute,
   OnboardingCreateOrganizationRoute: OnboardingCreateOrganizationRoute,
   OnboardingInviteMembersRoute: OnboardingInviteMembersRoute,
@@ -316,10 +358,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

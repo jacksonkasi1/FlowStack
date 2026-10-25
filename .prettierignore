@@ -1,0 +1,5 @@
+# Generated files: never reformat.
+**/routeTree.gen.ts
+packages/db/drizzle/**
+patches/**
+bun.lock

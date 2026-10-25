@@ -1,442 +1,201 @@
 # Deployment Guide
 
-FlowStack supports deployment to **Google Cloud Run** with three environment tiers.
+The API (`apps/server`) deploys to Google Cloud Run with
+`.deploy/scripts/deploy.sh`, normally through the **Deploy API** GitHub workflow
+(`.github/workflows/deploy.yml`). Three environments are defined in
+`.deploy/deploy.config.yaml`: `sandbox`, `beta` and `prod`.
 
-All deployment configuration is centralized in the `.deploy/` folder.
+> **Verification status.** The deploy, verify, promote and rollback logic is
+> tested against a fake `gcloud` (`tests/deploy.test.ts`). The GCP-side setup
+> below (Workload Identity Federation, IAM, Secret Manager) has not been run
+> against a real project by the template maintainers; dry-run it in sandbox first.
 
----
+## Contents
 
-## Table of Contents
-
-- [File Architecture](#file-architecture)
-- [Prerequisites](#prerequisites)
-- [Local Development](#local-development)
-- [Cloud Run Deployment](#cloud-run-deployment)
-- [Deployment Configuration](#deployment-configuration)
-- [Adding Custom Environments](#adding-custom-environments)
+- [How a deploy works](#how-a-deploy-works)
+- [One-time Google Cloud setup](#one-time-google-cloud-setup)
+- [Secrets](#secrets)
+- [Deploying](#deploying)
+- [Rollback runbook](#rollback-runbook)
+- [Database migrations](#database-migrations)
+- [Configuration reference](#configuration-reference)
+- [Custom environments](#custom-environments)
+- [Migrating from a service account key](#migrating-from-a-service-account-key)
 - [Troubleshooting](#troubleshooting)
 
----
-
-## File Architecture
-
-### Server Deployment Structure
+## How a deploy works
 
 ```
-apps/server/
-├── .deploy/                          # 📁 All deployment-related files
-│   ├── deploy.config.yaml           # 🔧 Infrastructure configuration (COMMITTED)
-│   ├── scripts/
-│   │   └── deploy.sh                # 🚀 Deployment script with YAML parser
-│   └── README.md                    # 📖 Deployment usage guide
-│
-├── .env.example                     # 📄 Local development template (COMMITTED)
-├── .env.prod.example                # 📄 Production template (COMMITTED)
-├── .env.beta.example                # 📄 Beta template (COMMITTED)
-├── .env.sandbox.example             # 📄 Sandbox template (COMMITTED)
-│
-├── .env                             # 🔒 Local secrets (GITIGNORED)
-├── .env.prod                        # 🔒 Production secrets (GITIGNORED)
-├── .env.beta                        # 🔒 Beta secrets (GITIGNORED)
-├── .env.sandbox                     # 🔒 Sandbox secrets (GITIGNORED)
-│
-├── gcp-service-account.json         # 🔑 GCP credentials (GITIGNORED)
-│
-├── src/                             # 💻 Application source code
-├── Dockerfile                       # 🐳 Docker build configuration
-├── package.json                     # 📦 Dependencies & deploy scripts
-├── tsconfig.json                    # ⚙️ TypeScript configuration
-└── DEPLOYMENT.md                    # 📚 This file
-
-Root Level:
-├── cloudbuild.yaml                  # ☁️ Google Cloud Build config
-└── turbo.json                       # ⚡ Turborepo configuration
+preflight ─▶ build image :<release> ─▶ deploy revision (no traffic, tag r-<release>)
+   │                                         │
+   │                              health check  <tag-url>/health/ready
+   │                                 │ fail                │ pass
+   ▼                                 ▼                     ▼
+ stop                     traffic unchanged;      move 100% traffic ─▶ (--auto-rollback)
+                          report failure          re-check service; restore previous
+                                                  revision if unhealthy
 ```
 
-### Key Files Explained
+1. **Preflight** stops before anything is built if: the environment is unknown;
+   no gcloud credentials or project are available; required secrets are missing
+   or still placeholders; a `production: true` environment is deployed from
+   outside CI, or from a tree with uncommitted changes.
+2. **Versioned image**: the image tag is the release, which is the commit SHA
+   (`FLOWSTACK_RELEASE`). Each revision is labelled `flowstack-release=<release>`, and
+   `FLOWSTACK_RELEASE` is set in the container (Sentry release).
+3. **Verification before traffic**: for an existing service, the new revision is
+   deployed with `--no-traffic` and checked on its tag URL at `/health/ready`
+   (which checks the database). A failing revision never serves users.
+4. **Promotion** moves 100% of traffic to the verified revision. With
+   `--auto-rollback` (default in the workflow) the service URL is checked again
+   and traffic returns to the previous revision if it is unhealthy.
+5. **Report**: a summary (outcome, release, new/previous/serving revision,
+   actor) is printed, written to the GitHub job summary and, with
+   `DEPLOY_REPORT_FILE`, saved as a JSON audit record (the workflow uploads it
+   as an artifact kept for 400 days, including the run URL).
+6. **Failed revisions are marked**: a revision that fails verification (or is
+   rolled back automatically) gets a `failed-<release>` traffic tag at 0%
+   traffic, so later rollbacks never select it. Nothing is deleted; its logs
+   remain available.
 
-| File                                             | Purpose                                                | Committed?         |
-| ------------------------------------------------ | ------------------------------------------------------ | ------------------ |
-| `.deploy/deploy.config.yaml`                     | Infrastructure settings (region, memory, CPU, scaling) | ✅ Yes             |
-| `.deploy/scripts/deploy.sh`                      | Deployment script with YAML parser                     | ✅ Yes             |
-| `.env.*.example`                                 | Environment variable templates                         | ✅ Yes             |
-| `.env`, `.env.prod`, `.env.beta`, `.env.sandbox` | Actual secrets and API keys                            | ❌ No (gitignored) |
-| `gcp-service-account.json`                       | GCP authentication credentials                         | ❌ No (gitignored) |
-| `Dockerfile`                                     | Container build instructions                           | ✅ Yes             |
-| `cloudbuild.yaml`                                | Cloud Build configuration                              | ✅ Yes             |
-| `package.json`                                   | Deploy scripts (`deploy:prod`, etc.)                   | ✅ Yes             |
+The first deploy of a service cannot use `--no-traffic`; it deploys directly and
+is then health-checked.
 
-### Security Model
+## One-time Google Cloud setup
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  COMMITTED (Safe to version control)                        │
-├─────────────────────────────────────────────────────────────┤
-│  • .deploy/deploy.config.yaml  - Infrastructure settings    │
-│  • .env.*.example              - Templates                  │
-│  • deploy.sh                   - Deployment script          │
-│  • Dockerfile                  - Build config               │
-└─────────────────────────────────────────────────────────────┘
+Run these as a project owner. Replace `PROJECT_ID`, `PROJECT_NUMBER`, `REGION` and
+`OWNER/REPO`. Use one GCP project per environment where possible; otherwise the
+per-environment `secret_prefix` keeps secrets apart.
 
-┌─────────────────────────────────────────────────────────────┐
-│  GITIGNORED (Never commit)                                  │
-├─────────────────────────────────────────────────────────────┤
-│  • .env, .env.prod, etc.       - Actual secrets            │
-│  • gcp-service-account.json    - GCP credentials           │
-└─────────────────────────────────────────────────────────────┘
-```
+```sh
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com secretmanager.googleapis.com \
+  iamcredentials.googleapis.com sts.googleapis.com --project PROJECT_ID
 
----
+# Artifact Registry repository (once; the deploy identity then only needs writer).
+gcloud artifacts repositories create flowstack --repository-format=docker \
+  --location REGION --project PROJECT_ID
 
-## Prerequisites
-
-Before deploying to Google Cloud Run, ensure you have:
-
-### Required Tools
-
-1. **Bun** (v1.2.22 or higher)
-
-   ```bash
-   curl -fsSL https://bun.sh/install | bash
-   ```
-
-2. **Google Cloud SDK (gcloud)**
-
-   ```bash
-   # macOS
-   brew install google-cloud-sdk
-
-   # Or download from: https://cloud.google.com/sdk/docs/install
-   ```
-
-3. **Docker** (for local testing - optional)
-   ```bash
-   # macOS
-   brew install docker
-   ```
-
-### Required GCP Setup
-
-1. **Google Cloud Project**
-   - Create a project at: https://console.cloud.google.com
-   - Note your Project ID
-
-2. **Enable Required APIs**
-
-   ```bash
-   gcloud services enable run.googleapis.com
-   gcloud services enable cloudbuild.googleapis.com
-   gcloud services enable artifactregistry.googleapis.com
-   ```
-
-3. **Service Account with Permissions**
-
-   Create a service account with these roles:
-   - `Cloud Run Admin`
-   - `Cloud Build Editor`
-   - `Artifact Registry Administrator`
-   - `Service Account User`
-
-   ```bash
-   # Create service account
-   gcloud iam service-accounts create flowstack-deployer \
-     --display-name="FlowStack Deployer"
-
-   # Grant roles
-   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-     --member="serviceAccount:flowstack-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-     --role="roles/run.admin"
-
-   # Repeat for other roles...
-
-   # Download JSON key
-   gcloud iam service-accounts keys create gcp-service-account.json \
-     --iam-account=flowstack-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com
-   ```
-
-4. **Move Service Account Key**
-   ```bash
-   mv gcp-service-account.json apps/server/
-   ```
-
-### Required Environment Files
-
-Create environment-specific `.env` files from templates:
-
-```bash
-cd apps/server
-
-# For production
-cp .env.prod.example .env.prod
-nano .env.prod  # Add your production secrets
-
-# For beta
-cp .env.beta.example .env.beta
-nano .env.beta
-
-# For sandbox
-cp .env.sandbox.example .env.sandbox
-nano .env.sandbox
+# Identities: one to deploy, one the service runs as.
+gcloud iam service-accounts create flowstack-deploy --project PROJECT_ID
+gcloud iam service-accounts create flowstack-run --project PROJECT_ID
 ```
 
-### Verify Prerequisites
+### Keyless authentication (Workload Identity Federation)
 
-Check that everything is installed:
+GitHub Actions exchanges its OIDC token for short-lived Google credentials; no
+key file exists anywhere.
 
-```bash
-# Check bun
-bun --version
+```sh
+gcloud iam workload-identity-pools create github --location global --project PROJECT_ID
+gcloud iam workload-identity-pools providers create-oidc github \
+  --location global --workload-identity-pool github --project PROJECT_ID \
+  --issuer-uri https://token.actions.githubusercontent.com \
+  --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+  --attribute-condition "assertion.repository == 'OWNER/REPO'"
 
-# Check gcloud
-gcloud --version
-
-# Check authentication
-gcloud auth list
-
-# Check project
-gcloud config get-value project
-
-# Check service account file exists
-ls -la apps/server/gcp-service-account.json
-
-# Check env files exist
-ls -la apps/server/.env.*
+gcloud iam service-accounts add-iam-policy-binding \
+  flowstack-deploy@PROJECT_ID.iam.gserviceaccount.com --project PROJECT_ID \
+  --role roles/iam.workloadIdentityUser \
+  --member "principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/OWNER/REPO"
 ```
 
----
-
-## Local Development
-
-```bash
-cd apps/server
-cp .env.example .env
-# Edit .env with your values
-bun run dev
-```
-
-Or from root:
-
-```bash
-bun --cwd apps/server dev
-```
-
----
-
-## Cloud Run Deployment
-
-### Setup
-
-1. **Save GCP Service Account JSON:**
-
-   ```bash
-   cp your-service-account.json apps/server/gcp-service-account.json
-   ```
-
-2. **Create environment files from templates:**
-
-   ```bash
-   # For production
-   cp apps/server/.env.prod.example apps/server/.env.prod
-   nano apps/server/.env.prod
-
-   # For beta
-   cp apps/server/.env.beta.example apps/server/.env.beta
-   nano apps/server/.env.beta
-
-   # For sandbox
-   cp apps/server/.env.sandbox.example apps/server/.env.sandbox
-   nano apps/server/.env.sandbox
-   ```
-
-### Deploy
-
-Deploy to any of three environments using npm scripts:
-
-**From Root (using bun):**
-
-```bash
-cd apps/server
-bun run deploy:prod
-bun run deploy:beta
-bun run deploy:sandbox
-```
-
-**Direct Script Execution:**
-
-```bash
-./apps/server/.deploy/scripts/deploy.sh prod
-./apps/server/.deploy/scripts/deploy.sh beta
-./apps/server/.deploy/scripts/deploy.sh sandbox
-```
-
-### Customize Region & Service Account Path
-
-```bash
-GCP_REGION=us-central1 bun run deploy:prod
-GCP_SA_KEY_PATH=./my-sa-key.json bun run deploy:prod
-
-# Or with direct script
-GCP_REGION=us-central1 ./apps/server/.deploy/scripts/deploy.sh prod
-GCP_SA_KEY_PATH=./my-sa-key.json ./apps/server/.deploy/scripts/deploy.sh prod
-```
-
----
-
-## Deployment Configuration
-
-### Configuration File (`/apps/server/.deploy/deploy.config.yaml`)
-
-All deployment infrastructure settings are managed in `.deploy/deploy.config.yaml`:
-
-```yaml
-defaults:
-  region: us-central1
-  artifact_registry: flowstack
-  service_account_key: gcp-service-account.json
-  timeout: 300
-
-environments:
-  prod:
-    service_name: flowstack-server-prod
-    memory: 2Gi
-    cpu: "2"
-    min_instances: 1
-    # ... more settings
-```
-
-**Benefits:**
-
-- ✅ Version controlled (safe to commit)
-- ✅ Single source of truth for all environments
-- ✅ Easy to compare environment configs
-- ✅ Environment variables override config values
-
-**Environment File Mapping:**
-
-Each environment can specify which `.env` file to use via the `env_file` field:
-
-```yaml
-environments:
-  prod:
-    env_file: .env.prod # Uses .env.prod for secrets
-    service_name: flowstack-server-prod
-    memory: 2Gi
-
-  staging:
-    env_file: .env.staging # Uses .env.staging for secrets
-    service_name: flowstack-server-staging
-    memory: 1Gi
-```
-
-**Fallback Behavior:**
-
-1. If `env_file` is specified → Use that file
-2. If not specified → Use `.env.<environment-name>`
-3. If that doesn't exist → Fall back to `.env`
-
----
-
-## Adding Custom Environments
-
-You can create ANY custom environment with ANY name!
-
-### Example: Personal Testing Environment
-
-**Step 1: Add to `deploy.config.yaml`**
-
-```yaml
-environments:
-  jackson-testing: # Custom name!
-    env_file: .env.jackson # Points to .env.jackson
-    service_name: flowstack-server-jackson
-    memory: 512Mi
-    cpu: "1"
-    min_instances: 0
-    max_instances: 2
-    concurrency: 40
-```
-
-**Step 2: Create env file**
-
-```bash
-cp apps/server/.env.example apps/server/.env.jackson
-nano apps/server/.env.jackson
-```
-
-**Step 3: Add deploy script to `package.json`**
-
-```json
-{
-  "scripts": {
-    "deploy:jackson-testing": "./.deploy/scripts/deploy.sh jackson-testing"
-  }
-}
-```
-
-**Step 4: Deploy**
-
-```bash
-cd apps/server
-bun run deploy:jackson-testing
-```
-
-**That's it!** ✅ The deployment script automatically:
-
-- Reads `deploy.config.yaml` to find `jackson-testing` config
-- Uses `.env.jackson` file as specified
-- Deploys with the configured resources
-
----
-
-## Multiple Developers / Environments
-
-Each developer can have their own environment:
-
-```yaml
-environments:
-  dev-john:
-    env_file: .env.john
-    service_name: flowstack-server-john
-    memory: 512Mi
-
-  dev-sarah:
-    env_file: .env.sarah
-    service_name: flowstack-server-sarah
-    memory: 512Mi
-```
-
-Then in `package.json`:
-
-```json
-"deploy:dev-john": "./.deploy/scripts/deploy.sh dev-john",
-"deploy:dev-sarah": "./.deploy/scripts/deploy.sh dev-sarah"
-```
-
----
-
-## Environment Files
-
-### Template Files (Committed)
-
-- `.env.example` — Local development template
-- `.env.prod.example` — Production template
-- `.env.beta.example` — Beta template
-- `.env.sandbox.example` — Sandbox template
-
-### Actual Files (Gitignored - Create from templates)
-
-- `.env` — Local development (copy from `.env.example`)
-- `.env.prod` — Production (copy from `.env.prod.example`)
-- `.env.beta` — Beta (copy from `.env.beta.example`)
-- `.env.sandbox` — Sandbox (copy from `.env.sandbox.example`)
-
-Copy template files and update with your actual values.
-
-### Environment File Format
-
-The deployment script supports inline comments in `.env` files:
-
-**Supported:**
+### Least-privilege roles
+
+| Identity           | Role                                                                   | Why                                                    |
+| ------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------ |
+| `flowstack-deploy` | `roles/run.developer`                                                  | Deploy revisions, move traffic                         |
+|                    | `roles/iam.serviceAccountUser` on `flowstack-run` only                 | Run revisions as the runtime identity                  |
+|                    | `roles/cloudbuild.builds.editor`                                       | Submit the image build                                 |
+|                    | `roles/artifactregistry.writer` on the `flowstack` repository          | Push images                                            |
+|                    | `roles/secretmanager.viewer`                                           | Check that secret **names** exist (cannot read values) |
+| `flowstack-run`    | `roles/secretmanager.secretAccessor` on its environment's secrets only | Read secrets at runtime                                |
+
+`--allow-unauthenticated` needs permission to set the service IAM policy, which
+`run.developer` lacks. Either grant `roles/run.admin` to the deploy identity, or
+have an owner make the service public once
+(`gcloud run services add-iam-policy-binding SERVICE --member allUsers --role roles/run.invoker`)
+and accept the warning gcloud prints on later deploys.
+
+Set `runtime_service_account: flowstack-run@PROJECT_ID.iam.gserviceaccount.com`
+in `deploy.config.yaml`.
+
+### GitHub repository settings
+
+| Setting                                                            | Value                                                                                                                                                                                     |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Variables (Settings › Secrets and variables › Actions › Variables) | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER` (`projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github`), `GCP_DEPLOY_SERVICE_ACCOUNT` |
+| Variables for migrations                                           | `INFISICAL_PROJECT_ID`, `INFISICAL_IDENTITY_ID` (an Infisical machine identity using OIDC auth trusting this repository), optional `INFISICAL_DOMAIN`                                     |
+| Environments                                                       | `sandbox`, `beta`, `prod`. On `prod`, add **required reviewers** and restrict deployment branches to `main`.                                                                              |
+
+No secret values are stored in GitHub: both Google Cloud and Infisical use OIDC.
+
+## Secrets
+
+Set `secrets_source` per environment in `deploy.config.yaml`.
+
+### `infisical` (direct runtime fetch, no local secret files)
+
+Keep application values only in Infisical. No Google Secret Manager or Secret
+Sync is required in this mode.
+
+1. Create an Infisical machine identity using **GCP ID Token Auth**. Allow only
+   the Cloud Run runtime service account's email. Add the identity to your
+   Infisical project with read access to the target environment/path only.
+   See [Infisical GCP authentication](https://infisical.com/docs/documentation/platform/identities/gcp-auth).
+2. Set the target's `secrets_source: infisical` and
+   `runtime_service_account: flowstack-run@PROJECT_ID.iam.gserviceaccount.com`
+   in `apps/server/.deploy/deploy.config.yaml`. The runtime account needs no
+   Secret Manager permissions for this mode.
+3. In each GitHub Environment, set `INFISICAL_PROJECT_ID` and
+   `INFISICAL_RUNTIME_IDENTITY_ID` (the GCP-auth identity, separate from the
+   migration OIDC identity). Optional: `INFISICAL_DOMAIN` (HTTPS origin for
+   your region/self-hosted instance), `INFISICAL_SECRET_PATH` (default `/`), and
+   `INFISICAL_RUNTIME_ENVIRONMENT` (override the configured slug; defaults to
+   `sandbox`, `beta`, or `prod`). These are identifiers, not secret values.
+4. Put required application values in the selected Infisical environment/path
+   using their original names, such as `DATABASE_URL`, without a `prod_` prefix.
+5. Run the deployment workflow. Preflight validates bootstrap configuration
+   without reading secrets. The candidate authenticates from inside Cloud Run,
+   loads secrets, then starts the API; the readiness check gates promotion.
+
+Do not wrap the local deploy script with production secret injection: credentials
+loaded in your shell do not automatically reach Cloud Run. The container uses
+its own Google identity, with no stored Infisical credentials. Outbound access
+to the configured Infisical host is required. Failed authentication, missing
+variables or an unavailable Infisical service stop new instances from starting;
+existing instances retain their loaded values. Redeploy after rotating values.
+
+Server variables come from `scripts/lib/env-manifest.mjs`; declare custom server
+variables there. Imports and secret references are supported. Public frontend
+build variables remain a separate build-time concern. Switching from Secret
+Manager clears old secret bindings. Existing env-file and Secret Manager modes
+remain available. Direct runtime authentication is covered with simulated
+Google metadata and Infisical responses; a real sandbox deployment still needs
+verification with your identities and permissions.
+
+### `secret-manager` (optional sync destination)
+
+Each runtime variable `NAME` is read from the Secret Manager secret
+`<secret_prefix>NAME` (default prefix `<environment>_`, e.g. `prod_DATABASE_URL`).
+Cloud Run resolves values at runtime; they never pass through the deploying
+machine, a temporary file or the logs. Preflight lists secret names and fails if
+a required one is missing. Required names come from `scripts/lib/env-manifest.mjs`
+and the integrations enabled in `.flowstack.json`.
+
+Keep Infisical as the source of truth and sync into Secret Manager with an
+Infisical **Secret Sync** (GCP Secret Manager destination) per environment, so
+rotation happens in one place. See
+[secrets-infisical.md](../../docs/advanced/secrets-infisical.md#deployed-environments).
+
+### `env-file` (legacy, default for compatibility)
+
+Values are read from `apps/server/<env_file>` (e.g. `.env.prod`, gitignored,
+created from the matching `.env.*.example`) and written to a mode-600 temporary
+file for `gcloud run deploy --env-vars-file`, which is deleted on exit. The
+script warns when a `production` environment uses this mode.
+
+The deploy script supports inline comments in `.env` files:
 
 ```bash
 # Full-line comments are supported
@@ -454,119 +213,147 @@ PASSWORD='my#pass#word'
 APP_NAME="MyApp" # production app  → parsed as "MyApp"
 ```
 
-**Comment Detection Rules:**
+- Inline comments require at least one space before `#`.
+- `"value#123" # comment` → `value#123`.
+- `NODE_ENV`, `PORT`, `ENVIRONMENT` and `FLOWSTACK_RELEASE` are set by the script.
 
-- Inline comments require **at least one space before #**
-- `value # comment` → `value` (comment stripped)
-- `value#123` → `value#123` (no space, # preserved)
-- `"value#123" # comment` → `value#123` (quoted, then comment stripped)
+## Deploying
 
-**Best Practices:**
+**From GitHub (normal path):** Actions › _Deploy API_ › _Run workflow_, choose the
+environment and action (`deploy`, `rollback`, `status`). Production waits for an
+approver. The job runs lint, type checks and tests before deploying.
 
-- Use full-line comments for better readability
-- Quote values with `#` if they might have trailing comments
-- Ensure space before `#` for inline comments
+**From a workstation (sandbox/beta, or emergencies):**
 
----
+```sh
+gcloud auth login && gcloud config set project PROJECT_ID
+apps/server/.deploy/scripts/deploy.sh sandbox --dry-run   # preflight + planned commands
+bun run --cwd apps/server deploy:sandbox                    # deploy
+apps/server/.deploy/scripts/deploy.sh sandbox status        # serving revision + recent revisions
+```
 
-## Environment-Specific Resources
+Environments with `production: true` refuse local deploys unless
+`FLOWSTACK_ALLOW_LOCAL_PRODUCTION_DEPLOY=1` is set for an emergency.
 
-The deployment script sets different resources based on environment:
+Overrides: `GCP_REGION`, `PROJECT_ID`, `FLOWSTACK_RELEASE`,
+`DEPLOY_HEALTH_PATH` (default `/health/ready`), `DEPLOY_HEALTH_ATTEMPTS` (6),
+`DEPLOY_HEALTH_INTERVAL` (10 s).
 
-### Production
+## Rollback runbook
 
-- Memory: 2Gi
-- CPU: 2
-- Min instances: 1
-- Max instances: 10
-- Concurrency: 80
+Rollback moves **traffic** between existing revisions. It never touches the database.
 
-### Beta
+1. **Confirm the problem.** `deploy.sh <env> status` shows the serving revision.
+   Check errors in Sentry and `gcloud run services logs read SERVICE --region REGION`.
+2. **Check schema compatibility.** If the bad release ran migrations, the older
+   revision must work with the new schema. Migrations in this project are
+   additive by convention; if one was destructive, roll forward with a fix
+   instead.
+3. **Roll back.** Run the _Deploy API_ workflow with action `rollback` (or
+   `deploy.sh <env> rollback`). Without a revision name it picks the newest
+   earlier revision deployed by this script that is Ready. To choose one:
+   `deploy.sh <env> rollback SERVICE-00042-abc`.
+4. **Verification is automatic.** The service URL is health-checked after the
+   switch. If the target is unhealthy too, traffic returns to where it was and
+   the run fails (`outcome: rollback-failed`); escalate.
+5. **Record it.** The job summary lists release, revisions and actor. Open an
+   issue linking the failed release, then fix forward on `dev`.
 
-- Memory: 1Gi
-- CPU: 1
-- Min instances: 0
-- Max instances: 5
-- Concurrency: 80
+Failed verifications need no rollback: the candidate never received traffic
+(`outcome: failed-verification`). Fix the cause and deploy again; the candidate
+revision can stay (it serves nothing) or be deleted with
+`gcloud run revisions delete`.
 
-### Sandbox
+To practise safely, deploy a deliberately broken commit to **sandbox** (e.g.
+point `secret_prefix` at a database secret for an unreachable host) and watch it
+fail verification, then run a rollback there.
 
-- Memory: 512Mi
-- CPU: 1
-- Min instances: 0
-- Max instances: 2
-- Concurrency: 40
+## Rate limiting behind a load balancer
 
----
+Better Auth rate-limits sign-in and other auth routes per client IP. Google's
+external Application Load Balancer sends
+`X-Forwarded-For: <client-ip>,<load-balancer-ip>`, and Better Auth only trusts a
+multi-hop chain when it knows which hops are proxies. Without that, every client
+shares **one** bucket, so a few failed sign-ins from anyone would rate-limit all
+users.
+
+Set `AUTH_TRUSTED_PROXIES` (comma-separated IPs or CIDRs) to your load
+balancer's forwarding-rule IP (`gcloud compute forwarding-rules list`). Better
+Auth then walks the chain right to left, skips trusted hops, and uses the first
+untrusted address, so a forged left-most value cannot escape a limit
+(`tests/e2e-api.test.ts`, "rate limiting behind a proxy"). If a different proxy
+sets a dedicated header, `AUTH_IP_HEADERS` lists header names to read instead.
+Deploy preflight warns while `AUTH_TRUSTED_PROXIES` is unset. Before relying on a
+value, confirm what your service receives (log the header in sandbox), because
+proxy chains differ between setups.
+
+## Database migrations
+
+Deploys never migrate automatically. The workflow input **Apply database
+migrations** runs `bun run db:migrate` with that environment's credentials from
+Infisical (OIDC machine identity) before the new revision is built. Production
+requires CI plus `--allow-production`; beta and sandbox require
+`--confirm-env=<env>`. Migrations are not reverted by rollbacks.
+
+## Configuration reference
+
+`.deploy/deploy.config.yaml` holds infrastructure settings only; no secrets.
+
+| Key                                                                         | Default                    | Meaning                                                          |
+| --------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
+| `region`                                                                    | `us-central1`              | Cloud Run region (`GCP_REGION` overrides)                        |
+| `artifact_registry`                                                         | `flowstack`                | Artifact Registry repository                                     |
+| `service_name`                                                              | `flowstack-server-<env>`   | Cloud Run service (setup renames it to `<project>-server-<env>`) |
+| `memory`, `cpu`, `min_instances`, `max_instances`, `concurrency`, `timeout` | per environment            | Sizing                                                           |
+| `allow_unauthenticated`                                                     | `true`                     | Public service                                                   |
+| `secrets_source`                                                            | `env-file`                 | `env-file` or `secret-manager`                                   |
+| `secret_prefix`                                                             | `<env>_`                   | Secret Manager name prefix                                       |
+| `runtime_service_account`                                                   | none                       | Identity the service runs as                                     |
+| `production`                                                                | `false`                    | CI-only, clean-tree deploys                                      |
+| `env_file`                                                                  | `.env.<env>`               | File for `env-file` mode                                         |
+| `service_account_key`                                                       | `gcp-service-account.json` | Legacy key file, used only if present                            |
+
+Current sizing: prod 2 CPU / 2Gi / 1–10 instances / concurrency 80; beta 1 CPU /
+1Gi / 0–5 / 80; sandbox 1 CPU / 512Mi / 0–2 / 40.
+
+## Custom environments
+
+Add a block under `environments:` with at least `service_name`, add a
+`deploy:<name>` script to `apps/server/package.json`, and (for the workflow) add
+the name to the `environment` options in `.github/workflows/deploy.yml` plus a
+GitHub Environment of the same name.
+
+```yaml
+jackson-testing:
+  env_file: .env.jackson
+  service_name: flowstack-server-jackson
+  memory: 512Mi
+  cpu: "1"
+  min_instances: 0
+  max_instances: 2
+  concurrency: 40
+```
+
+## Migrating from a service account key
+
+The script still uses `apps/server/gcp-service-account.json` (or `GCP_SA_KEY_PATH`)
+when present, with a warning. To move to keyless:
+
+1. Complete [keyless authentication](#keyless-authentication-workload-identity-federation)
+   and the GitHub variables.
+2. Run the workflow against sandbox (action `status`, then `deploy`).
+3. Delete the local key file, then delete the key in IAM
+   (`gcloud iam service-accounts keys delete KEY_ID --iam-account ...`).
+4. Switch each environment to `secrets_source: secret-manager` once its secrets
+   exist in Secret Manager.
 
 ## Troubleshooting
 
-**Service account not found**
-
-- Check `gcp-service-account.json` exists or set `GCP_SA_KEY_PATH`
-
-**Environment file not found**
-
-- Create `.env.prod`, `.env.beta`, or `.env.sandbox` from the respective `.example` files:
-  - `cp apps/server/.env.prod.example apps/server/.env.prod`
-  - `cp apps/server/.env.beta.example apps/server/.env.beta`
-  - `cp apps/server/.env.sandbox.example apps/server/.env.sandbox`
-
-**Container failed to start**
-
-- Check Cloud Run logs via deployment output link
-- Verify all required environment variables are set
-
-**API key errors**
-
-- Verify all keys in `.env.prod|beta|sandbox` are correct and active
-- Check service account has necessary permissions
-
----
-
-## Deployment Flow
-
-1. Script validates environment file exists
-2. Service account authentication
-3. Artifact Registry repository created (if not exists)
-4. Docker image built and pushed via Cloud Build
-5. Environment variables converted to Cloud Run format (using unique temp file)
-6. Service deployed to Cloud Run
-7. Service URL returned
-
-### Parallel Deployments
-
-The deployment script supports running multiple deployments in parallel:
-
-```bash
-# Deploy to multiple environments simultaneously
-bun run deploy:prod & bun run deploy:beta & bun run deploy:sandbox &
-
-# Wait for all deployments to complete
-wait
-
-# Or in a single line
-bun run deploy:prod & bun run deploy:beta & bun run deploy:sandbox & wait
-```
-
-Each deployment:
-
-- Creates a unique temporary file using `mktemp` (no race conditions)
-- Authenticates independently
-- Can deploy to different regions
-- Cleans up automatically on completion or failure
-
----
-
-## Quick Commands Reference
-
-| Task               | Command                                          |
-| ------------------ | ------------------------------------------------ |
-| Local dev          | `cd apps/server && bun run dev`                  |
-| Build              | `cd apps/server && bun run build`                |
-| Type check         | `cd apps/server && bun run check-types`          |
-| Deploy prod        | `cd apps/server && bun run deploy:prod`          |
-| Deploy beta        | `cd apps/server && bun run deploy:beta`          |
-| Deploy sandbox     | `cd apps/server && bun run deploy:sandbox`       |
-| Custom region prod | `GCP_REGION=us-west1 bun run deploy:prod`        |
-| Custom SA key      | `GCP_SA_KEY_PATH=./key.json bun run deploy:prod` |
+| Symptom                             | Fix                                                                                           |
+| ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| `No active gcloud credentials`      | `gcloud auth login` locally; in CI check the WIF variables and `id-token: write`              |
+| `missing Secret Manager secrets`    | Create or sync the listed names; check `secret_prefix`                                        |
+| `still has the example placeholder` | Replace the value in the env file (or Infisical)                                              |
+| `failed-verification`               | Check `/health/ready` locally and the revision logs; usually `DATABASE_URL` or network access |
+| `Setting IAM policy failed` warning | See the `--allow-unauthenticated` note under least-privilege roles                            |
+| Build fails in Cloud Build          | `gcloud builds list --region REGION`; `.gcloudignore` controls what is uploaded               |

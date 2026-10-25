@@ -1,0 +1,32 @@
+name: Release
+# Tag a reviewed commit on main (e.g. v2.0.0) to publish versioned release
+# metadata. The tag must match TEMPLATE_VERSION in scripts/lib/project-config.mjs
+# so generated projects can trace their starter version.
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check tag matches template version and is on main
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(node -e 'import("./scripts/lib/project-config.mjs").then(m=>process.stdout.write(m.TEMPLATE_VERSION))')
+          [ "$TAG" = "v$VERSION" ] || { echo "Tag $TAG does not match TEMPLATE_VERSION $VERSION"; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "Tagged commit is not on main"; exit 1; }
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --verify-tag --generate-notes --title "FlowStack $TAG"

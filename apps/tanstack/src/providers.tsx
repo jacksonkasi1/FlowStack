@@ -12,9 +12,12 @@ import { useState } from 'react'
 
 // ** import utils
 import { authClient } from '@/lib/auth-client'
+import { SessionSync, StartupSplash, notifySessionChange } from '@repo/auth-ui'
+import { AUTH_LOCALIZATION } from '@repo/config'
 
 // ** import config
 import { APP_URLS } from '@/config/urls'
+import { TEMPLATE_FEATURES } from '@repo/config'
 import {
   getOrganizationProviderConfig,
   createLogoUploadHandler,
@@ -53,26 +56,37 @@ export function Providers({ children }: ProvidersProps) {
         <AuthQueryProvider>
           <AuthUIProviderTanstack
             authClient={authClient as any}
+            localization={AUTH_LOCALIZATION}
+            onSessionChange={() => notifySessionChange(authClient)}
             baseURL={APP_URLS.frontend}
             navigate={(href) => router.navigate({ to: href })}
             replace={(href) => router.navigate({ to: href, replace: true })}
             Link={({ href, ...props }) => <Link to={href} {...props} />}
-            social={{
-              providers: ['google'],
-            }}
-            magicLink={true}
+            social={
+              TEMPLATE_FEATURES.googleAuth
+                ? { providers: ['google'] }
+                : undefined
+            }
+            magicLink={TEMPLATE_FEATURES.email}
             account={{
               fields: ['image', 'name'],
             }}
-            avatar={{
-              upload: uploadAvatar,
-              delete: deleteAvatar,
-            }}
-            {...getOrganizationProviderConfig({
-              logoUpload: logoUploadHandler,
-              logoDelete: logoDeleteHandler,
-            })}
+            avatar={
+              TEMPLATE_FEATURES.storage
+                ? { upload: uploadAvatar, delete: deleteAvatar }
+                : undefined
+            }
+            {...getOrganizationProviderConfig(
+              TEMPLATE_FEATURES.storage
+                ? {
+                    logoUpload: logoUploadHandler,
+                    logoDelete: logoDeleteHandler,
+                  }
+                : undefined,
+            )}
           >
+            <SessionSync client={authClient} />
+            <StartupSplash />
             {children}
             <Toaster />
           </AuthUIProviderTanstack>

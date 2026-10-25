@@ -1,0 +1,16 @@
+# Secret scanning rules for gitleaks (and `infisical scan`, which reads the same format).
+# Used by the pre-commit hook, `bun run secrets:scan` and CI.
+#
+# The default rule set is used unchanged. Allowlist entries must name the
+# exact documented example value with a narrow regex, never a whole file, so
+# a real secret added next to an example is still caught.
+# `[allowlist]` (singular) is used because the Infisical CLI's scanner reads
+# only that form; gitleaks accepts it too.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented .env quoting example in apps/server/DEPLOYMENT.md"
+# Matches the detected secret value itself (the default regexTarget).
+regexes = ['''^my#pass#word$''']
